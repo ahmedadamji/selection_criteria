@@ -21,11 +21,18 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
   
   for ( pcl::PointCloud<pcl::PointXYZI>::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    // if ( it->z >= 0.2) // ((( pow(it->x,2) + pow(it->y,2) ) >= pow(min_radius,2)) && (( pow(it->x,2) + pow(it->y,2) ) <= pow(max_radius,2)))
+    // if ( it->z >= 0.2)
     // {
     //   out_cloud_ptr->points.push_back(*it);
     // }
-    out_cloud_ptr->points.push_back(*it);
+
+    float max_radius = 2;
+    float min_radius = 0.02;
+    if ((( pow(it->x,2) + pow(it->y,2) ) >= pow(min_radius,2)) && (( pow(it->x,2) + pow(it->y,2) ) <= pow(max_radius,2)))
+    {
+      out_cloud_ptr->points.push_back(*it);
+    }
+    //out_cloud_ptr->points.push_back(*it);
   } 
 
 }
