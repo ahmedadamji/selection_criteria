@@ -26,7 +26,7 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    float max_radius = 2;
+    float max_radius = 0.2;
     float min_radius = 0.02;
     if ((( pow(it->x,2) + pow(it->y,2) ) >= pow(min_radius,2)) && (( pow(it->x,2) + pow(it->y,2) ) <= pow(max_radius,2)))
     {
@@ -86,11 +86,41 @@ int main (int argc, char** argv)
 {
   ros::init (argc, argv, "selection_criteria");
   ros::NodeHandle n;
-    
 
-  message_filters::Subscriber<sensor_msgs::PointCloud2> c1(n, "/filtered_points", 1);
+
+  // this is normally done with different topics
+  message_filters::Subscriber<sensor_msgs::PointCloud2> c1(n, "/filtered_points", 1); //check if anything is even published to filtered points
   message_filters::Subscriber<sensor_msgs::PointCloud2> c2(n, "/filtered_points", 1);
   Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), c1, c2);
+
+
+
+  // message_filters::Subscriber<std_msgs::Float64MultiArray> vp(n, "/velodyne_packet", 1);
+  // tf::matrixEigenToMsg(map,vp );
+
+  // sensor_msgs::PointCloud2 cloud;
+  // cloud.header.stamp = ros::Time::now();
+  // cloud.width  = vp.end()+1;
+  // cloud.height = 1;
+  // cloud.is_bigendian = false;
+  // cloud.is_dense = false;
+
+  // sensor_msgs::PointCloud2Modifier modifier(cloud);
+  // modifier.setPointCloud2FieldsByString(1,"xy");
+  // modifier.resize(vp.end()+1);
+
+  // sensor_msgs::PointCloud2Iterator<float> out_x(cloud, "x");
+  // sensor_msgs::PointCloud2Iterator<float> out_y(cloud, "y");
+
+  // for (double i=0;i<vp.end();i++)
+  // {
+  //   *out_x = i;
+  //   *out_y = vp.data[i];
+  //   ++out_x;
+  //   ++out_y;
+  // }
+
+
   
   SubscribeAndPublish SAPObject;
   
