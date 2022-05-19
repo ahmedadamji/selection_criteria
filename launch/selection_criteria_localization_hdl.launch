@@ -45,7 +45,7 @@
       <remap from="/velodyne_points" to="$(arg points_topic)" />
       <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" />
 
-      <param name="points_topic" value="/selected_points" />
+      <param name="points_topic" value="/selected_points" /> <!-- Added this -->
       
       <!-- odometry frame_id -->
       <param name="odom_child_frame_id" value="$(arg odom_child_frame_id)" />
