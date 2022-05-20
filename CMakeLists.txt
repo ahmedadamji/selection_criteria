@@ -206,5 +206,7 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-add_executable(selection_criteria src/selection_criteria.cpp)
-target_link_libraries(selection_criteria ${catkin_LIBRARIES})
+add_executable(selection_criteria_mapping src/selection_criteria_mapping.cpp)
+add_executable(selection_criteria_localization src/selection_criteria_localization.cpp)
+target_link_libraries(selection_criteria_mapping ${catkin_LIBRARIES})
+target_link_libraries(selection_criteria_localization ${catkin_LIBRARIES})

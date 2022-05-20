@@ -27,7 +27,7 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
   {
     out_cloud_ptr->points.push_back(*it);
     
-    // std::cout << "Points are being added to the PointCloud!"<< std::endl;
+    std::cout << "Points are being added to the PointCloud!"<< std::endl;
 
     // if ( it->z >= 0.2)
     // {
