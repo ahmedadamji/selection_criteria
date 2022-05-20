@@ -100,13 +100,15 @@ int main (int argc, char** argv)
   ros::init (argc, argv, "selection_criteria");
   ros::NodeHandle n;
 
-
+  // Which topic am i supposed to subscribe and publish to for localization and mapping
   // this is normally done with different topics
   message_filters::Subscriber<sensor_msgs::PointCloud2> c1(n, "/filtered_points", 1); //check if anything is even published to filtered points
   message_filters::Subscriber<sensor_msgs::PointCloud2> c2(n, "/filtered_points", 1);
   Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), c1, c2);
 
-
+  // message_filters::Subscriber<sensor_msgs::PointCloud2> c1(n, "/rs16_tc/rslidar_points", 1); //check if anything is even published to filtered points
+  // message_filters::Subscriber<sensor_msgs::PointCloud2> c2(n, "/rs16_tc/rslidar_points", 1);
+  // Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), c1, c2);
 
   // message_filters::Subscriber<std_msgs::Float64MultiArray> vp(n, "/velodyne_packet", 1);
   // tf::matrixEigenToMsg(map,vp );

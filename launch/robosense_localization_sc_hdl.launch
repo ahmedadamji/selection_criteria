@@ -25,7 +25,7 @@
 
 
   <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria" name="selection_criteria"> <!-- Can this be here? -->
+  <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization"> <!-- Can this be here? -->
     <param name="publish_frequency" type="double" value="10.0" />
   </node>
 
@@ -35,7 +35,7 @@
 
     <!-- globalmap_server_nodelet -->
     <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
-      <param name="globalmap_pcd" value="$(find selection_criteria)/maps/2021-09-03-11-17-36_map_0.2_0.02_radius.pcd" />  add the map we want here ...
+      <param name="globalmap_pcd" value="src/data/maps/PSA_APM8380_AIDE_TB1L0_WRK_X11_2021-08-26-18-19-19_1_vanilla_map.pcd" />
       <!-- <param name="globalmap_pcd" value="$(find hdl_localization)/data/map.pcd" /> -->
       <param name="convert_utm_to_local" value="true" />
       <param name="downsample_resolution" value="0.1" />
@@ -46,8 +46,6 @@
     <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)">
       <remap from="/velodyne_points" to="$(arg points_topic)" />
       <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" />
-
-      <param name="points_topic" value="/selected_points" /> <!-- Added this... -->
       
       <!-- odometry frame_id -->
       <param name="odom_child_frame_id" value="$(arg odom_child_frame_id)" />
@@ -80,6 +78,8 @@
       <param name="init_ori_z" value="0.0" />
 
       <param name="use_global_localization" value="$(arg use_global_localization)" />
+
+      <param name="points_topic" value="/selected_points" />
     </node>
 
     <node pkg="hdl_localization" type="plot_status.py" name="plot_estimation_errors" if="$(arg plot_estimation_errors)" />
