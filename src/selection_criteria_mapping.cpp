@@ -66,9 +66,9 @@ void cylinderFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl
   out_cloud_ptr->points.clear();
   for ( pcl::PointCloud<pcl::PointXYZI>::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-
-    if !(( it->z >= z_axis_origin && it->z <= (z_axis_origin + height)) && // within the Z limits
-         (( pow(it->x,2) + pow(it->y,2) ) <= pow(radius,2))) // within the radius limits
+    
+    if (!(( it->z >= z_axis_origin && it->z <= (z_axis_origin + height)) && // within the Z limits
+         (( pow(it->x,2) + pow(it->y,2) ) <= pow(radius,2)))) // within the radius limits
     {
       out_cloud_ptr->points.push_back(*it);
     }
@@ -178,7 +178,7 @@ _output_header = cloud_msg1->header;
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "selection_criteria");
-  ros::NodeHandle n;
+  ros::NodeHandle nh;
 
   // Which topic am i supposed to subscribe and publish to for localization and mapping
   // this is normally done with different topics
