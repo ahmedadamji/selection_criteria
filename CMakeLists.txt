@@ -13,6 +13,11 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   pcl_conversions
   pcl_ros
+  nav_msgs
+  message_filters
+  tf2_ros
+  tf2_geometry_msgs
+  tf2
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,9 +112,10 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES selection_criteria
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+CATKIN_DEPENDS roscpp rospy std_msgs nav_msgs message_filters tf2_ros tf2_geometry_msgs tf2 
 #  DEPENDS system_lib
 )
+
 
 ###########
 ## Build ##
@@ -208,5 +214,8 @@ include_directories(
 # catkin_add_nosetests(test)
 add_executable(selection_criteria_mapping src/selection_criteria_mapping.cpp)
 add_executable(selection_criteria_localization src/selection_criteria_localization.cpp)
+add_executable(error src/error.cpp)
+
 target_link_libraries(selection_criteria_mapping ${catkin_LIBRARIES})
 target_link_libraries(selection_criteria_localization ${catkin_LIBRARIES})
+target_link_libraries(error ${catkin_LIBRARIES})
