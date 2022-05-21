@@ -171,9 +171,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -999999
+      Max Intensity: 29.613576889038086
       Min Color: 0; 0; 0
-      Min Intensity: 999999
+      Min Intensity: -15.58642292022705
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -201,9 +201,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -999999
+      Max Intensity: 172.59446716308594
       Min Color: 255; 85; 0
-      Min Intensity: 999999
+      Min Intensity: 19.74982452392578
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -376,16 +376,16 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 255
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 0.9014424681663513
       Name: PointCloud2
-      Position Transformer: ""
+      Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
@@ -454,7 +454,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 50.91687774658203
+      Distance: 105.9288330078125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -469,7 +469,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0247968435287476
+      Pitch: 1.029796838760376
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
       Yaw: 3.221651077270508

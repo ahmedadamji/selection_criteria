@@ -46,7 +46,7 @@
     <param name="points_topic" value="$(arg points_topic)" />
     <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />
     <param name="robot_odom_frame_id" value="$(arg robot_odom_frame_id)" />
-    <param name="keyframe_delta_trans" value="10.0" />
+    <param name="keyframe_delta_trans" value="5.0" />
     <param name="keyframe_delta_angle" value="1.0" />
     <param name="keyframe_delta_time" value="10000.0" />
     <param name="transform_thresholding" value="false" />

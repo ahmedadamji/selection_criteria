@@ -21,17 +21,11 @@ typedef sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::Po
 
 void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_ptr)
 {
-
-  // out_cloud_ptr = in_cloud_ptr;
   out_cloud_ptr->points.clear();
   
   for ( pcl::PointCloud<pcl::PointXYZI>::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    out_cloud_ptr->points.push_back(*it);
-    
-    //std::cout << "Points are being added to the PointCloud!"<< std::endl;
-    //ROS_INFO ("Points are being added to the PointCloud!");
-
+    //out_cloud_ptr->points.push_back(*it);
     // if ( it->z >= 0.2)
     // {
     //   out_cloud_ptr->points.push_back(*it);
@@ -43,6 +37,14 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
     // {
     //   out_cloud_ptr->points.push_back(*it);
     // }
+    
+    float max_radius = 0.05;
+    if (( pow(it->x,2) + pow(it->y,2) ) <= pow(max_radius,2))
+    {
+      out_cloud_ptr->points.push_back(*it);
+    }
+
+    
   } 
 
 }
@@ -130,15 +132,14 @@ _output_header = cloud_msg1->header;
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "selection_criteria");
-  ros::NodeHandle nh;
+  ros::NodeHandle n;
 
   // Which topic am i supposed to subscribe and publish to for localization and mapping
   // this is normally done with different topics
-
-  // message_filters::Subscriber<sensor_msgs::PointCloud2> c1(n, "/rs16_tc/rslidar_points", 1); //check if anything is even published to filtered points
-  // message_filters::Subscriber<sensor_msgs::PointCloud2> c2(n, "/rs16_tc/rslidar_points", 1);
+  // message_filters::Subscriber<sensor_msgs::PointCloud2> c1(n, "/filtered_points", 1); //check if anything is even published to filtered points
+  // message_filters::Subscriber<sensor_msgs::PointCloud2> c2(n, "/filtered_points", 1);
   // Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), c1, c2);
-  
+
 
   // SubscribeAndPublish SAPObject;
   
@@ -150,7 +151,7 @@ int main (int argc, char** argv)
   // Create a ROS subscriber for the input point cloud
   //nh.subscribe("/rs16_tc/rslidar_points", &SubscribeAndPublish::callback, &SAPObject, 1);
   // nh.subscribe("/rs16_tc/rslidar_points", 1000, boost::bind(&SubscribeAndPublish::callback, &SAPObject, _1));
-  ros::Subscriber sub = nh.subscribe("/rs16_tc/rslidar_points", 1000, &SubscribeAndPublish::callback, &SAPObject);
+  ros::Subscriber sub = nh.subscribe("/filtered_points", 1000, &SubscribeAndPublish::callback, &SAPObject);
 
   
    
