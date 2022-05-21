@@ -41,14 +41,9 @@
     <param name="radius_min_neighbors" value="2" />
   </node>
 
-  <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_mapping" name="selection_criteria_mapping">
-    <param name="publish_frequency" type="double" value="100.0" />
-  </node>
-  
   <!-- scan_matching_odometry_nodelet -->
   <node pkg="nodelet" type="nodelet" name="scan_matching_odometry_nodelet" args="load hdl_graph_slam/ScanMatchingOdometryNodelet $(arg nodelet_manager)">
-    <param name="points_topic" value="/selected_points" />
+    <param name="points_topic" value="$(arg points_topic)" />
     <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />
     <param name="robot_odom_frame_id" value="$(arg robot_odom_frame_id)" />
     <param name="keyframe_delta_trans" value="10.0" />
@@ -75,7 +70,7 @@
 
   <!-- floor_detection_nodelet -->
   <node pkg="nodelet" type="nodelet" name="floor_detection_nodelet" args="load hdl_graph_slam/FloorDetectionNodelet $(arg nodelet_manager)" if="$(arg enable_floor_detection)">
-    <param name="points_topic" value="/selected_points" />
+    <param name="points_topic" value="$(arg points_topic)" />
     <param name="tilt_deg" value="0.0" />
     <param name="sensor_height" value="2.0" />
     <param name="height_clip_range" value="4.0" />
@@ -86,7 +81,7 @@
 
   <!-- hdl_graph_slam_nodelet -->
   <node pkg="nodelet" type="nodelet" name="hdl_graph_slam_nodelet" args="load hdl_graph_slam/HdlGraphSlamNodelet $(arg nodelet_manager)">
-    <param name="points_topic" value="/selected_points" />
+    <param name="points_topic" value="$(arg points_topic)" />
     <!-- frame settings -->
     <param name="map_frame_id" value="$(arg map_frame_id)" />
     <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />

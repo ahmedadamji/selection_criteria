@@ -7,7 +7,7 @@
   <arg name="enable_imu_acc" default="false" />
   <arg name="enable_imu_ori" default="false" />
 
-  <arg name="points_topic" default="/rs16_tc/rslidar_points" />
+  <arg name="points_topic" default="/velodyne_points" />
   <arg name="map_frame_id" default="map" />
   <arg name="lidar_odom_frame_id" default="odom" />
 
@@ -16,14 +16,14 @@
   <arg name="robot_odom_frame_id" default="robot_odom" />
 
   <!-- transformation between lidar and base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link robosense 10" />
+  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velodyne 10" />
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
 
   <!-- prefiltering_nodelet -->
   <node pkg="nodelet" type="nodelet" name="prefiltering_nodelet" args="load hdl_graph_slam/PrefilteringNodelet $(arg nodelet_manager)">
-    <remap from="/velodyne_points" to="$(arg points_topic)" /> <!-- is this correct?? -->
+    <remap from="/velodyne_points" to="$(arg points_topic)" />
     <!-- in case base_link_frame is blank, mapping will be performed in the lidar frame -->
     <param name="base_link_frame" value="base_link" />
     <!-- distance filter -->
@@ -41,17 +41,13 @@
     <param name="radius_min_neighbors" value="2" />
   </node>
 
-  <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_mapping" name="selection_criteria_mapping">
-    <param name="publish_frequency" type="double" value="100.0" />
-  </node>
   
   <!-- scan_matching_odometry_nodelet -->
   <node pkg="nodelet" type="nodelet" name="scan_matching_odometry_nodelet" args="load hdl_graph_slam/ScanMatchingOdometryNodelet $(arg nodelet_manager)">
-    <param name="points_topic" value="/selected_points" />
+    <param name="points_topic" value="$(arg points_topic)" />
     <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />
     <param name="robot_odom_frame_id" value="$(arg robot_odom_frame_id)" />
-    <param name="keyframe_delta_trans" value="10.0" />
+    <param name="keyframe_delta_trans" value="5.0" />
     <param name="keyframe_delta_angle" value="1.0" />
     <param name="keyframe_delta_time" value="10000.0" />
     <param name="transform_thresholding" value="false" />
@@ -75,7 +71,7 @@
 
   <!-- floor_detection_nodelet -->
   <node pkg="nodelet" type="nodelet" name="floor_detection_nodelet" args="load hdl_graph_slam/FloorDetectionNodelet $(arg nodelet_manager)" if="$(arg enable_floor_detection)">
-    <param name="points_topic" value="/selected_points" />
+    <param name="points_topic" value="$(arg points_topic)" />
     <param name="tilt_deg" value="0.0" />
     <param name="sensor_height" value="2.0" />
     <param name="height_clip_range" value="4.0" />
@@ -86,7 +82,7 @@
 
   <!-- hdl_graph_slam_nodelet -->
   <node pkg="nodelet" type="nodelet" name="hdl_graph_slam_nodelet" args="load hdl_graph_slam/HdlGraphSlamNodelet $(arg nodelet_manager)">
-    <param name="points_topic" value="/selected_points" />
+    <param name="points_topic" value="$(arg points_topic)" />
     <!-- frame settings -->
     <param name="map_frame_id" value="$(arg map_frame_id)" />
     <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />
