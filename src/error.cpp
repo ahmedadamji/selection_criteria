@@ -16,6 +16,10 @@
 
 #define RAD2DEG 57.295779513
 
+// Added:
+#include <tf2/LinearMath/Quaternion.h>
+#include <cmath>
+
 using namespace message_filters;
 
 typedef sync_policies::ApproximateTime<nav_msgs::Odometry, nav_msgs::Odometry> MySyncPolicy;
@@ -106,6 +110,49 @@ try{
   ros::Publisher pub_; 
 
 };
+
+// Function for rotation matrix to quaternion conversion:
+std::vector<double> rotmat2q(double T[3][3]) {
+
+  std::vector<double> q;
+
+  int tr = 0;
+  for(int i=0;i<3;i++) {
+    for(int j=0;j<3;j++) {
+      if(i == j) {
+        tr = tr + T[i][j];
+      }
+    }
+  }
+
+  // This is the wrong way to set values
+  if (tr == 4) {
+    q.push_back(1.0);
+    q.push_back(0.0);
+    q.push_back(0.0);
+    q.push_back(0.0);
+    return q;
+  }
+
+  double angle = acos((T[0, 0] + T[1, 1] + T[2, 2] - 1)/2);
+
+  xr = T[2, 1] - T[1, 2];
+  yr = T[0, 2] - T[2, 0];
+  zr = T[1, 0] - T[0, 1];
+
+  x = xr/sqrt(np.power(xr, 2) + np.power(yr, 2) + np.power(zr, 2));
+  y = yr/sqrt(np.power(xr, 2) + np.power(yr, 2) + np.power(zr, 2));
+  z = zr/sqrt(np.power(xr, 2) + np.power(yr, 2) + np.power(zr, 2));
+
+  q.push_back(cos(angle/2));
+  q.push_back(x * sin(angle/2));
+  q.push_back(sin(angle/2));
+  q.push_back(z * sin(angle/2));
+
+  return q;
+}
+
+
 
 int main(int argc, char** argv)
 {

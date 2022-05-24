@@ -63,7 +63,7 @@
       <param name="downsample_resolution" value="0.1" />
       <!-- if "specify_init_pose" is true, pose estimator will be initialized with the following params -->
       <!-- otherwise, you need to input an initial pose with "2D Pose Estimate" on rviz" -->
-      <param name="specify_init_pose" value="false" /> <!--  here if we use the same bag file for localization and mapping we canb have this as true as this is the origin of the map, otherwise we set to false and specify starting position in rviz, in real life this is done using gps.-->
+      <param name="specify_init_pose" value="true" /> <!--  here if we use the same bag file for localization and mapping we canb have this as true as this is the origin of the map, otherwise we set to false and specify starting position in rviz, in real life this is done using gps.-->
       <param name="init_pos_x" value="0.0" /> <!--  This is close to 40, but i have set it to be specified in rviz -->
       <param name="init_pos_y" value="0.0" />
       <param name="init_pos_z" value="0.0" />

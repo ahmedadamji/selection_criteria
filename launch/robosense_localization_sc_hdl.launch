@@ -27,7 +27,7 @@
 
   <!-- calling the selection_criteria node to filter out point clouds -->
   <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization"> <!-- Can this be here? -->
-    <param name="publish_frequency" type="double" value="100.0" />
+    <param name="publish_frequency" type="double" value="10.0" />
   </node>
 
 
