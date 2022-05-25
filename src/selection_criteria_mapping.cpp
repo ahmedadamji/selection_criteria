@@ -53,7 +53,7 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
   int totalOutputPoints = out_cloud_ptr->size();
   int filteredPoints = totalInputPoints - totalOutputPoints;
 
-  ROS_INFO(totalInputPoints, " ", totalOutputPoints, " ", filteredPoints);
+  //ROS_INFO(totalInputPoints, " ", totalOutputPoints, " ", filteredPoints);
 
 }
 
@@ -61,7 +61,7 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
 // Will return points outside the defined Cylinder
 void cylinderFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_ptr,
 		     double z_axis_origin = -2.5,
-		     double x_axis_origin = -20,
+		     double x_axis_origin = 0,
 		     double y_axis_origin = -20,
 		     double radius = 0.2,
 		     double height = 0.5)
@@ -74,14 +74,15 @@ void cylinderFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl
   for ( pcl::PointCloud<pcl::PointXYZI>::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     
-    if (!(( it->z >= z_axis_origin && it->z <= (z_axis_origin + height)) && // within the Z limits
-         (( pow(it->x,2) + pow(it->y,2) ) <= pow(radius,2)))) // within the radius limits
+    if (!(( it->x >= x_axis_origin && it->x <= (x_axis_origin + height)) && // within the Z limits
+         (( pow(it->z,2) + pow(it->y,2) ) <= pow(radius,2)))) // within the radius limits
     {
       out_cloud_ptr->points.push_back(*it);
     }
 
-  } 
+  }
 }
+
 
 // Box filter
 // Will return points inbetween the defined ceiling and floor of the Z axes
@@ -187,14 +188,15 @@ class SubscribeAndPublish
 ////////////////////////////////////////////////////////
 int main (int argc, char** argv)
 {
-  ros::init (argc, argv, "selection_criteria");
+  ros::init (argc, argv, "selection_criteria_mapping");
   ros::NodeHandle nh;
 
   // Which topic am i supposed to subscribe and publish to for localization and mapping
   // this is normally done with different topics
   message_filters::Subscriber<sensor_msgs::PointCloud2> c1(nh, "/filtered_points", 1); //check if anything is even published to filtered points
   message_filters::Subscriber<sensor_msgs::PointCloud2> c2(nh, "/filtered_points", 1);
-  Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), c1, c2);
+  //Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), c1, c2);
+  Synchronizer<MySyncPolicy> sync(MySyncPolicy(1), c1, c2);
 
 
   SubscribeAndPublish SAPObject;
@@ -208,8 +210,6 @@ int main (int argc, char** argv)
   //nh.subscribe("/rs16_tc/rslidar_points", &SubscribeAndPublish::callback, &SAPObject, 1);
   // nh.subscribe("/rs16_tc/rslidar_points", 1000, boost::bind(&SubscribeAndPublish::callback, &SAPObject, _1));
   //nh.subscribe("/filtered_points", 1000, &SubscribeAndPublish::callback, &SAPObject);
-
-  
    
   ros::spin ();
   return 0;

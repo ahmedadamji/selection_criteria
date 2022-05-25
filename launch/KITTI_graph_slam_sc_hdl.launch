@@ -50,7 +50,7 @@
   </node> -->
 
   <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_mapping" name="selection_criteria_mapping">
+  <node pkg="selection_criteria" type="selection_criteria_mapping" name="selection_criteria_mapping" output="screen">
     <param name="publish_frequency" type="double" value="10.0" />
   </node>
   
