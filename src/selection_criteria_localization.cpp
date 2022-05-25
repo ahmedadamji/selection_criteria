@@ -141,7 +141,7 @@ SCLocalization::radiusCondition(double x, double y, double z,
                                   double max_radius = 250)
 {
 
-  if ((( pow(x, 2) + pow(y, 2) ) >= pow(min_radius,2)) && (( pow(x, 2) + pow(y, 2) ) <= pow(max_radius,2))) // within the radius limits
+  if ((( pow(x, 2) + pow(y, 2) ) >= pow(min_radius, 2)) && (( pow(x, 2) + pow(y, 2) ) <= pow(max_radius, 2))) // within the radius limits
   {
     return true;
   }
