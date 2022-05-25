@@ -135,14 +135,30 @@ SCLocalization::cylinderCondition(double x, double y, double z,
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool
+SCLocalization::radiusCondition(double x, double y, double z,
+                                  double min_radius = 0,
+                                  double max_radius = 250)
+{
+
+  if ((( pow(x, 2) + pow(y, 2) ) >= pow(min_radius,2)) && (( pow(x, 2) + pow(y, 2) ) <= pow(max_radius,2))) // within the radius limits
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void
 SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 {
   out_cloud_ptr->points.clear();
 
-  double cylinder_x_axis_origin = 0;
-  double cylinder_radius = 10;
-  double cylinder_height = 100;
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -172,7 +188,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 
 
     
-    if (cylinderCondition(x, y, z))
+    if (cylinderCondition(x, y, z) && radiusCondition(x, y, z))
     {
       out_cloud_ptr->points.push_back(*it);
     }
@@ -235,6 +251,37 @@ SCLocalization::cylinderFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr
   std::cout << filteredPoints << std::endl;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::radiusFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr,
+                             double min_radius = 0,
+                             double max_radius = 250)
+{
+
+  out_cloud_ptr->points.clear();
+  
+  for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
+  {
+    
+    if ((( pow(it->x,2) + pow(it->y,2) ) >= pow(min_radius,2)) && (( pow(it->x,2) + pow(it->y,2) ) <= pow(max_radius,2)))
+    {
+      out_cloud_ptr->points.push_back(*it);
+    }
+
+  }
+
+  int totalInputPoints = in_cloud_ptr->size();
+  int totalOutputPoints = out_cloud_ptr->size();
+  int filteredPoints = totalInputPoints - totalOutputPoints;
+
+  std::cout << "Total number of input points: " << std::endl;
+  std::cout << totalInputPoints << std::endl;
+  std::cout << "Total number of output points: " << std::endl;
+  std::cout << totalOutputPoints << std::endl;
+  std::cout << "Total number of filtered points: " << std::endl;
+  std::cout << filteredPoints << std::endl;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

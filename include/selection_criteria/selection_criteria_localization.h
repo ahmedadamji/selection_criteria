@@ -115,7 +115,7 @@ class SCLocalization
 
     /** \brief Cylinder Filter Condition 
       *
-      * used for picking and placing at given position 
+      * used for filtering points inside a defined cylinder
       * 
       * \input[in] x: x co-ordinate of point in point cloud
       * \input[in] y: y co-ordinate of point in point cloud
@@ -134,6 +134,25 @@ class SCLocalization
                       double cylinder_radius,
                       double cylinder_height);
 
+      /** \brief Radius Filter Condition 
+      *
+      * used for filtering points inside a defined radial region
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] min_radius: The minimum filtering radius
+      * \input[in] max_radius: The maximum filtering radius
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    radiusCondition(double x,
+                    double y,
+                    double z,
+                    double min_radius,
+                    double max_radius);
+
     /** \brief Filter 
       *
       * Selection Criteria Filter
@@ -151,7 +170,6 @@ class SCLocalization
       * Will return points outside the defined Cylinder
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[out] out_cloud_ptr the output PointCloud2 pointer
       * \input[in] cylinder_x_axis_origin: The origin of the cylinder in the x axis
       * \input[in] cylinder_radius: The radius of the cylinder
       * \input[in] cylinder_height: The height of the cylinder
@@ -166,13 +184,29 @@ class SCLocalization
                     double cylinder_radius,
                     double cylinder_height);
 
+    /** \brief Radius Filter 
+      *
+      * Will return points within the defined radius bounds
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] min_radius: The minimum filtering radius
+      * \input[in] max_radius: The maximum filtering radius
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      *  
+      */
+    void 
+    radiusFilter (PointCPtr &in_cloud_ptr,
+                  PointCPtr &out_cloud_ptr,
+                  double min_radius,
+                  double max_radius);
+
     /** \brief Box Filter 
       *
       * Will return points inbetween the defined ceiling and floor of the Z axes
       * and also between the min0/max0 OR min1/max1 pairs on the X and Y axes
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[out] out_cloud_ptr the output PointCloud2 pointer
       * \input[in] x_axis_min: Min filter bound in the x axis
       * \input[in] y_axis_min: Min filter bound in the y axis
       * \input[in] z_axis_min: Min filter bound in the z axis
@@ -228,6 +262,8 @@ class SCLocalization
     
     /** \brief Point Cloud (filtered) pointer. */
     PointCPtr g_cloud_filtered;
+
+
 
 
 
