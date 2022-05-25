@@ -20,13 +20,43 @@ typedef sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::Po
 ///////////////////////////////////
 // Will return points based on the conditions set by the algorithm
 
+// Cylinder Condition
+// Will return true if points are outside the defined Cylinder
+bool cylinderCondition(double x, double y, double z,
+                    double cylinder_x_axis_origin = 0,
+                    double cylinder_radius = 10,
+                    double cylinder_height = 100)
+{
+  // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
+  // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
+  // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
+  // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
+
+  
+  if (!(( x >= cylinder_x_axis_origin && x <= (cylinder_x_axis_origin + cylinder_height)) && // within the Z limits
+        (( pow(z,2) + pow(y,2) ) <= pow(cylinder_radius,2)))) // within the radius limits
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+}
+
 void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_ptr)
 {
   out_cloud_ptr->points.clear();
+
+  double cylinder_x_axis_origin = 0;
+  double cylinder_radius = 10;
+  double cylinder_height = 100;
   
   for ( pcl::PointCloud<pcl::PointXYZI>::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    out_cloud_ptr->points.push_back(*it);
+    //out_cloud_ptr->points.push_back(*it);
+
     // if ( it->z >= 0.2)
     // {
     //   out_cloud_ptr->points.push_back(*it);
@@ -45,6 +75,17 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
+    double x = it->x;
+    double y = it->y;
+    double z = it->z;
+
+
+    
+    if (cylinderCondition(x, y, z))
+    {
+      out_cloud_ptr->points.push_back(*it);
+    }
+
 
 
   }
@@ -53,34 +94,52 @@ void Filter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointC
   int totalOutputPoints = out_cloud_ptr->size();
   int filteredPoints = totalInputPoints - totalOutputPoints;
 
-  //ROS_INFO(totalInputPoints, " ", totalOutputPoints, " ", filteredPoints);
+  std::cout << "Total number of input points: " << std::endl;
+  std::cout << totalInputPoints << std::endl;
+  std::cout << "Total number of output points: " << std::endl;
+  std::cout << totalOutputPoints << std::endl;
+  std::cout << "Total number of filtered points: " << std::endl;
+  std::cout << filteredPoints << std::endl;
 
 }
+
+
 
 // Cylinder filter
 // Will return points outside the defined Cylinder
 void cylinderFilter(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, pcl::PointCloud<pcl::PointXYZI>::Ptr out_cloud_ptr,
-		     double z_axis_origin = -2.5,
-		     double x_axis_origin = -20,
-		     double y_axis_origin = -20,
-		     double radius = 0.2,
-		     double height = 0.5)
+		     double cylinder_x_axis_origin = 0,
+		     double cylinder_radius = 10,
+		     double cylinder_height = 100)
 {
   // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
   // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
   // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
   // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
+
   out_cloud_ptr->points.clear();
+  
   for ( pcl::PointCloud<pcl::PointXYZI>::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     
-    if (!(( it->z >= z_axis_origin && it->z <= (z_axis_origin + height)) && // within the Z limits
-         (( pow(it->x,2) + pow(it->y,2) ) <= pow(radius,2)))) // within the radius limits
+    if (!(( it->x >= cylinder_x_axis_origin && it->x <= (cylinder_x_axis_origin + cylinder_height)) && // within the Z limits
+         (( pow(it->z,2) + pow(it->y,2) ) <= pow(cylinder_radius,2)))) // within the radius limits
     {
       out_cloud_ptr->points.push_back(*it);
     }
 
-  } 
+  }
+
+  int totalInputPoints = in_cloud_ptr->size();
+  int totalOutputPoints = out_cloud_ptr->size();
+  int filteredPoints = totalInputPoints - totalOutputPoints;
+
+  std::cout << "Total number of input points: " << std::endl;
+  std::cout << totalInputPoints << std::endl;
+  std::cout << "Total number of output points: " << std::endl;
+  std::cout << totalOutputPoints << std::endl;
+  std::cout << "Total number of filtered points: " << std::endl;
+  std::cout << filteredPoints << std::endl;
 }
 
 // Box filter
@@ -134,6 +193,7 @@ class SubscribeAndPublish
       //////////////////////////////////////////////////
       // add both clouds
       Filter(cloud1f, cloud_all); //removed suspected unneccesary points
+      //cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points
 
       // // Previous condition -->
       // Filter(cloud1f, cloud1); //removed suspected unneccesary points
