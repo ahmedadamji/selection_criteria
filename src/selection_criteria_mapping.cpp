@@ -146,7 +146,7 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    //out_cloud_ptr->points.push_back(*it);
+    out_cloud_ptr->points.push_back(*it);
 
     // if ( it->z >= 0.2)
     // {
@@ -172,10 +172,10 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 
 
     
-    if (cylinderCondition(x, y, z))
-    {
-      out_cloud_ptr->points.push_back(*it);
-    }
+    // if (cylinderCondition(x, y, z))
+    // {
+    //   out_cloud_ptr->points.push_back(*it);
+    // }
 
 
 

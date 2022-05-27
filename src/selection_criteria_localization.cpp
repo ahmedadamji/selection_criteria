@@ -112,7 +112,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
 bool
 SCLocalization::cylinderCondition(double x, double y, double z,
                                   double cylinder_x_axis_origin = 0,
-                                  double cylinder_radius = 10,
+                                  double cylinder_radius = 3,
                                   double cylinder_height = 100)
 {
   // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
@@ -162,7 +162,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    //out_cloud_ptr->points.push_back(*it);
+    out_cloud_ptr->points.push_back(*it);
 
     // if ( it->z >= 0.2)
     // {
@@ -185,13 +185,17 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     double x = it->x;
     double y = it->y;
     double z = it->z;
-
-
     
-    if (cylinderCondition(x, y, z) && radiusCondition(x, y, z))
-    {
-      out_cloud_ptr->points.push_back(*it);
-    }
+    // if (cylinderCondition(x, y, z))
+    // {
+    //   out_cloud_ptr->points.push_back(*it);
+    // }
+
+    // if (cylinderCondition(x, y, z) && radiusCondition(x, y, z))
+    // {
+    //   out_cloud_ptr->points.push_back(*it);
+    // }
+
 
 
 
