@@ -2,7 +2,7 @@
 <launch>
   <!-- arguments -->
   <!-- <arg name="nodelet_manager" default="velodyne_nodelet_manager" /> -->
-  <arg name="nodelet_manager" default="rslidar_nodelet_manager" />
+  <arg name="nodelet_manager" default="velodyne_nodelet_manager" />
   <!-- <arg name="points_topic" default="/velodyne_points" />  -->
   <arg name="points_topic" default="/kitti/velo/pointcloud" />
   <!-- input clouds are transformed in odom_child_frame, and then localization is performed in that frame -->
