@@ -7,8 +7,8 @@
   <arg name="points_topic" default="/rs16_tc/rslidar_points" />
   <!-- input clouds are transformed in odom_child_frame, and then localization is performed in that frame -->
   <!-- this is useful to match the LIDAR and IMU coodinate systems -->
-  <arg name="odom_child_frame_id" default="base_link" />
-  <!-- <arg name="odom_child_frame_id" default="robosense" /> -->
+  <!-- <arg name="odom_child_frame_id" default="base_link" /> -->
+  <arg name="odom_child_frame_id" default="robosense" />
 
 
   <!-- optional arguments -->
@@ -26,14 +26,16 @@
   
   <!-- transformation between lidar and base_link -->
   <!-- <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link robosense 10" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="base_map" args="0 0 0 0 0 0 /odom /map 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_odom" args="0 0 0 1.571 0 0 /map /base_link 100" />
 
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
 
   <!-- From Dr Abdellatif -->
-  <arg name="scan_matching_output_topic" default="/aide/odometry/sm/map/baselink"/>
-  <arg name="odometry_topic" default="/aide/odometry/filtered/psamap/baselink"/>
+  <!-- <arg name="scan_matching_output_topic" default="/aide/odometry/sm/map/baselink"/>
+  <arg name="odometry_topic" default="/aide/odometry/filtered/psamap/baselink"/> -->
 
   <!-- prefiltering_nodelet -->
   <node pkg="nodelet" type="nodelet" name="prefiltering_nodelet" args="load hdl_graph_slam/PrefilteringNodelet $(arg nodelet_manager)" output="screen">
@@ -102,7 +104,7 @@
     
     <!-- if "specify_init_pose" is true, pose estimator will be initialized with the following params -->
     <!-- otherwise, you need to input an initial pose with "2D Pose Estimate" on rviz" -->
-    <param name="specify_init_pose" value="true" /> <!--  here if we use the same bag file for localization and mapping we canb have this as true as this is the origin of the map, otherwise we set to false and specify starting position in rviz, in real life this is done using gps.-->
+    <param name="specify_init_pose" value="false" /> <!--  here if we use the same bag file for localization and mapping we canb have this as true as this is the origin of the map, otherwise we set to false and specify starting position in rviz, in real life this is done using gps.-->
     <param name="init_pos_x" value="0.0" />
     <param name="init_pos_y" value="0.0" />
     <param name="init_pos_z" value="0.0" />

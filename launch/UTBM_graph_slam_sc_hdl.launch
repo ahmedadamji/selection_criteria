@@ -16,6 +16,7 @@
   <arg name="enable_robot_odometry_init_guess" default="false" />
   <arg name="robot_odom_frame_id" default="robot_odom" />
 
+  <!-- Source: https://github.com/epan-utbm/utbm_robocar_dataset/blob/baselines/launch/utbm_dataset_play.launch -->
   <!-- Velodyne HDL-32E: left -->
   <group ns="hdl32e_left">
     <node pkg="nodelet" type="nodelet" name="velodyne_left_nodelet_manager" args="manager" output="screen"/>
