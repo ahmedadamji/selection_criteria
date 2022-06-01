@@ -24,9 +24,8 @@
 
   <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
 
-
   <!-- transformation between lidar and base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link map 10" />
+  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" />
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
@@ -92,8 +91,8 @@
     <!-- if NDT is slow for your PC, try DIRECT1 serach method, which is a bit unstable but extremely fast -->
     <param name="ndt_neighbor_search_method" value="DIRECT7" />
     <param name="ndt_neighbor_search_radius" value="4.0" />
-    <param name="ndt_resolution" value="6.0" />
-    <param name="downsample_resolution" value="0.1" />
+    <param name="ndt_resolution" value="6.0" /> <!-- check into references-->
+    <param name="downsample_resolution" value="0.1" /> <!-- can be higher upto 0.3 to 0.5 for outdoor -->
     
     <param name="use_aide_odometry" value="true"/>
     <param name="use_PointMatcher" value="true" />
@@ -117,4 +116,11 @@
   </node>
 
   <node pkg="hdl_localization" type="plot_status.py" name="plot_estimation_errors" if="$(arg plot_estimation_errors)" />
+
+
+  <!-- node to transform coordinate frame of the recorded bagfile -->
+  <node pkg="selection_criteria" type="transform_frame" name="transform_frame" output="screen">
+    <param name="publish_frequency" type="double" value="100.0" />
+  </node>
+
 </launch>

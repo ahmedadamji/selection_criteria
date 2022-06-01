@@ -18,6 +18,10 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   tf2_geometry_msgs
   tf2
+  tf2_msgs
+  tf2_sensor_msgs
+  geometry_msgs
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -118,9 +122,15 @@ find_package(tf_conversions REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES selection_criteria
-CATKIN_DEPENDS roscpp rospy std_msgs nav_msgs message_filters tf2_ros tf2_geometry_msgs tf2 
+CATKIN_DEPENDS roscpp rospy std_msgs nav_msgs geometry_msgs tf2_geometry_msgs pcl_conversions pcl_ros tf2 message_filters tf2_ros tf2
+tf2_ros
+tf2_msgs
+tf2_sensor_msgs
+geometry_msgs
+sensor_msgs
 #  DEPENDS system_lib
 )
+
 
 
 ###########
@@ -143,6 +153,7 @@ add_library(selection_criteria_mapping_lib src/selection_criteria_mapping.cpp)
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
+add_dependencies(selection_criteria_localization_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(selection_criteria_mapping_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
@@ -236,7 +247,11 @@ add_dependencies(selection_criteria_mapping_lib ${${PROJECT_NAME}_EXPORTED_TARGE
 add_executable(selection_criteria_mapping src/selection_criteria_mapping.cpp)
 add_executable(selection_criteria_localization src/selection_criteria_localization.cpp)
 add_executable(error src/error.cpp)
+add_executable(transform_frame src/transform_frame.cpp)
+
 
 target_link_libraries(selection_criteria_mapping ${catkin_LIBRARIES})
 target_link_libraries(selection_criteria_localization ${catkin_LIBRARIES})
 target_link_libraries(error ${catkin_LIBRARIES})
+target_link_libraries(transform_frame ${catkin_LIBRARIES})
+
