@@ -162,7 +162,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    // out_cloud_ptr->points.push_back(*it);
+    out_cloud_ptr->points.push_back(*it);
 
     // if ( it->z >= 0.2)
     // {
@@ -191,10 +191,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    if (cylinderCondition(x, y, z) && radiusCondition(x, y, z))
-    {
-      out_cloud_ptr->points.push_back(*it);
-    }
+    // if (cylinderCondition(x, y, z) && radiusCondition(x, y, z))
+    // {
+    //   out_cloud_ptr->points.push_back(*it);
+    // }
 
 
 

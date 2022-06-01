@@ -115,12 +115,11 @@
     <!-- <param name="points_topic" value="/selected_points" /> -->
   </node>
 
-  <node pkg="hdl_localization" type="plot_status.py" name="plot_estimation_errors" if="$(arg plot_estimation_errors)" />
-
 
   <!-- node to transform coordinate frame of the recorded bagfile -->
-  <node pkg="selection_criteria" type="transform_frame" name="transform_frame" output="screen">
-    <param name="publish_frequency" type="double" value="100.0" />
-  </node>
+  <node pkg="selection_criteria" type="transform_frame" name="transform_odom_frame" output="screen"/>
+
+  <node pkg="hdl_localization" type="plot_status.py" name="plot_estimation_errors" if="$(arg plot_estimation_errors)" />
+
 
 </launch>
