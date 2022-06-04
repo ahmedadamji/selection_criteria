@@ -6,8 +6,8 @@
   <arg name="enable_gps" default="false" />
   <arg name="enable_imu_acc" default="false" />
   <arg name="enable_imu_ori" default="false" />
-
   <arg name="points_topic" default="/kitti/velo/pointcloud" />
+
   <arg name="map_frame_id" default="map" />
   <arg name="lidar_odom_frame_id" default="odom" />
 
@@ -68,7 +68,7 @@
     <param name="downsample_method" value="NONE" />
     <param name="downsample_resolution" value="0.1" />
     <!-- ICP, GICP, NDT, GICP_OMP, NDT_OMP, FAST_GICP(recommended), or FAST_VGICP -->
-    <param name="registration_method" value="NDT" />
+    <param name="registration_method" value="FAST_GICP" />
     <param name="reg_num_threads" value="0" />
     <param name="reg_transformation_epsilon" value="0.1"/>
     <param name="reg_maximum_iterations" value="64"/>

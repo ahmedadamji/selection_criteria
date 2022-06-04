@@ -153,6 +153,29 @@ class SCLocalization
                     double min_radius,
                     double max_radius);
 
+    /** \brief Radius Filter Condition 
+      *
+      * used for filtering points outside a defined ring
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] ring_x_axis_origin: The origin of the Ring in the x axis
+      * \input[in] ring_min_radius: The min radius of the ring
+      * \input[in] ring_max_radius: The max radius of the ring
+      * \input[in] ring_height: The height of the ring
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    ringCondition(double x,
+                  double y,
+                  double z,
+                  double ring_x_axis_origin,
+                  double ring_min_radius,
+                  double ring_max_radius,
+                  double ring_height);
+
     /** \brief Filter 
       *
       * Selection Criteria Filter
@@ -163,7 +186,7 @@ class SCLocalization
       */
     void 
     Filter (PointCPtr &in_cloud_ptr,
-             PointCPtr &out_cloud_ptr);
+            PointCPtr &out_cloud_ptr);
 
     /** \brief Cylinder Filter 
       *
@@ -200,6 +223,27 @@ class SCLocalization
                   PointCPtr &out_cloud_ptr,
                   double min_radius,
                   double max_radius);
+    
+      /** \brief Ring Filter 
+      *
+      * Will return points inside the defined Ring
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] ring_x_axis_origin: The origin of the Ring in the x axis
+      * \input[in] ring_min_radius: The min radius of the ring
+      * \input[in] ring_max_radius: The max radius of the ring
+      * \input[in] ring_height: The height of the ring
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      *  
+      */
+    void 
+    ringFilter (PointCPtr &in_cloud_ptr,
+                PointCPtr &out_cloud_ptr,
+                double ring_x_axis_origin,
+                double ring_min_radius,
+                double ring_max_radius,
+                double ring_height);
 
     /** \brief Box Filter 
       *
@@ -262,6 +306,16 @@ class SCLocalization
     
     /** \brief Point Cloud (filtered) pointer. */
     PointCPtr g_cloud_filtered;
+
+    
+    /** \brief X-Coordinate of curent point in the pointcloud. */
+    double g_x;
+
+    /** \brief Y-Coordinate of curent point in the pointcloud. */
+    double g_y;
+
+    /** \brief Z-Coordinate of curent point in the pointcloud. */
+    double g_z;
 
 
 

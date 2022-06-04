@@ -10,6 +10,9 @@
   <arg name="odom_child_frame_id" default="base_link" />
   <!-- <arg name="odom_child_frame_id" default="robosense" /> -->
 
+  
+  <param name="/use_sim_time" value="true" />
+
 
   <!-- optional arguments -->
   <arg name="use_imu" default="false" />
@@ -25,21 +28,18 @@
   <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
 
   <!-- transformation between lidar and base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" />
+  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 100" />
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
 
   <!-- From Dr Abdellatif -->
-  <arg name="scan_matching_output_topic" default="/aide/odometry/sm/map/baselink"/>
-  <arg name="odometry_topic" default="/aide/odometry/filtered/psamap/baselink"/>
+  <!-- <arg name="scan_matching_output_topic" default="/aide/odometry/sm/map/baselink"/> -->
+  <!-- <arg name="odometry_topic" default="/aide/odometry/filtered/psamap/baselink"/> -->
 
   <!-- prefiltering_nodelet -->
   <node pkg="nodelet" type="nodelet" name="prefiltering_nodelet" args="load hdl_graph_slam/PrefilteringNodelet $(arg nodelet_manager)" output="screen">
       <remap from="/velodyne_points" to="$(arg points_topic)" />
-      <!-- <remap from="/imu/data" to="$(arg imu_topic)" /> -->
-      <!-- <param name="deskewing" value="true" /> -->
-      <!-- <param name="scan_period" value="0.1" /> -->
       <param name="base_link_frame" value="base_link" />
       <param name="use_distance_filter" value="true" />
       <param name="distance_near_thresh" value="0.1" />
@@ -54,10 +54,7 @@
   </node>
 
   <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen">
-    <param name="publish_frequency" type="double" value="10.0" />
-  </node>
-
+  <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen"/>
 
     <!-- globalmap_server_nodelet -->
     <!-- <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
@@ -85,14 +82,15 @@
     <param name="enable_robot_odometry_prediction" value="$(arg enable_robot_odometry_prediction)" />
     <param name="robot_odom_frame_id" value="$(arg robot_odom_frame_id)" />
 
-    <!-- ndt settings -->
+    <!-- ndt settings --> <!-- Normal Distribution Transforms -->
     <!-- available reg_methods: NDT_OMP, NDT_CUDA_P2D, NDT_CUDA_D2D-->
     <param name="reg_method" value="NDT_OMP" />
     <!-- if NDT is slow for your PC, try DIRECT1 serach method, which is a bit unstable but extremely fast -->
+    <!-- <param name="ndt_neighbor_search_method" value="DIRECT7" /> -->
     <param name="ndt_neighbor_search_method" value="DIRECT7" />
     <param name="ndt_neighbor_search_radius" value="4.0" />
-    <param name="ndt_resolution" value="6.0" /> <!-- check into references-->
-    <param name="downsample_resolution" value="0.1" /> <!-- can be higher upto 0.3 to 0.5 for outdoor -->
+    <param name="ndt_resolution" value="6.0" /> <!-- reference for this is the graph slam github, where larger values are better for outdoor environmrnts-->
+    <param name="downsample_resolution" value="0.3" /> <!-- can be higher upto 0.3 to 0.5 for outdoor -->
     
     <param name="use_aide_odometry" value="true"/>
     <param name="use_PointMatcher" value="true" />

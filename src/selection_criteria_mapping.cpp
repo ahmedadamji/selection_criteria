@@ -71,40 +71,6 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-void
-SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
-{// declare type
-  PointCPtr cloud1f(new PointC);
-  PointCPtr cloud1(new PointC);
-  PointCPtr cloud2(new PointC);
-  PointCPtr cloud_all(new PointC);
-
-  // These are the two synced clouds we are subscribing to, however both of these are currently same
-  pcl::fromROSMsg(*cloud_msg1, *cloud1f);
-  //pcl::fromROSMsg(*cloud_msg2, *cloud2);
-  //////////////////////////////////////////////////
-  // add both clouds
-  Filter(cloud1f, cloud_all); //removed suspected unneccesary points
-  //cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points
-
-  // // Previous condition -->
-  // Filter(cloud1f, cloud1); //removed suspected unneccesary points
-  // // Why do we need to add these clouds?
-  // Add(cloud1, cloud2);// add rm floor
-  // Add(cloud2, cloud_all);
-
-
-
-  // write head and publish output
-  sensor_msgs::PointCloud2 output;
-  
-  pcl::toROSMsg(*cloud_all, output);
-  output.header = cloud_msg1->header;
-  pub_.publish (output);
-}
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -267,6 +233,41 @@ SCMapping::Add(PointCPtr &cloud1, PointCPtr &cloud2)
   } 
   
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
+{// declare type
+  PointCPtr cloud1f(new PointC);
+  PointCPtr cloud1(new PointC);
+  PointCPtr cloud2(new PointC);
+  PointCPtr cloud_all(new PointC);
+
+  // These are the two synced clouds we are subscribing to, however both of these are currently same
+  pcl::fromROSMsg(*cloud_msg1, *cloud1f);
+  //pcl::fromROSMsg(*cloud_msg2, *cloud2);
+  //////////////////////////////////////////////////
+  // add both clouds
+  Filter(cloud1f, cloud_all); //removed suspected unneccesary points
+  //cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points
+
+  // // Previous condition -->
+  // Filter(cloud1f, cloud1); //removed suspected unneccesary points
+  // // Why do we need to add these clouds?
+  // Add(cloud1, cloud2);// add rm floor
+  // Add(cloud2, cloud_all);
+
+
+
+  // write head and publish output
+  sensor_msgs::PointCloud2 output;
+  
+  pcl::toROSMsg(*cloud_all, output);
+  output.header = cloud_msg1->header;
+  pub_.publish (output);
+}
+
 
 ////////////////////////////////////////////////////////
 int

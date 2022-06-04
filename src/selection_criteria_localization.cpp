@@ -44,7 +44,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   nh_ = nh;
 
   // Define the publishers
-  pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("/selected_points", 1, true);
+  pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("/selected_points", 3, true);
   
   // Initialize public variables
   // g_vg_leaf_sz = 0.01;
@@ -67,50 +67,17 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
 
   // Create a ROS subscriber for the input point cloud
-  sub_ = nh_.subscribe("/filtered_points", 1, &SCLocalization::callback, this);
+  sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
 
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-void
-SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
-{// declare type
-  PointCPtr cloud1f(new PointC);
-  PointCPtr cloud1(new PointC);
-  PointCPtr cloud2(new PointC);
-  PointCPtr cloud_all(new PointC);
-
-  // These are the two synced clouds we are subscribing to, however both of these are currently same
-  pcl::fromROSMsg(*cloud_msg1, *cloud1f);
-  //pcl::fromROSMsg(*cloud_msg2, *cloud2);
-  //////////////////////////////////////////////////
-  // add both clouds
-  Filter(cloud1f, cloud_all); //removed suspected unneccesary points
-  //cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points
-
-  // // Previous condition -->
-  // Filter(cloud1f, cloud1); //removed suspected unneccesary points
-  // // Why do we need to add these clouds?
-  // Add(cloud1, cloud2);// add rm floor
-  // Add(cloud2, cloud_all);
-
-
-
-  // write head and publish output
-  sensor_msgs::PointCloud2 output;
-  
-  pcl::toROSMsg(*cloud_all, output);
-  output.header = cloud_msg1->header;
-  pub_.publish (output);
-}
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool
-SCLocalization::cylinderCondition(double x, double y, double z,
+SCLocalization::cylinderCondition(double x,
+                                  double y,
+                                  double z,
                                   double cylinder_x_axis_origin = 0,
                                   double cylinder_radius = 3,
                                   double cylinder_height = 100)
@@ -120,8 +87,8 @@ SCLocalization::cylinderCondition(double x, double y, double z,
   // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
   // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
 
-  
-  if (!(( x >= cylinder_x_axis_origin && x <= (cylinder_x_axis_origin + cylinder_height)) && // within the Z limits
+  // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+  if (!(( x >= (cylinder_x_axis_origin - cylinder_height) && x <= (cylinder_x_axis_origin + cylinder_height)) && // within the Z limits
         (( pow(z,2) + pow(y,2) ) <= pow(cylinder_radius,2)))) // within the radius limits
   {
     return true;
@@ -136,12 +103,40 @@ SCLocalization::cylinderCondition(double x, double y, double z,
 ////////////////////////////////////////////////////////////////////////////////
 
 bool
-SCLocalization::radiusCondition(double x, double y, double z,
-                                  double min_radius = 0,
-                                  double max_radius = 250)
+SCLocalization::radiusCondition(double x,
+                                double y,
+                                double z,
+                                double min_radius = 0,
+                                double max_radius = 250)
 {
 
   if ((( pow(x, 2) + pow(y, 2) ) >= pow(min_radius, 2)) && (( pow(x, 2) + pow(y, 2) ) <= pow(max_radius, 2))) // within the radius limits
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+}
+////////////////////////////////////////////////////////////////////////////////
+
+bool
+SCLocalization::ringCondition(double x,
+                              double y,
+                              double z,
+                              double ring_x_axis_origin = 0,
+                              double ring_min_radius = 3,
+                              double ring_max_radius = 50,
+                              double ring_height = 100)
+{
+
+    // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+    if  ((!(( x >= (ring_x_axis_origin - ring_height) && x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+        (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
+        ((( x >= (ring_x_axis_origin - ring_height) && x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+        (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
   {
     return true;
   }
@@ -182,16 +177,16 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    double x = it->x;
-    double y = it->y;
-    double z = it->z;
+    g_x = it->x;
+    g_y = it->y;
+    g_z = it->z;
     
     // if (cylinderCondition(x, y, z))
     // {
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    // if (cylinderCondition(x, y, z) && radiusCondition(x, y, z))
+    // if (cylinderCondition(g_x, g_y, g_z) && radiusCondition(g_x, g_y, g_z, 0, 50))
     // {
     //   out_cloud_ptr->points.push_back(*it);
     // }
@@ -220,10 +215,11 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCLocalization::cylinderFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr,
-                               double cylinder_x_axis_origin = 0,
-                               double cylinder_radius = 10,
-                               double cylinder_height = 100)
+SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
+                                PointCPtr &out_cloud_ptr,
+                                double cylinder_x_axis_origin = 0,
+                                double cylinder_radius = 3,
+                                double cylinder_height = 100)
 {
   // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
   // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
@@ -234,8 +230,8 @@ SCLocalization::cylinderFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    
-    if (!(( it->x >= cylinder_x_axis_origin && it->x <= (cylinder_x_axis_origin + cylinder_height)) && // within the Z limits
+    // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+    if (!(( it->x >= (cylinder_x_axis_origin - cylinder_height) && it->x <= (cylinder_x_axis_origin + cylinder_height)) && // within the Z limits
          (( pow(it->z,2) + pow(it->y,2) ) <= pow(cylinder_radius,2)))) // within the radius limits
     {
       out_cloud_ptr->points.push_back(*it);
@@ -258,9 +254,10 @@ SCLocalization::cylinderFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCLocalization::radiusFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr,
-                             double min_radius = 0,
-                             double max_radius = 250)
+SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
+                              PointCPtr &out_cloud_ptr,
+                              double min_radius = 0,
+                              double max_radius = 250)
 {
 
   out_cloud_ptr->points.clear();
@@ -287,13 +284,54 @@ SCLocalization::radiusFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr,
   std::cout << filteredPoints << std::endl;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCLocalization::boxFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr,
-		     double x_axis_min = -2.5, double x_axis_max = 0,
-		     double y_axis_min = -20, double y_axis_max = 25,
-		     double z_axis_min = -20, double z_axis_max = 25)
+SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
+                                PointCPtr &out_cloud_ptr,
+                                double ring_x_axis_origin = 0,
+                                double ring_min_radius = 3,
+                                double ring_max_radius = 50,
+                                double ring_height = 100)
+{
+  // This ring filter will remove points in the inner cylinder and retain points within the outter cylinder as this combines certain properties of the cylinder and radius filters
+  out_cloud_ptr->points.clear();
+  
+  for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
+  {
+    // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+    if  ((!(( it->x >= (ring_x_axis_origin - ring_height) && it->x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
+        ((( it->x >= (ring_x_axis_origin - ring_height) && it->x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
+    {
+      out_cloud_ptr->points.push_back(*it);
+    }
+
+  }
+
+  int totalInputPoints = in_cloud_ptr->size();
+  int totalOutputPoints = out_cloud_ptr->size();
+  int filteredPoints = totalInputPoints - totalOutputPoints;
+
+  std::cout << "Total number of input points: " << std::endl;
+  std::cout << totalInputPoints << std::endl;
+  std::cout << "Total number of output points: " << std::endl;
+  std::cout << totalOutputPoints << std::endl;
+  std::cout << "Total number of filtered points: " << std::endl;
+  std::cout << filteredPoints << std::endl;
+  std::cout << in_cloud_ptr->header.frame_id;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
+                          PointCPtr &out_cloud_ptr,
+                          double x_axis_min = -2.5, double x_axis_max = 0,
+                          double y_axis_min = -20, double y_axis_max = 25,
+                          double z_axis_min = -20, double z_axis_max = 25)
 {
   out_cloud_ptr->points.clear();
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
@@ -318,6 +356,44 @@ SCLocalization::Add(PointCPtr &cloud1, PointCPtr &cloud2)
   } 
   
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
+{// declare type
+  PointCPtr cloud1f(new PointC);
+  PointCPtr cloud1(new PointC);
+  PointCPtr cloud2(new PointC);
+  PointCPtr cloud_all(new PointC);
+
+  // These are the two synced clouds we are subscribing to, however both of these are currently same
+  pcl::fromROSMsg(*cloud_msg1, *cloud1f);
+  //pcl::fromROSMsg(*cloud_msg2, *cloud2);
+  //////////////////////////////////////////////////
+  // add both clouds
+  Filter(cloud1f, cloud_all); //removed suspected unneccesary points
+  //cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of cylinder filter
+  //radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
+  //ringFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of ring filter
+
+  // // Previous condition -->
+  // Filter(cloud1f, cloud1); //removed suspected unneccesary points
+  // // Why do we need to add these clouds?
+  // Add(cloud1, cloud2);// add rm floor
+  // Add(cloud2, cloud_all);
+
+
+
+  // write head and publish output
+  sensor_msgs::PointCloud2 output;
+  
+  pcl::toROSMsg(*cloud_all, output);
+  output.header = cloud_msg1->header;
+  pub_.publish (output);
+}
+
 
 ////////////////////////////////////////////////////////
 int
