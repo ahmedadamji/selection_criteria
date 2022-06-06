@@ -191,6 +191,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
+    // if (ringCondition(x, y, z))
+    // {
+    //   out_cloud_ptr->points.push_back(*it);
+    // }
 
 
 
