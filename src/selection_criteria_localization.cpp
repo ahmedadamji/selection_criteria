@@ -159,6 +159,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   {
     out_cloud_ptr->points.push_back(*it);
 
+
+    // This is a floor condition where points above the floor are selected based on height, this has not been yet implemented in a function or a filter.
+    // Can I try to filter the points that have been detected as floor points by the floor detection nodelet.
+    // And is there any reason for me to do this?
     // if ( it->z >= 0.2)
     // {
     //   out_cloud_ptr->points.push_back(*it);
