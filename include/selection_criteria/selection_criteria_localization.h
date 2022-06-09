@@ -160,7 +160,6 @@ class SCLocalization
       * \input[in] x: x co-ordinate of point in point cloud
       * \input[in] y: y co-ordinate of point in point cloud
       * \input[in] z: z co-ordinate of point in point cloud
-      * \input[in] ring_x_axis_origin: The origin of the Ring in the x axis
       * \input[in] ring_min_radius: The min radius of the ring
       * \input[in] ring_max_radius: The max radius of the ring
       * \input[in] ring_height: The height of the ring
@@ -171,7 +170,6 @@ class SCLocalization
     ringCondition(double x,
                   double y,
                   double z,
-                  double ring_x_axis_origin,
                   double ring_min_radius,
                   double ring_max_radius,
                   double ring_height);
@@ -229,7 +227,6 @@ class SCLocalization
       * Will return points inside the defined Ring
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[in] ring_x_axis_origin: The origin of the Ring in the x axis
       * \input[in] ring_min_radius: The min radius of the ring
       * \input[in] ring_max_radius: The max radius of the ring
       * \input[in] ring_height: The height of the ring
@@ -240,7 +237,6 @@ class SCLocalization
     void 
     ringFilter (PointCPtr &in_cloud_ptr,
                 PointCPtr &out_cloud_ptr,
-                double ring_x_axis_origin,
                 double ring_min_radius,
                 double ring_max_radius,
                 double ring_height);

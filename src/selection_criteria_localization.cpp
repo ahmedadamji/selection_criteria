@@ -126,16 +126,15 @@ bool
 SCLocalization::ringCondition(double x,
                               double y,
                               double z,
-                              double ring_x_axis_origin = 0,
                               double ring_min_radius = 3,
                               double ring_max_radius = 50,
                               double ring_height = 100)
 {
 
     // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-    if  ((!(( x >= (ring_x_axis_origin - ring_height) && x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+    if  ((!(( x >= (- ring_height) && x <= (ring_height)) && // within the Z limits
         (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
-        ((( x >= (ring_x_axis_origin - ring_height) && x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+        ((( x >= (- ring_height) && x <= (ring_height)) && // within the Z limits
         (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
   {
     return true;
@@ -157,7 +156,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    out_cloud_ptr->points.push_back(*it);
+    // out_cloud_ptr->points.push_back(*it);
 
 
     // This is a floor condition where points above the floor are selected based on height, this has not been yet implemented in a function or a filter.
@@ -178,10 +177,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    // if (cylinderCondition(g_x, g_y, g_z) && radiusCondition(g_x, g_y, g_z, 0, 50))
-    // {
-    //   out_cloud_ptr->points.push_back(*it);
-    // }
+    if (cylinderCondition(g_x, g_y, g_z, 0, 2, 100) && radiusCondition(g_x, g_y, g_z, 0, 50))
+    {
+      out_cloud_ptr->points.push_back(*it);
+    }
 
     // if (ringCondition(x, y, z))
     // {
@@ -286,7 +285,6 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
                                 PointCPtr &out_cloud_ptr,
-                                double ring_x_axis_origin = 0,
                                 double ring_min_radius = 3,
                                 double ring_max_radius = 50,
                                 double ring_height = 100)
@@ -297,9 +295,9 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-    if  ((!(( it->x >= (ring_x_axis_origin - ring_height) && it->x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+    if  ((!(( it->x >= (- ring_height) && it->x <= (ring_height)) && // within the Z limits
         (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
-        ((( it->x >= (ring_x_axis_origin - ring_height) && it->x <= (ring_x_axis_origin + ring_height)) && // within the Z limits
+        ((( it->x >= (- ring_height) && it->x <= (ring_height)) && // within the Z limits
         (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
     {
       out_cloud_ptr->points.push_back(*it);
@@ -370,9 +368,9 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   //////////////////////////////////////////////////
   // add both clouds
   Filter(cloud1f, cloud_all); //removed suspected unneccesary points
-  //cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of cylinder filter
-  //radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
-  //ringFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of ring filter
+  // cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of cylinder filter
+  // radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
+  // ringFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of ring filter
 
   // // Previous condition -->
   // Filter(cloud1f, cloud1); //removed suspected unneccesary points

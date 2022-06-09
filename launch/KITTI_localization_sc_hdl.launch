@@ -45,16 +45,16 @@
       <!-- <param name="scan_period" value="0.1" /> -->
       <param name="base_link_frame" value="base_link" />
       <!-- This is similar to my radius filter so makes sense to comment, and describe why in my thesis -->
-      <param name="use_distance_filter" value="false" />
-      <!-- <param name="distance_near_thresh" value="0.1" /> -->
-      <!-- <param name="distance_far_thresh" value="100.0" /> -->
+      <param name="use_distance_filter" value="true" />
+      <param name="distance_near_thresh" value="0.1" />
+      <param name="distance_far_thresh" value="100.0" />
       <param name="downsample_method" value="VOXELGRID" />
       <param name="downsample_resolution" value="0.25" />
       <!-- Note and explain that this is not the same as my radius filter, this is for outlier detection-->
       <param name="outlier_removal_method" value="RADIUS" /> 
       <param name="statistical_mean_k" value="30" />
       <param name="statistical_stddev" value="1.2" />
-      <param name="radius_radius" value="0.4" />
+      <param name="radius_radius" value="0.5" />
       <param name="radius_min_neighbors" value="2" />
   </node>
 
