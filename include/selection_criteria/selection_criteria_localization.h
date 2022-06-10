@@ -31,7 +31,9 @@ SOFTWARE. */
 
 #include <stdlib.h>
 #include <cmath>
+#include <math.h>
 #include <iostream>
+#include <sstream>
 
 // ROS includes
 #include <std_msgs/String.h>
@@ -41,11 +43,15 @@ SOFTWARE. */
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Scalar.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <nav_msgs/Odometry.h>
+
 
 // PCL specific includes
 #include <pcl_conversions/pcl_conversions.h>
@@ -82,6 +88,15 @@ SOFTWARE. */
 // TF specific includes
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+// TF2
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Matrix3x3.h"
+#include <tf2_ros/buffer.h>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include <tf2/convert.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2_ros/transform_listener.h>
+
 
 // standard c++ library includes (std::string, std::vector)
 #include <string>
@@ -112,6 +127,7 @@ class SCLocalization
       * \input[in] nh ROS node handle
       */
     SCLocalization(ros::NodeHandle& nh);
+
 
     /** \brief Cylinder Filter Condition 
       *
@@ -284,6 +300,23 @@ class SCLocalization
     void
     callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1);
 
+    /** \brief Get Robot Velocity 
+      *
+      * used to get the vehicle velocity based on Odometry
+      * 
+      * \input[in] robot_twist a Twist geometry_msgs const pointer
+      * 
+      * \return velocity
+      */
+    double
+    getVelocity(const geometry_msgs::Twist& robot_twist);
+
+    /** \brief Odometry CallBack function.
+      * 
+      * \input[in] odom_in a Odometry nav_msgs const pointer
+      */
+    void
+    odom_callback(const nav_msgs::OdometryConstPtr& odom_in);
 
       
     /* Variables */
@@ -296,6 +329,7 @@ class SCLocalization
 
     /** \brief ROS subscribers. */
     ros::Subscriber sub_;
+    ros::Subscriber odom_sub_;
     
     /** \brief Point Cloud (input) pointer. */
     PointCPtr g_cloud_ptr;

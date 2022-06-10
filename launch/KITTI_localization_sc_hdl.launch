@@ -15,11 +15,11 @@
 
 
   <!-- optional arguments -->
-  <arg name="use_imu" default="false" />
+  <arg name="use_imu" default="false" /> <!-- Disabled to maximise the effect of selected points upon visualization of performance-->
   <arg name="invert_imu_acc" default="false" />
   <arg name="invert_imu_gyro" default="false" />
   <arg name="use_global_localization" default="true" />
-  <arg name="imu_topic" default="/imu/data" />
+  <arg name="imu_topic" default="/kitti/oxts/imu" />
   <arg name="enable_robot_odometry_prediction" value="true" />
   <arg name="robot_odom_frame_id" value="odom" />
   <!-- <arg name="robot_odom_frame_id" value="map" /> -->

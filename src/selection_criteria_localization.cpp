@@ -68,6 +68,9 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
   // Create a ROS subscriber for the input point cloud
   sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
+  
+  // Create a ROS subscriber for computed odometry
+  odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
 
 }
 
@@ -386,6 +389,28 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   pcl::toROSMsg(*cloud_all, output);
   output.header = cloud_msg1->header;
   pub_.publish (output);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double
+SCLocalization::getVelocity(const geometry_msgs::Twist& robot_twist)
+{
+
+  return 0.0;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
+{
+  nav_msgs::Odometry robot_odom;
+  robot_odom = *odom_in;
+  geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
+  double velocity = getVelocity(robot_twist);
+
 }
 
 
