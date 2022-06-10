@@ -453,6 +453,9 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // pcl::fromROSMsg(temp_cloud, cloud_world);
 
 
+  // Think of ways I can access the graphical information in hdl, such as associated covariance of each observation
+  // Go through CW2 and CW3 of COMP0130 on 11/06/2022
+
 
 }
 
