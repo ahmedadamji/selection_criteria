@@ -177,7 +177,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    if (cylinderCondition(g_x, g_y, g_z, 0, 2, 100) && radiusCondition(g_x, g_y, g_z, 0, 50))
+    if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50))
     {
       out_cloud_ptr->points.push_back(*it);
     }
