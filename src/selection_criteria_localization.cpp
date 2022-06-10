@@ -406,10 +406,53 @@ SCLocalization::getVelocity(const geometry_msgs::Twist& robot_twist)
 void
 SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 {
+  // Need to use this to predict where an observed point was in the previous frame
+  // Can do this by estimating the relative velocity of a point based on its distance from the robot,
+  // and use that to estimate its location from the previous frame
+  // can use this to find the angle difference of the point in successive frames
+  // can store history of velocity of the robot in a ros topic or param to check if the angle diviation
+  // of a point from its last observation has been greater than a set threshold to decide if the point will be useful.
+  
+  // As hdl is a graph based slam algorithm, think of COMP0130 coursework of how points were eliminated there and look at coursework feedback.
+
   nav_msgs::Odometry robot_odom;
   robot_odom = *odom_in;
   geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
   double velocity = getVelocity(robot_twist);
+
+  //need to convert position of robot and observation to world frame to find its previous position of robot based on relative velocity
+  // the position of observation does not change in the world frame 
+  // (Exception is where the observation is not stationary and may need to check if the point is aligned with the map?)
+
+  // Code to change the coordinate frame of the point cloud:
+
+  // // Extract inout point cloud info
+  // g_lidar_frame_id_ = cloud_in->header.frame_id;
+
+  // sensor_msgs::PointCloud2 temp_cloud;
+  // pcl::toROSMsg(*cloud_in, temp_cloud);
+  // sensor_msgs::PointCloud cloud_lidar;
+  // sensor_msgs::convertPointCloud2ToPointCloud(temp_cloud, cloud_lidar);
+  // cloud_lidar.header.frame_id = g_lidar_frame_id_;
+  // cloud_lidar.header.stamp = ros::Time (0);
+  // sensor_msgs::PointCloud cloud_world;
+  // try
+  // {
+  //   g_listener_.transformPointCloud ("world",
+  //                                     cloud_lidar,
+  //                                     cloud_world);
+                                
+  // }
+  // catch (tf::TransformException& ex)
+  // {
+  //   ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  // }
+
+  // sensor_msgs::convertPointCloudToPointCloud2(cloud_world, temp_cloud);
+  // PointC cloud_world;
+  // pcl::fromROSMsg(temp_cloud, cloud_world);
+
+
 
 }
 
