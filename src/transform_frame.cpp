@@ -46,57 +46,39 @@ nav_msgs::Odometry odom_out;
 geometry_msgs::TransformStamped transformStamped;
 
 try {
-    //transformStamped = tfBuffer.lookupTransform("velo_link", "map",ros::Time(0), ros::Duration(1));
-    transformStamped.header.stamp = ros::Time::now();
-    transformStamped.header.frame_id = "map";
-    //transformStamped.child_frame_id = ;
-    // transformStamped.transform.translation.x = msg->x;
-    // transformStamped.transform.translation.y = msg->y;
-    transformStamped.transform.translation.x = 0.0;
-    transformStamped.transform.translation.y = 0.0;
-    transformStamped.transform.translation.z = 0.0;
-    tf2::Quaternion q;
-    // q.setRPY(0, 0, msg->theta);
-    // A yaw is a counterclockwise rotation of $ \alpha$ about the $ z$-axis.
-    // A pitch is a counterclockwise rotation of $ \beta$ about the $ y$-axis.
-    // A roll is a counterclockwise rotation of $ \gamma$ about the $ x$-axis.
-    q.setRPY(- M_PI_2, M_PI_2, 0.0);
-    transformStamped.transform.rotation.x = q.x();
-    transformStamped.transform.rotation.y = q.y();
-    transformStamped.transform.rotation.z = q.z();
-    transformStamped.transform.rotation.w = q.w();
-    //tf2::doTransform(*cloud_in, cloud_out, transformStamped); //what is the correct command if this is odometry
+    transformStamped = tfBuffer.lookupTransform("camera_color_left", "velo_link",ros::Time(0), ros::Duration(1));
     odom_out = *odom_in;
     geometry_msgs::Pose pose_in = odom_out.pose.pose;
     geometry_msgs::Pose pose_out;
     tf2::doTransform(pose_in, pose_out, transformStamped); 
-    //odom_out.pose.pose = pose_out;
-
-
-    transformStamped.header.stamp = ros::Time::now();
-    transformStamped.header.frame_id = "map";
-    //transformStamped.child_frame_id = ;
-    // transformStamped.transform.translation.x = msg->x;
-    // transformStamped.transform.translation.y = msg->y;
-    transformStamped.transform.translation.x = 0.0;
-    transformStamped.transform.translation.y = 0.0;
-    transformStamped.transform.translation.z = 0.0;
-    // tf2::Quaternion q;
-    // q.setRPY(0, 0, msg->theta);
-    // A yaw is a counterclockwise rotation of $ \alpha$ about the $ z$-axis.
-    // A pitch is a counterclockwise rotation of $ \beta$ about the $ y$-axis.
-    // A roll is a counterclockwise rotation of $ \gamma$ about the $ x$-axis.
-    q.setRPY(- M_PI, 0.0, 0.0);
-    transformStamped.transform.rotation.x = q.x();
-    transformStamped.transform.rotation.y = q.y();
-    transformStamped.transform.rotation.z = q.z();
-    transformStamped.transform.rotation.w = q.w();
-    //tf2::doTransform(*cloud_in, cloud_out, transformStamped); //what is the correct command if this is odometry
-    odom_out = *odom_in;
-    pose_in = pose_out;
-    // geometry_msgs::Pose pose_out;
-    tf2::doTransform(pose_in, pose_out, transformStamped); 
     odom_out.pose.pose = pose_out;
+
+
+    // transformStamped.header.stamp = ros::Time::now();
+    // transformStamped.header.frame_id = "map";
+    // //transformStamped.child_frame_id = ;
+    // // transformStamped.transform.translation.x = msg->x;
+    // // transformStamped.transform.translation.y = msg->y;
+    // transformStamped.transform.translation.x = 0.0;
+    // transformStamped.transform.translation.y = 0.0;
+    // transformStamped.transform.translation.z = 0.0;
+    // // tf2::Quaternion q;
+    // // q.setRPY(0, 0, msg->theta);
+    // // A yaw is a counterclockwise rotation of $ \alpha$ about the $ z$-axis.
+    // // A pitch is a counterclockwise rotation of $ \beta$ about the $ y$-axis.
+    // // A roll is a counterclockwise rotation of $ \gamma$ about the $ x$-axis.
+    // // The direction can also be found using the right hand thumb rule.
+    // q.setRPY(- M_PI, M_PI, 0.0);
+    // transformStamped.transform.rotation.x = q.x();
+    // transformStamped.transform.rotation.y = q.y();
+    // transformStamped.transform.rotation.z = q.z();
+    // transformStamped.transform.rotation.w = q.w();
+    // //tf2::doTransform(*cloud_in, cloud_out, transformStamped); //what is the correct command if this is odometry
+    // odom_out = *odom_in;
+    // pose_in = pose_out;
+    // // geometry_msgs::Pose pose_out;
+    // tf2::doTransform(pose_in, pose_out, transformStamped); 
+    //odom_out.pose.pose = pose_out;
 
 
     // pub.publish(cloud_out);
