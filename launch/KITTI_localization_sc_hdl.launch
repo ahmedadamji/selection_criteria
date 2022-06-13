@@ -3,6 +3,7 @@
   <!-- arguments -->
   <!-- <arg name="nodelet_manager" default="velodyne_nodelet_manager" /> -->
   <arg name="nodelet_manager" default="velodyne_nodelet_manager" />
+  <arg name="enable_floor_detection" default="true" />
   <!-- <arg name="points_topic" default="/velodyne_points" />  -->
   <arg name="points_topic" default="/kitti/velo/pointcloud" />
   <!-- input clouds are transformed in odom_child_frame, and then localization is performed in that frame -->
@@ -57,6 +58,20 @@
       <param name="radius_radius" value="0.5" />
       <param name="radius_min_neighbors" value="2" />
   </node>
+
+  <!-- floor_detection_nodelet -->
+  <node pkg="nodelet" type="nodelet" name="floor_detection_nodelet" args="load hdl_graph_slam/FloorDetectionNodelet $(arg nodelet_manager)" if="$(arg enable_floor_detection)">
+    <param name="points_topic" value="$(arg points_topic)" />
+    <param name="tilt_deg" value="0.0" />
+    <param name="sensor_height" value="3.0" />
+    <param name="height_clip_range" value="1.0" />
+    <param name="floor_pts_thresh" value="512" />
+    <param name="use_normal_filtering" value="true" />
+    <param name="normal_filter_thresh" value="20.0" />
+  </node>
+
+  <!-- node to remove the floor points from filtered points -->
+  <node pkg="selection_criteria" type="remove_floor" name="remove_floor" output="screen"/>
 
   <!-- calling the selection_criteria node to filter out point clouds -->
   <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen"/>

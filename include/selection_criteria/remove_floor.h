@@ -35,8 +35,10 @@ SOFTWARE. */
 #include <iostream>
 #include <sstream>
 
+
 // ROS includes
 #include <std_msgs/String.h>
+#include <std_msgs/Time.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PointStamped.h>
@@ -74,6 +76,12 @@ SOFTWARE. */
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
+#include <pcl/search/impl/search.hpp>
+#include <pcl/features/normal_3d.h>
+#include <pcl/filters/impl/plane_clipper3D.hpp>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 
@@ -96,6 +104,9 @@ SOFTWARE. */
 #include <tf2/convert.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <tf2_ros/transform_listener.h>
+
+
+
 
 
 // standard c++ library includes (std::string, std::vector)
@@ -154,6 +165,40 @@ class RmFloor
     Add (PointCPtr &cloud1,
              PointCPtr &cloud2);
 
+    // FROM HDL_GRAPH_SLAM
+
+    /** \brief Point Cloud Floor Plane Detection
+     * 
+     * \input[in] cloud1 a PointCloud2 sensor_msgs const pointer
+     * 
+     */
+    void
+    detect(PointCPtr &cloud1);
+
+    /** \brief Plane Clip
+     * 
+     * \input[in] src_cloud a PointCloud2 sensor_msgs const pointer
+     * \input[in] plane a ...
+     * \input[in] negative a ...
+     * \input[out] cloud2 the output PointCloud2 pointer with appeded points
+     * 
+     * 
+     */
+    void
+    plane_clip(PointCPtr &src_cloud,
+             PointCPtr &cloud2, const Eigen::Vector4f& plane, bool negative);
+
+    /** \brief Detect points with non-vertical normals
+     * 
+     * \input[in] cloud a PointCloud2 sensor_msgs const pointer
+     * \input[in] plane a ...
+     * \input[out] cloud2 the output PointCloud2 pointer with appeded points
+     * 
+     */
+    void
+    normal_detection(PointCPtr& cloud,
+             PointCPtr &cloud2);
+
 
     /** \brief Point Cloud CallBack function.
       * 
@@ -193,6 +238,22 @@ class RmFloor
 
 
 
+
+    // Floor detection parameters from hdl_graph_slam:
+    /** \brief Approximate sensor tilt angle [deg]. */
+    double tilt_deg;
+    /** \brief Approximate sensor height [m]. */
+    double sensor_height;
+    /** \brief Points with heights in [sensor_height - height_clip_range, sensor_height + height_clip_range] will be used for floor detection. */
+    double height_clip_range;
+    /** \brief Minimum number of support points of RANSAC to accept a detected floor plane. */
+    int floor_pts_thresh;
+    /** \brief Verticality check thresold for the detected floor plane [deg]. */
+    double floor_normal_thresh;
+    /** \brief If true, points with "non-"vertical normals will be filtered before RANSAC. */
+    bool use_normal_filtering;
+    /** \brief "Non-"verticality check threshold [deg]. */
+    double normal_filter_thresh;
 
 
 

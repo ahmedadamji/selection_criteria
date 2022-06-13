@@ -67,7 +67,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
 
   // Create a ROS subscriber for the input point cloud
-  sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
+  sub_ = nh_.subscribe("/filtered_points_without_floor", 3, &SCLocalization::callback, this);
   
   // Create a ROS subscriber for computed odometry
   odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
