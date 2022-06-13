@@ -36,17 +36,18 @@ ros::Publisher odom_pub;
 // void callback (const sensor_msgs::PointCloud2ConstPtr& cloud_in)
 void callback (const nav_msgs::OdometryConstPtr& odom_in)
 {
-ros::Duration cache_(1);
+ros::Duration cache_(5);
+// ros::Duration cache_ = genpy.Time(secs=pow(2,31)-1);
 tf2_ros::Buffer tfBuffer(cache_);
 tf2_ros::TransformListener tfListener(tfBuffer);
 // sensor_msgs::PointCloud2 cloud_out;
 nav_msgs::Odometry odom_out;
 
-    
+
 geometry_msgs::TransformStamped transformStamped;
 
 try {
-    transformStamped = tfBuffer.lookupTransform("camera_color_left", "velo_link",ros::Time(0), ros::Duration(1));
+    transformStamped = tfBuffer.lookupTransform("camera_color_left", "velo_link",ros::Time(0), ros::Duration(5));
     odom_out = *odom_in;
     geometry_msgs::Pose pose_in = odom_out.pose.pose;
     geometry_msgs::Pose pose_out;
@@ -97,12 +98,12 @@ int main (int argc, char** argv){
 
     // Create a ROS subscriber for the input point cloud
     // ros::Subscriber sub = nh.subscribe ("/kitti/velo/pointcloud", 1, callback);
-    ros::Subscriber sub = nh.subscribe("/odom", 1, callback);
+    ros::Subscriber sub = nh.subscribe("/odom", 3, callback);
 
 
     // Create a ROS publisher for the output point cloud
     // pub = nh.advertise<sensor_msgs::PointCloud2> ("/kitti/velo/pointcloud_transformed", 1); // cannot do this, need to work on rotating the odometry not the pointcloud.
-    odom_pub = nh.advertise<nav_msgs::Odometry> ("/odom_transformed", 1); // cannot do this, need to work on rotating the odometry not the pointcloud.
+    odom_pub = nh.advertise<nav_msgs::Odometry> ("/odom_transformed", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
     
  
     ros::spin();
