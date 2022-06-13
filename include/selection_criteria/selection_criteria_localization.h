@@ -136,9 +136,9 @@ class SCLocalization
       * \input[in] x: x co-ordinate of point in point cloud
       * \input[in] y: y co-ordinate of point in point cloud
       * \input[in] z: z co-ordinate of point in point cloud
-      * \input[in] cylinder_x_axis_origin: The origin of the cylinder in the x axis
-      * \input[in] cylinder_radius: The radius of the cylinder
-      * \input[in] cylinder_height: The height of the cylinder
+      * \input[in] x_axis_origin: The origin of the cylinder in the x axis
+      * \input[in] radius: The radius of the cylinder
+      * \input[in] height: The height of the cylinder
       *  
       * \return true if condition is fulfilled
       */
@@ -146,9 +146,9 @@ class SCLocalization
     cylinderCondition(double x,
                       double y,
                       double z,
-                      double cylinder_x_axis_origin,
-                      double cylinder_radius,
-                      double cylinder_height);
+                      double x_axis_origin,
+                      double radius,
+                      double height);
 
       /** \brief Radius Filter Condition 
       *
@@ -169,13 +169,14 @@ class SCLocalization
                     double min_radius,
                     double max_radius);
 
-    /** \brief Radius Filter Condition 
+    /** \brief Ring Filter Condition 
       *
       * used for filtering points outside a defined ring
       * 
       * \input[in] x: x co-ordinate of point in point cloud
       * \input[in] y: y co-ordinate of point in point cloud
       * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] x_axis_origin: The origin of the ring in the x axis
       * \input[in] ring_min_radius: The min radius of the ring
       * \input[in] ring_max_radius: The max radius of the ring
       * \input[in] ring_height: The height of the ring
@@ -186,6 +187,7 @@ class SCLocalization
     ringCondition(double x,
                   double y,
                   double z,
+                  double x_axis_origin,
                   double ring_min_radius,
                   double ring_max_radius,
                   double ring_height);
@@ -207,9 +209,9 @@ class SCLocalization
       * Will return points outside the defined Cylinder
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[in] cylinder_x_axis_origin: The origin of the cylinder in the x axis
-      * \input[in] cylinder_radius: The radius of the cylinder
-      * \input[in] cylinder_height: The height of the cylinder
+      * \input[in] x_axis_origin: The origin of the cylinder in the x axis
+      * \input[in] radius: The radius of the cylinder
+      * \input[in] height: The height of the cylinder
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
       *  
@@ -217,9 +219,9 @@ class SCLocalization
     void 
     cylinderFilter (PointCPtr &in_cloud_ptr,
                     PointCPtr &out_cloud_ptr,
-                    double cylinder_x_axis_origin,
-                    double cylinder_radius,
-                    double cylinder_height);
+                    double x_axis_origin,
+                    double radius,
+                    double height);
 
     /** \brief Radius Filter 
       *
@@ -243,6 +245,7 @@ class SCLocalization
       * Will return points inside the defined Ring
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] x_axis_origin: The origin of the ring in the x axis
       * \input[in] ring_min_radius: The min radius of the ring
       * \input[in] ring_max_radius: The max radius of the ring
       * \input[in] ring_height: The height of the ring
@@ -253,6 +256,7 @@ class SCLocalization
     void 
     ringFilter (PointCPtr &in_cloud_ptr,
                 PointCPtr &out_cloud_ptr,
+                double x_axis_origin,
                 double ring_min_radius,
                 double ring_max_radius,
                 double ring_height);

@@ -3,15 +3,15 @@
   <!-- arguments -->
   <!-- <arg name="nodelet_manager" default="velodyne_nodelet_manager" /> -->
   <arg name="nodelet_manager" default="velodyne_nodelet_manager" />
-  <arg name="enable_floor_detection" default="true" />
+  <arg name="enable_floor_detection" default="false" />
   <!-- <arg name="points_topic" default="/velodyne_points" />  -->
   <arg name="points_topic" default="/kitti/velo/pointcloud" />
   <!-- input clouds are transformed in odom_child_frame, and then localization is performed in that frame -->
   <!-- this is useful to match the LIDAR and IMU coodinate systems -->
-  <!-- <arg name="odom_child_frame_id" default="base_link" /> -->
-  <arg name="odom_child_frame_id" default="velo_link" />
+  <arg name="odom_child_frame_id" default="base_link" />
+  <!-- <arg name="odom_child_frame_id" default="velo_link" /> -->
 
-  <!-- Ros Params -->
+  <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
 
 
@@ -29,7 +29,7 @@
   <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
 
   <!-- transformation between lidar and base_link -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" />
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
@@ -44,7 +44,8 @@
       <remap from="/imu/data" to="$(arg imu_topic)" />
       <!-- <param name="deskewing" value="true" /> -->
       <!-- <param name="scan_period" value="0.1" /> -->
-      <param name="base_link_frame" value="velo_link" />
+      <param name="base_link_frame" value="base_link" />
+      <!-- <param name="base_link_frame" value="velo_link" /> -->
       <!-- This is similar to my radius filter so makes sense to comment, and describe why in my thesis -->
       <param name="use_distance_filter" value="true" />
       <param name="distance_near_thresh" value="0.1" />
@@ -71,7 +72,7 @@
   </node>
 
   <!-- node to remove the floor points from filtered points -->
-  <node pkg="selection_criteria" type="remove_floor" name="remove_floor" output="screen"/>
+  <!-- <node pkg="selection_criteria" type="remove_floor" name="remove_floor" output="screen"/> -->
 
   <!-- calling the selection_criteria node to filter out point clouds -->
   <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen"/>
