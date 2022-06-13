@@ -374,10 +374,12 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   //////////////////////////////////////////////////
   // add both clouds
   Filter(cloud1f, cloud_all); //removed suspected unneccesary points
-  // cylinderFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of cylinder filter
-  // radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
-  // ringFilter(cloud1f, cloud_all); //removed suspected unneccesary points in form of ring filter
 
+  // Floor Removal Tests --> Try these with and without removing floor
+  // Filter(cloud1f, cloud_all); //removed suspected unneccesary points
+  // cylinderFilter(cloud1f, cloud_all, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
+  // ringFilter(cloud1f, cloud_all, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
 
   // Cylinder Filters
   // To test best thickness of forward points to be eliminated
