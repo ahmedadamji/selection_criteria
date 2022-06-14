@@ -41,6 +41,7 @@ ros::Duration cache_(5);
 tf2_ros::Buffer tfBuffer(cache_);
 tf2_ros::TransformListener tfListener(tfBuffer);
 // sensor_msgs::PointCloud2 cloud_out;
+nav_msgs::Odometry odom = *odom_in;
 nav_msgs::Odometry odom_out;
 
 
@@ -48,15 +49,19 @@ geometry_msgs::TransformStamped transformStamped;
 
 try {
     transformStamped = tfBuffer.lookupTransform("camera_color_left", "velo_link",ros::Time(0), ros::Duration(5));
-    odom_out = *odom_in;
-    geometry_msgs::Pose pose_in = odom_out.pose.pose;
+    // check based on results weather we need the translation
+    transformStamped.transform.translation.x = 0.0;
+    transformStamped.transform.translation.y = 0.0;
+    transformStamped.transform.translation.z = 0.0;
+    geometry_msgs::Pose pose_in = odom.pose.pose;
     geometry_msgs::Pose pose_out;
-    tf2::doTransform(pose_in, pose_out, transformStamped); 
+    tf2::doTransform(pose_in, pose_out, transformStamped);
+    odom_out = odom;
     odom_out.pose.pose = pose_out;
 
 
     // transformStamped.header.stamp = ros::Time::now();
-    // transformStamped.header.frame_id = "map";
+    // transformStamped.header.frame_id = "velo_link";
     // //transformStamped.child_frame_id = ;
     // // transformStamped.transform.translation.x = msg->x;
     // // transformStamped.transform.translation.y = msg->y;
@@ -75,11 +80,14 @@ try {
     // transformStamped.transform.rotation.z = q.z();
     // transformStamped.transform.rotation.w = q.w();
     // //tf2::doTransform(*cloud_in, cloud_out, transformStamped); //what is the correct command if this is odometry
-    // odom_out = *odom_in;
-    // pose_in = pose_out;
+    // geometry_msgs::Pose pose_in = odom_in.pose.pose;
+    // geometry_msgs::Pose pose_out;
+    // // pose_in = pose_out;
     // // geometry_msgs::Pose pose_out;
-    // tf2::doTransform(pose_in, pose_out, transformStamped); 
-    //odom_out.pose.pose = pose_out;
+    // tf2::doTransform(pose_in, pose_out, transformStamped);
+    // odom_out = odom_in;
+    // odom_out.pose.pose = pose_out;
+
 
 
     // pub.publish(cloud_out);

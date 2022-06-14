@@ -71,7 +71,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
   
   // Create a ROS subscriber for computed odometry
-  odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
+  odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
 
 }
 
@@ -404,7 +404,6 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   // cylinderFilter(cloud1f, cloud_all, 40, 3, 100); //removed suspected unneccesary points in form of cylinder filter
 
 
-
   // Radius Filters
   // To test inner radius of points required to be removed
   // radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
@@ -510,6 +509,46 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 
   // Think of ways I can access the graphical information in hdl, such as associated covariance of each observation
   // Go through CW2 and CW3 of COMP0130 on 11/06/2022
+
+
+  // can actually change this to imu callback to access velocity of the robot directly as odometry twist is not published:
+  // Topic of imu --> /kitti/oxts/imu
+
+
+  // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:
+
+  double q_x = robot_odom.pose.pose.orientation.x;
+  double q_y = robot_odom.pose.pose.orientation.y;
+  double q_z = robot_odom.pose.pose.orientation.z;
+  double q_w = robot_odom.pose.pose.orientation.w;
+
+  // g_roll = atan2(2.0*(q_x*q_y + q_w*q_z), q_w*q_w + q_x*q_x - q_y*q_y - q_z*q_z);
+  // g_pitch = asin(-2.0*(q_x*q_z - q_w*q_y));
+  // g_yaw = atan2(2.0*(q_y*q_z + q_w*q_x), q_w*q_w - q_x*q_x - q_y*q_y + q_z*q_z);
+
+  // Quaternion
+  tf2::Quaternion q(q_x, q_y, q_z, q_w);
+  // 3x3 Rotation matrix from quaternion
+  tf2::Matrix3x3 m(q);
+  // Roll Pitch and Yaw from rotation matrix
+  m.getRPY(g_roll, g_pitch, g_yaw);
+
+
+  std::cout<<(g_roll * (180.0/3.141592653589793238463))<<std::endl;
+  std::cout<<(g_pitch * (180.0/3.141592653589793238463))<<std::endl;
+  std::cout<<(g_yaw * (180.0/3.141592653589793238463))<<std::endl;
+
+  g_rpy.push_back(to_string(g_roll));
+  g_rpy.push_back(to_string(g_pitch));
+  g_rpy.push_back(to_string(g_yaw));
+
+	// Appending the Values of Roll, Pitch and Yaw to a text file.
+	// std::ofstream output_file("~/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/RPY.txt");
+	std::ofstream output_file("RPY.txt");
+	std::ostream_iterator<std::string> output_iterator(output_file, ",");
+	std::copy(g_rpy.begin(), g_rpy.end(), output_iterator);
+
+
 
 
 }

@@ -15,8 +15,16 @@
   <param name="/use_sim_time" value="true" />
 
 
+  <arg name="enable_gps" default="false" />
+  <arg name="enable_imu_acc" default="false" />
+  <arg name="enable_imu_ori" default="false" />
+
+
   <!-- optional arguments -->
-  <arg name="use_imu" default="false" /> <!-- Disabled to maximise the effect of selected points upon visualization of performance-->
+
+   <!-- Use the IMU topic seperately to Find Twist Information --> 
+  <arg name="use_imu" default="true" /><!-- Disable to maximise the effect of selected points upon visualization of performance-->
+
   <arg name="invert_imu_acc" default="false" />
   <arg name="invert_imu_gyro" default="false" />
   <arg name="use_global_localization" default="true" />
@@ -98,6 +106,11 @@
     <param name="invert_acc" value="$(arg invert_imu_acc)" />
     <param name="invert_gyro" value="$(arg invert_imu_gyro)" />
     <param name="cool_time_duration" value="2.0" />
+
+    <!-- constraint switches -->
+    <param name="enable_gps" value="$(arg enable_gps)" />
+    <param name="enable_imu_acceleration" value="$(arg enable_imu_acc)" />
+    <param name="enable_imu_orientation" value="$(arg enable_imu_ori)" />
 
     <!-- robot odometry-based prediction -->
     <param name="enable_robot_odometry_prediction" value="$(arg enable_robot_odometry_prediction)" />
