@@ -31,7 +31,11 @@ SOFTWARE. */
 
 #include <stdlib.h>
 #include <cmath>
+#include <math.h>
 #include <iostream>
+#include <sstream>
+#include <fstream>
+#include <iterator>
 
 // ROS includes
 #include <std_msgs/String.h>
@@ -41,11 +45,15 @@ SOFTWARE. */
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Scalar.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <nav_msgs/Odometry.h>
+
 
 // PCL specific includes
 #include <pcl_conversions/pcl_conversions.h>
@@ -82,6 +90,15 @@ SOFTWARE. */
 // TF specific includes
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+// TF2
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Matrix3x3.h"
+#include <tf2_ros/buffer.h>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include <tf2/convert.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2_ros/transform_listener.h>
+
 
 // standard c++ library includes (std::string, std::vector)
 #include <string>
@@ -115,14 +132,14 @@ class SCMapping
 
     /** \brief Cylinder Filter Condition 
       *
-      * used for picking and placing at given position 
+      * used for filtering points inside a defined cylinder
       * 
       * \input[in] x: x co-ordinate of point in point cloud
       * \input[in] y: y co-ordinate of point in point cloud
       * \input[in] z: z co-ordinate of point in point cloud
-      * \input[in] cylinder_x_axis_origin: The origin of the cylinder in the x axis
-      * \input[in] cylinder_radius: The radius of the cylinder
-      * \input[in] cylinder_height: The height of the cylinder
+      * \input[in] x_axis_origin: The origin of the cylinder in the x axis
+      * \input[in] radius: The radius of the cylinder
+      * \input[in] height: The height of the cylinder
       *  
       * \return true if condition is fulfilled
       */
@@ -130,9 +147,51 @@ class SCMapping
     cylinderCondition(double x,
                       double y,
                       double z,
-                      double cylinder_x_axis_origin,
-                      double cylinder_radius,
-                      double cylinder_height);
+                      double x_axis_origin,
+                      double radius,
+                      double height);
+
+      /** \brief Radius Filter Condition 
+      *
+      * used for filtering points inside a defined radial region
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] min_radius: The minimum filtering radius
+      * \input[in] max_radius: The maximum filtering radius
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    radiusCondition(double x,
+                    double y,
+                    double z,
+                    double min_radius,
+                    double max_radius);
+
+    /** \brief Ring Filter Condition 
+      *
+      * used for filtering points outside a defined ring
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] x_axis_origin: The origin of the ring in the x axis
+      * \input[in] ring_min_radius: The min radius of the ring
+      * \input[in] ring_max_radius: The max radius of the ring
+      * \input[in] ring_height: The height of the ring
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    ringCondition(double x,
+                  double y,
+                  double z,
+                  double x_axis_origin,
+                  double ring_min_radius,
+                  double ring_max_radius,
+                  double ring_height);
 
     /** \brief Filter 
       *
@@ -144,17 +203,16 @@ class SCMapping
       */
     void 
     Filter (PointCPtr &in_cloud_ptr,
-             PointCPtr &out_cloud_ptr);
+            PointCPtr &out_cloud_ptr);
 
     /** \brief Cylinder Filter 
       *
       * Will return points outside the defined Cylinder
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[out] out_cloud_ptr the output PointCloud2 pointer
-      * \input[in] cylinder_x_axis_origin: The origin of the cylinder in the x axis
-      * \input[in] cylinder_radius: The radius of the cylinder
-      * \input[in] cylinder_height: The height of the cylinder
+      * \input[in] x_axis_origin: The origin of the cylinder in the x axis
+      * \input[in] radius: The radius of the cylinder
+      * \input[in] height: The height of the cylinder
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
       *  
@@ -162,9 +220,47 @@ class SCMapping
     void 
     cylinderFilter (PointCPtr &in_cloud_ptr,
                     PointCPtr &out_cloud_ptr,
-                    double cylinder_x_axis_origin,
-                    double cylinder_radius,
-                    double cylinder_height);
+                    double x_axis_origin,
+                    double radius,
+                    double height);
+
+    /** \brief Radius Filter 
+      *
+      * Will return points within the defined radius bounds
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] min_radius: The minimum filtering radius
+      * \input[in] max_radius: The maximum filtering radius
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      *  
+      */
+    void 
+    radiusFilter (PointCPtr &in_cloud_ptr,
+                  PointCPtr &out_cloud_ptr,
+                  double min_radius,
+                  double max_radius);
+    
+      /** \brief Ring Filter 
+      *
+      * Will return points inside the defined Ring
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] x_axis_origin: The origin of the ring in the x axis
+      * \input[in] ring_min_radius: The min radius of the ring
+      * \input[in] ring_max_radius: The max radius of the ring
+      * \input[in] ring_height: The height of the ring
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      *  
+      */
+    void 
+    ringFilter (PointCPtr &in_cloud_ptr,
+                PointCPtr &out_cloud_ptr,
+                double x_axis_origin,
+                double ring_min_radius,
+                double ring_max_radius,
+                double ring_height);
 
     /** \brief Box Filter 
       *
@@ -172,7 +268,6 @@ class SCMapping
       * and also between the min0/max0 OR min1/max1 pairs on the X and Y axes
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[out] out_cloud_ptr the output PointCloud2 pointer
       * \input[in] x_axis_min: Min filter bound in the x axis
       * \input[in] y_axis_min: Min filter bound in the y axis
       * \input[in] z_axis_min: Min filter bound in the z axis
@@ -228,6 +323,17 @@ class SCMapping
     
     /** \brief Point Cloud (filtered) pointer. */
     PointCPtr g_cloud_filtered;
+
+    
+    /** \brief X-Coordinate of curent point in the pointcloud. */
+    double g_x;
+
+    /** \brief Y-Coordinate of curent point in the pointcloud. */
+    double g_y;
+
+    /** \brief Z-Coordinate of curent point in the pointcloud. */
+    double g_z;
+
 
 
 
