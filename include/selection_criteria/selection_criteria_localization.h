@@ -332,6 +332,7 @@ class SCLocalization
 
     /** \brief ROS publishers. */
     ros::Publisher pub_;
+    ros::Publisher odom_abs_pub;
 
     /** \brief ROS subscribers. */
     ros::Subscriber sub_;

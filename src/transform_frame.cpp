@@ -60,6 +60,10 @@ try {
     odom_out.pose.pose = pose_out;
 
 
+    odom_out.pose.pose.orientation = odom.pose.pose.orientation;
+
+
+
     // transformStamped.header.stamp = ros::Time::now();
     // transformStamped.header.frame_id = "velo_link";
     // //transformStamped.child_frame_id = ;
@@ -106,7 +110,7 @@ int main (int argc, char** argv){
 
     // Create a ROS subscriber for the input point cloud
     // ros::Subscriber sub = nh.subscribe ("/kitti/velo/pointcloud", 1, callback);
-    ros::Subscriber sub = nh.subscribe("/odom", 3, callback);
+    ros::Subscriber sub = nh.subscribe("/odom_abs", 3, callback);
 
 
     // Create a ROS publisher for the output point cloud

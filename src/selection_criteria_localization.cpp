@@ -45,7 +45,9 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
   // Define the publishers
   pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("/selected_points", 3, true);
-  
+  odom_abs_pub = nh.advertise<nav_msgs::Odometry> ("/odom_abs", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
+    
+
   // Initialize public variables
   // g_vg_leaf_sz = 0.01;
   // g_x_thrs_min = -0.7; 
@@ -71,7 +73,9 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
   
   // Create a ROS subscriber for computed odometry
-  odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
+  odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
+  // odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
+
 
 }
 
@@ -515,6 +519,15 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // Topic of imu --> /kitti/oxts/imu
 
 
+
+
+
+
+
+
+
+
+
   // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:
 
   double q_x = robot_odom.pose.pose.orientation.x;
@@ -532,11 +545,41 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   tf2::Matrix3x3 m(q);
   // Roll Pitch and Yaw from rotation matrix
   m.getRPY(g_roll, g_pitch, g_yaw);
+  
+  // g_roll = g_roll * (180.0 / M_PI);
+  // g_pitch = g_pitch * (180.0 / M_PI);
+  // g_yaw = g_yaw * (180.0 / M_PI); 
+
+  //Because while finding error it does not make sense to have one at 180 and another at -180 becuse of the angle change fluctuation:
+  //Also because after transformation, my yaw is pitch and therefore it is easier to compare the orientation without the transformation due to the adjustments i have to make.
+  //Try to set yaw and roll to 0 afterwards and check if i can find same effect.
+  //If i have further problems try to make changes in evo to only find absolute error
+  g_roll = 0;
+  g_pitch = - g_yaw;
+  g_yaw = 0; 
+
+  tf2::Quaternion newQuaternion;
+  newQuaternion.setRPY( g_roll, g_pitch, g_yaw );  // Create this quaternion from roll/pitch/yaw (in radians)
+
+  // Print the quaternion components (0,0,0,1)
+  // ROS_INFO_STREAM("x: " << newQuaternion.getX() << " y: " << newQuaternion.getY() << 
+  //                 " z: " << newQuaternion.getZ() << " w: " << newQuaternion.getW());
+  robot_odom.pose.pose.orientation.x = newQuaternion.getX();
+  robot_odom.pose.pose.orientation.y = newQuaternion.getY();
+  robot_odom.pose.pose.orientation.z = newQuaternion.getZ();
+  robot_odom.pose.pose.orientation.w = newQuaternion.getW();
+
+  odom_abs_pub.publish(robot_odom);
 
 
-  std::cout<<(g_roll * (180.0/3.141592653589793238463))<<std::endl;
-  std::cout<<(g_pitch * (180.0/3.141592653589793238463))<<std::endl;
-  std::cout<<(g_yaw * (180.0/3.141592653589793238463))<<std::endl;
+  // Need to read gt data by syncronising the topics in the same callback, correct the angle, and convert it back to quaternion, and then correct the odometry
+  // As Roll is the Yaw in my frame
+  // if( (g_roll_gt < -10) && (g_yaw > 0) ) g_yaw -= 360.0;
+  // if( (g_roll_gt > 10) && (g_yaw < 0) ) g_yaw += 360.0;
+
+  std::cout<< g_roll <<std::endl;
+  std::cout<< g_pitch <<std::endl;
+  std::cout<< g_yaw <<std::endl;
 
   g_rpy.push_back(to_string(g_roll));
   g_rpy.push_back(to_string(g_pitch));
@@ -547,6 +590,11 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 	std::ofstream output_file("RPY.txt");
 	std::ostream_iterator<std::string> output_iterator(output_file, ",");
 	std::copy(g_rpy.begin(), g_rpy.end(), output_iterator);
+
+
+
+
+
 
 
 
