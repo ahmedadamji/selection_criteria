@@ -27,6 +27,8 @@
 
 #define RAD2DEG 57.295779513
 
+// REFERENCE: https://towardsdatascience.com/kitti-coordinate-transformations-125094cd42fb
+
 
 // ros::Publisher pub;
 ros::Publisher odom_pub;

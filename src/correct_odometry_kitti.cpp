@@ -110,19 +110,19 @@ CorrectOdometry::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // if( (g_roll_gt < -10) && (g_yaw > 0) ) g_yaw -= 360.0;
   // if( (g_roll_gt > 10) && (g_yaw < 0) ) g_yaw += 360.0;
 
-  std::cout<< g_roll <<std::endl;
-  std::cout<< g_pitch <<std::endl;
-  std::cout<< g_yaw <<std::endl;
+  // std::cout<< g_roll <<std::endl;
+  // std::cout<< g_pitch <<std::endl;
+  // std::cout<< g_yaw <<std::endl;
 
-  g_rpy.push_back(to_string(g_roll));
-  g_rpy.push_back(to_string(g_pitch));
-  g_rpy.push_back(to_string(g_yaw));
+  // g_rpy.push_back(to_string(g_roll));
+  // g_rpy.push_back(to_string(g_pitch));
+  // g_rpy.push_back(to_string(g_yaw));
 
-	// Appending the Values of Roll, Pitch and Yaw to a text file.
-	// std::ofstream output_file("~/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/RPY.txt");
-	std::ofstream output_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/RPY.txt");
-	std::ostream_iterator<std::string> output_iterator(output_file, ",");
-	std::copy(g_rpy.begin(), g_rpy.end(), output_iterator);
+	// // Appending the Values of Roll, Pitch and Yaw to a text file.
+	// // std::ofstream output_file("~/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/RPY.txt");
+	// std::ofstream output_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/RPY.txt");
+	// std::ostream_iterator<std::string> output_iterator(output_file, ",");
+	// std::copy(g_rpy.begin(), g_rpy.end(), output_iterator);
 
 
 
