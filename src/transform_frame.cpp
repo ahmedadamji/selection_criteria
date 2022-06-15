@@ -50,9 +50,9 @@ geometry_msgs::TransformStamped transformStamped;
 try {
     transformStamped = tfBuffer.lookupTransform("camera_color_left", "velo_link",ros::Time(0), ros::Duration(5));
     // check based on results weather we need the translation
-    transformStamped.transform.translation.x = 0.0;
-    transformStamped.transform.translation.y = 0.0;
-    transformStamped.transform.translation.z = 0.0;
+    // transformStamped.transform.translation.x = 0.0;
+    // transformStamped.transform.translation.y = 0.0;
+    // transformStamped.transform.translation.z = 0.0;
     geometry_msgs::Pose pose_in = odom.pose.pose;
     geometry_msgs::Pose pose_out;
     tf2::doTransform(pose_in, pose_out, transformStamped);

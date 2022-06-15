@@ -355,17 +355,6 @@ class SCLocalization
     double g_z;
 
 
-    /** \brief Variable to save the Robot Odometry's Roll value for each pose */
-    double g_roll;
-    /** \brief Variable to save the Robot Odometry's Pitch value for each pose */
-    double g_pitch;
-    /** \brief Variable to save the Robot Odometry's Yaw value for each pose */
-    double g_yaw;
-    /** \brief List to save the Robot Odometry's Roll, Pitch and Yaw value in each iteration */
-    std::vector<std::string> g_rpy;
-
-
-
 
 
 

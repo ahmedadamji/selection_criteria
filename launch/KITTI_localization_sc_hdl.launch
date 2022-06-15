@@ -148,6 +148,9 @@
   </node>
 
 
+  <!-- node to correct the odometry orientations to be compatible with the kitti dataset -->
+  <node pkg="selection_criteria" type="correct_odometry_kitti" name="correct_odometry_kitti" output="screen"/>
+
   <!-- node to transform coordinate frame of the recorded bagfile -->
   <node pkg="selection_criteria" type="transform_frame" name="transform_odom_frame" output="screen"/>
 

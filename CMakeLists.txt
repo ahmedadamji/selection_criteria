@@ -148,6 +148,7 @@ ${PCL_INCLUDE_DIRS})
 #   src/${PROJECT_NAME}/comp0129-s22-lab.cpp
 # )
 add_library(selection_criteria_localization_lib src/selection_criteria_localization.cpp)
+add_library(correct_odometry_kitti_lib src/correct_odometry_kitti.cpp)
 add_library(selection_criteria_mapping_lib src/selection_criteria_mapping.cpp)
 add_library(remove_floor_lib src/remove_floor.cpp)
 
@@ -155,6 +156,7 @@ add_library(remove_floor_lib src/remove_floor.cpp)
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(selection_criteria_localization_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(correct_odometry_kitti_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(selection_criteria_mapping_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(remove_floor_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -248,6 +250,7 @@ add_dependencies(remove_floor_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 # catkin_add_nosetests(test)
 add_executable(selection_criteria_mapping src/selection_criteria_mapping.cpp)
 add_executable(selection_criteria_localization src/selection_criteria_localization.cpp)
+add_executable(correct_odometry_kitti src/correct_odometry_kitti.cpp)
 add_executable(remove_floor src/remove_floor.cpp)
 add_executable(error src/error.cpp)
 add_executable(transform_frame src/transform_frame.cpp)
@@ -255,6 +258,7 @@ add_executable(transform_frame src/transform_frame.cpp)
 
 target_link_libraries(selection_criteria_mapping ${catkin_LIBRARIES})
 target_link_libraries(selection_criteria_localization ${catkin_LIBRARIES})
+target_link_libraries(correct_odometry_kitti ${catkin_LIBRARIES})
 target_link_libraries(remove_floor ${catkin_LIBRARIES})
 target_link_libraries(error ${catkin_LIBRARIES})
 target_link_libraries(transform_frame ${catkin_LIBRARIES})
