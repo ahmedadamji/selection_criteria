@@ -64,13 +64,13 @@ RmFloor::RmFloor (ros::NodeHandle &nh):
   // Create a ROS subscriber for the input point cloud
   sub_ = nh_.subscribe("/filtered_points", 3, &RmFloor::callback, this);
 
-  tilt_deg = nh_.param<double>("tilt_deg", 0.0);
-  sensor_height = nh_.param<double>("sensor_height", 2.0);
-  height_clip_range = nh_.param<double>("height_clip_range", 1.0);
-  floor_pts_thresh = nh_.param<int>("floor_pts_thresh", 512);
-  floor_normal_thresh = nh_.param<double>("floor_normal_thresh", 10.0);
-  use_normal_filtering = nh_.param<bool>("use_normal_filtering", true);
-  normal_filter_thresh = nh_.param<double>("normal_filter_thresh", 20.0);
+  // tilt_deg = nh_.param<double>("tilt_deg", 0.0);
+  // sensor_height = nh_.param<double>("sensor_height", 2.0);
+  // height_clip_range = nh_.param<double>("height_clip_range", 1.0);
+  // floor_pts_thresh = nh_.param<int>("floor_pts_thresh", 512);
+  // floor_normal_thresh = nh_.param<double>("floor_normal_thresh", 10.0);
+  // use_normal_filtering = nh_.param<bool>("use_normal_filtering", true);
+  // normal_filter_thresh = nh_.param<double>("normal_filter_thresh", 20.0);
 
 }
 
@@ -95,7 +95,7 @@ RmFloor::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     // This is a floor condition where points above the floor are selected based on height, this has not been yet implemented in a function or a filter.
     // Can I try to filter the points that have been detected as floor points by the floor detection nodelet.
     // And is there any reason for me to do this?
-    if ( it->z >= -2)
+    if ( g_z >= 0.05)
     {
       out_cloud_ptr->points.push_back(*it);
     }

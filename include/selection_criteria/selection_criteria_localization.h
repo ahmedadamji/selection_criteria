@@ -25,19 +25,11 @@ SOFTWARE. */
 
 #define _USE_MATH_DEFINES
 
+
+// ROS includes
 #include <ros/ros.h>
 #include <ros/time.h>
 #include <ros/console.h>
-
-#include <stdlib.h>
-#include <cmath>
-#include <math.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <iterator>
-
-// ROS includes
 #include <std_msgs/String.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -84,13 +76,12 @@ SOFTWARE. */
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-#include <iostream>
-#include <cstdlib>
 
 // TF specific includes
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-// TF2
+
+// TF2 specific includes
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include <tf2_ros/buffer.h>
@@ -103,6 +94,14 @@ SOFTWARE. */
 // standard c++ library includes (std::string, std::vector)
 #include <string>
 #include <vector>
+#include <stdlib.h>
+#include <cmath>
+#include <math.h>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <iterator>
+#include <cstdlib>
 
 // NAMESPACES
 using namespace std;
@@ -193,6 +192,15 @@ class SCLocalization
                   double ring_min_radius,
                   double ring_max_radius,
                   double ring_height);
+
+    /** \brief Compute Statistics 
+      *
+      * Computes statistics of the points filtered from chosen criteria and displays and stores them to a text file
+      * 
+      * \input[in] file_name the name of the file to store the statistics to
+      */
+    void 
+    computeStatistics (string file_name);
 
     /** \brief Filter 
       *
@@ -344,6 +352,11 @@ class SCLocalization
     /** \brief Point Cloud (filtered) pointer. */
     PointCPtr g_cloud_filtered;
 
+    /** \brief Size of Input Point Cloud. */
+    int g_in_cloud_size;
+
+    /** \brief Size of Out Point Cloud. */
+    int g_out_cloud_size;
     
     /** \brief X-Coordinate of curent point in the pointcloud. */
     double g_x;

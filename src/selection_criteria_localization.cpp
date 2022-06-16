@@ -155,6 +155,82 @@ SCLocalization::ringCondition(double x,
 
 }
 
+void
+SCLocalization::computeStatistics(string file_name)
+{
+
+  int totalInputPoints;
+  ros::param::get("/total_input_points", totalInputPoints);
+  totalInputPoints += g_in_cloud_size;
+  ros::param::set("/total_input_points", totalInputPoints);
+
+  
+  int totalOutputPoints;
+  ros::param::get("/total_output_points", totalOutputPoints);
+  totalOutputPoints += g_out_cloud_size;
+  ros::param::set("/total_output_points", totalOutputPoints);
+
+
+  int filteredPoints;
+  ros::param::get("/filtered_points", filteredPoints);
+  filteredPoints += (g_in_cloud_size - g_out_cloud_size);
+  ros::param::set("/filtered_points", filteredPoints);
+
+
+  int numberOfFrames;
+  ros::param::get("/number_of_frames", numberOfFrames);
+  numberOfFrames += 1;
+  ros::param::set("/number_of_frames", numberOfFrames);
+
+  double averageInputPoints = ((1.0 * totalInputPoints)/(1.0 * numberOfFrames));
+  double averageOutputPoints = ((1.0 * totalOutputPoints)/(1.0 * numberOfFrames));
+  double averagefilteredPoints = ((1.0 * filteredPoints)/(1.0 * numberOfFrames));
+
+  std::cout << "Total number of input points: " << std::endl;
+  std::cout << totalInputPoints << std::endl;
+  std::cout << "Total number of output points: " << std::endl;
+  std::cout << totalOutputPoints << std::endl;
+  std::cout << "Total number of filtered points: " << std::endl;
+  std::cout << filteredPoints << std::endl;
+  std::cout << "Average number of input points per frame: " << std::endl;
+  std::cout << averageInputPoints << std::endl;
+  std::cout << "Average number of output points per frame: " << std::endl;
+  std::cout << averageOutputPoints << std::endl;
+  std::cout << "Average number of filtered points per frame: " << std::endl;
+  std::cout << averagefilteredPoints << std::endl;
+
+  //define array of statistics
+  string statistics[6] = { "Total number of input points: " + to_string(totalInputPoints),
+                            "Total number of output points: " + to_string(totalOutputPoints),
+                            "Total number of filtered points: " + to_string(filteredPoints),
+                            "Average number of input points per frame: " + to_string(averageInputPoints),
+                            "Average number of output points per frame: " + to_string(averageOutputPoints),
+                            "Average number of filtered points per frame: " + to_string(averagefilteredPoints) };
+  //get array size
+  int arraySize = *(&statistics + 1) - statistics;
+  //exception handling
+  try {
+    cout << "\nWriting  array contents to file...";
+    //open file for writing
+    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/statistics/"+file_name, std::ofstream::out);
+    //check if file was successfully opened for writing
+    if (fw.is_open())
+    {
+      //store array contents to text file
+      for (int i = 0; i < arraySize; i++) {
+        fw << statistics[i] << "\n";
+      }
+      fw.close();
+    }
+    else cout << "Problem with opening file";
+  }
+  catch (const char* msg) {
+    cerr << msg << endl;
+  }
+
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void
@@ -186,7 +262,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50))
+    if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50) && (g_z >= 0.05))
     {
       out_cloud_ptr->points.push_back(*it);
     }
@@ -199,17 +275,13 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 
 
   }
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
 
-  int totalInputPoints = in_cloud_ptr->size();
-  int totalOutputPoints = out_cloud_ptr->size();
-  int filteredPoints = totalInputPoints - totalOutputPoints;
+  string file_name = "06_odom.txt";
 
-  std::cout << "Total number of input points: " << std::endl;
-  std::cout << totalInputPoints << std::endl;
-  std::cout << "Total number of output points: " << std::endl;
-  std::cout << totalOutputPoints << std::endl;
-  std::cout << "Total number of filtered points: " << std::endl;
-  std::cout << filteredPoints << std::endl;
+  computeStatistics(file_name);
+
 
 }
 

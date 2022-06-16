@@ -13,6 +13,10 @@
 
   <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
+  <param name="/number_of_frames" type="int" value="0" />
+  <param name="/total_input_points" type="int" value="0" />
+  <param name="/total_output_points" type="int" value="0" />
+  <param name="/filtered_points" type="int" value="0" />
 
 
   <arg name="enable_gps" default="false" />
