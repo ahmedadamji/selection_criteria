@@ -193,6 +193,14 @@ class SCLocalization
                   double ring_max_radius,
                   double ring_height);
 
+    /** \brief Update ROS Params
+      *
+      * Updates the values stored in ROS parameters to the appropriate values
+      * 
+      */
+    void 
+    updateROSParams ();
+
     /** \brief Compute Statistics 
       *
       * Computes statistics of the points filtered from chosen criteria and displays and stores them to a text file
@@ -358,6 +366,27 @@ class SCLocalization
     /** \brief Size of Out Point Cloud. */
     int g_out_cloud_size;
     
+    /** \brief Total Size of Input Point Cloud. */
+    int g_total_input_points;
+
+    /** \brief Total Size of Output Point Cloud. */
+    int g_total_output_points;
+
+    /** \brief Total Size of Filtered Points. */
+    int g_total_filtered_points;
+
+    /** \brief Number of recorded Point Cloud Frames. */
+    int g_total_number_of_frames;
+
+    /** \brief Average Size of Input Point Cloud. */
+    double g_average_input_points;
+
+    /** \brief Average Size of Output Point Cloud. */
+    double g_average_output_points;
+
+    /** \brief Average Size of Filtered Points. */
+    double g_average_filtered_points;
+
     /** \brief X-Coordinate of curent point in the pointcloud. */
     double g_x;
 
@@ -367,6 +396,14 @@ class SCLocalization
     /** \brief Z-Coordinate of curent point in the pointcloud. */
     double g_z;
 
+    /** \brief Name of Evaluation Dataset. */
+    string g_dataset;
+
+    /** \brief Name of Evaluation Sequence. */
+    string g_sequence;
+
+    /** \brief Name of used Filer. */
+    string g_filter_name;
 
 
 

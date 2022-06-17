@@ -21,6 +21,7 @@
 #include <tf2_ros/buffer.h>
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include <ros/ros.h>
+#include <rosbag/bag.h>
 #include <tf/transform_broadcaster.h>
 #include <nav_msgs/Odometry.h>
 
@@ -32,6 +33,10 @@
 
 // ros::Publisher pub;
 ros::Publisher odom_pub;
+
+
+// NAMESPACES
+using namespace std;
 
 
 // void callback (const nav_msgs::OdometryConstPtr& odom_in) // check how to do tf transform for odometry, and if there is a pointer object for odometry
@@ -65,39 +70,30 @@ try {
     odom_out.pose.pose.orientation = odom.pose.pose.orientation;
 
 
-
-    // transformStamped.header.stamp = ros::Time::now();
-    // transformStamped.header.frame_id = "velo_link";
-    // //transformStamped.child_frame_id = ;
-    // // transformStamped.transform.translation.x = msg->x;
-    // // transformStamped.transform.translation.y = msg->y;
-    // transformStamped.transform.translation.x = 0.0;
-    // transformStamped.transform.translation.y = 0.0;
-    // transformStamped.transform.translation.z = 0.0;
-    // // tf2::Quaternion q;
-    // // q.setRPY(0, 0, msg->theta);
-    // // A yaw is a counterclockwise rotation of $ \alpha$ about the $ z$-axis.
-    // // A pitch is a counterclockwise rotation of $ \beta$ about the $ y$-axis.
-    // // A roll is a counterclockwise rotation of $ \gamma$ about the $ x$-axis.
-    // // The direction can also be found using the right hand thumb rule.
-    // q.setRPY(- M_PI, M_PI, 0.0);
-    // transformStamped.transform.rotation.x = q.x();
-    // transformStamped.transform.rotation.y = q.y();
-    // transformStamped.transform.rotation.z = q.z();
-    // transformStamped.transform.rotation.w = q.w();
-    // //tf2::doTransform(*cloud_in, cloud_out, transformStamped); //what is the correct command if this is odometry
-    // geometry_msgs::Pose pose_in = odom_in.pose.pose;
-    // geometry_msgs::Pose pose_out;
-    // // pose_in = pose_out;
-    // // geometry_msgs::Pose pose_out;
-    // tf2::doTransform(pose_in, pose_out, transformStamped);
-    // odom_out = odom_in;
-    // odom_out.pose.pose = pose_out;
-
-
-
-    // pub.publish(cloud_out);
+    // Publishing Odometry
     odom_pub.publish(odom_out);
+
+    // Recording Odometry to ROSBAG for Evaluation
+
+    string dataset;
+    ros::param::get("/dataset", dataset);
+
+    string sequence;
+    ros::param::get("/sequence", sequence);
+
+    string filter_name;
+    ros::param::get("/filter_name", filter_name);
+
+    string file_name = dataset + "_" + sequence + "_" + filter_name + ".bag";
+
+    string file_path = "/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + dataset + "/" + sequence + "/results/trajectories/" + file_name;
+
+    rosbag::Bag bag;
+    bag.open(file_path, rosbag::bagmode::Write);
+    bag.write("odom", ros::Time::now(), odom_out);
+    bag.close();
+
+    
 } catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
     //ros::Duration(1.0).sleep();

@@ -46,18 +46,6 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   // Define the publishers
   pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("/selected_points", 3, true);
   odom_abs_pub = nh.advertise<nav_msgs::Odometry> ("/odom_abs", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
-    
-
-  // Initialize public variables
-  // g_vg_leaf_sz = 0.01;
-  // g_x_thrs_min = -0.7; 
-  // g_x_thrs_max = -0.5;
-  // g_y_thrs_min = 0.0;
-  // g_y_thrs_max = 0.4;
-  // g_cf_red = 25.5;
-  // g_cf_blue = 204;
-  // g_cf_green = 25.5;
-  // g_k_nn = 50;
 
 
   // // Create a ROS subscriber for the input point cloud
@@ -73,9 +61,12 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
   
   // Create a ROS subscriber for computed odometry
-  odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
-  // odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
+  // odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
+  odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
 
+  // Get name of evaluation dataset and sequence:
+  ros::param::get("/dataset", g_dataset);
+  ros::param::get("/sequence", g_sequence);
 
 }
 
@@ -140,11 +131,11 @@ SCLocalization::ringCondition(double x,
                               double ring_height = 100)
 {
 
-    // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-    if  ((!(( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
-        (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
-        ((( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
-        (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
+  // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+  if  ((!(( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
+      (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
+      ((( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
+      (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
   {
     return true;
   }
@@ -154,66 +145,73 @@ SCLocalization::ringCondition(double x,
   }
 
 }
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::updateROSParams()
+{
+
+
+  ros::param::set("/filter_name", g_filter_name);
+
+  ros::param::get("/total_input_points", g_total_input_points);
+  g_total_input_points += g_in_cloud_size;
+  ros::param::set("/total_input_points", g_total_input_points);
+  
+  ros::param::get("/total_output_points", g_total_output_points);
+  g_total_output_points += g_out_cloud_size;
+  ros::param::set("/total_output_points", g_total_output_points);
+
+  ros::param::get("/filtered_points", g_total_filtered_points);
+  g_total_filtered_points += (g_in_cloud_size - g_out_cloud_size);
+  ros::param::set("/filtered_points", g_total_filtered_points);
+
+  ros::param::get("/number_of_frames", g_total_number_of_frames);
+  g_total_number_of_frames += 1;
+  ros::param::set("/number_of_frames", g_total_number_of_frames);
+
+
+}
+////////////////////////////////////////////////////////////////////////////////
 
 void
 SCLocalization::computeStatistics(string file_name)
 {
 
-  int totalInputPoints;
-  ros::param::get("/total_input_points", totalInputPoints);
-  totalInputPoints += g_in_cloud_size;
-  ros::param::set("/total_input_points", totalInputPoints);
+  double g_average_input_points = ((1.0 * g_total_input_points)/(1.0 * g_total_number_of_frames));
+  double g_average_output_points = ((1.0 * g_total_output_points)/(1.0 * g_total_number_of_frames));
+  double g_average_filtered_points = ((1.0 * g_total_filtered_points)/(1.0 * g_total_number_of_frames));
 
-  
-  int totalOutputPoints;
-  ros::param::get("/total_output_points", totalOutputPoints);
-  totalOutputPoints += g_out_cloud_size;
-  ros::param::set("/total_output_points", totalOutputPoints);
+  cout << "Total number of input points: " << endl;
+  cout << g_total_input_points << endl;
+  cout << "Total number of output points: " << endl;
+  cout << g_total_output_points << endl;
+  cout << "Total number of filtered points: " << endl;
+  cout << g_total_filtered_points << endl;
+  cout << "Average number of input points per frame: " << endl;
+  cout << g_average_input_points << endl;
+  cout << "Average number of output points per frame: " << endl;
+  cout << g_average_output_points << endl;
+  cout << "Average number of filtered points per frame: " << endl;
+  cout << g_average_filtered_points << endl;
 
+  // defining array of statistics
+  string statistics[6] = { "Total number of input points: " + to_string(g_total_input_points),
+                            "Total number of output points: " + to_string(g_total_output_points),
+                            "Total number of filtered points: " + to_string(g_total_filtered_points),
+                            "Average number of input points per frame: " + to_string(g_average_input_points),
+                            "Average number of output points per frame: " + to_string(g_average_output_points),
+                            "Average number of filtered points per frame: " + to_string(g_average_filtered_points) };
 
-  int filteredPoints;
-  ros::param::get("/filtered_points", filteredPoints);
-  filteredPoints += (g_in_cloud_size - g_out_cloud_size);
-  ros::param::set("/filtered_points", filteredPoints);
-
-
-  int numberOfFrames;
-  ros::param::get("/number_of_frames", numberOfFrames);
-  numberOfFrames += 1;
-  ros::param::set("/number_of_frames", numberOfFrames);
-
-  double averageInputPoints = ((1.0 * totalInputPoints)/(1.0 * numberOfFrames));
-  double averageOutputPoints = ((1.0 * totalOutputPoints)/(1.0 * numberOfFrames));
-  double averagefilteredPoints = ((1.0 * filteredPoints)/(1.0 * numberOfFrames));
-
-  std::cout << "Total number of input points: " << std::endl;
-  std::cout << totalInputPoints << std::endl;
-  std::cout << "Total number of output points: " << std::endl;
-  std::cout << totalOutputPoints << std::endl;
-  std::cout << "Total number of filtered points: " << std::endl;
-  std::cout << filteredPoints << std::endl;
-  std::cout << "Average number of input points per frame: " << std::endl;
-  std::cout << averageInputPoints << std::endl;
-  std::cout << "Average number of output points per frame: " << std::endl;
-  std::cout << averageOutputPoints << std::endl;
-  std::cout << "Average number of filtered points per frame: " << std::endl;
-  std::cout << averagefilteredPoints << std::endl;
-
-  //define array of statistics
-  string statistics[6] = { "Total number of input points: " + to_string(totalInputPoints),
-                            "Total number of output points: " + to_string(totalOutputPoints),
-                            "Total number of filtered points: " + to_string(filteredPoints),
-                            "Average number of input points per frame: " + to_string(averageInputPoints),
-                            "Average number of output points per frame: " + to_string(averageOutputPoints),
-                            "Average number of filtered points per frame: " + to_string(averagefilteredPoints) };
-  //get array size
+  // get array size
   int arraySize = *(&statistics + 1) - statistics;
   //exception handling
   try {
-    cout << "\nWriting  array contents to file...";
-    //open file for writing
-    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/statistics/"+file_name, std::ofstream::out);
-    //check if file was successfully opened for writing
+    cout << "\nSaving Statistics to file " + file_name;
+    // Opening File
+    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/" + file_name, ofstream::out);
+    
+    // If file opened write contents
     if (fw.is_open())
     {
       //store array contents to text file
@@ -230,7 +228,6 @@ SCLocalization::computeStatistics(string file_name)
 
 
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void
@@ -275,11 +272,12 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 
 
   }
+
+  g_filter_name = "cyl_0_4_100_rad_0_50_floor";
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
-
-  string file_name = "06_odom.txt";
-
+  updateROSParams();
+  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
   computeStatistics(file_name);
 
 
@@ -315,16 +313,15 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-  int totalInputPoints = in_cloud_ptr->size();
-  int totalOutputPoints = out_cloud_ptr->size();
-  int filteredPoints = totalInputPoints - totalOutputPoints;
 
-  std::cout << "Total number of input points: " << std::endl;
-  std::cout << totalInputPoints << std::endl;
-  std::cout << "Total number of output points: " << std::endl;
-  std::cout << totalOutputPoints << std::endl;
-  std::cout << "Total number of filtered points: " << std::endl;
-  std::cout << filteredPoints << std::endl;
+  g_filter_name = string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  updateROSParams();
+  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
+  computeStatistics(file_name);
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -348,16 +345,14 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-  int totalInputPoints = in_cloud_ptr->size();
-  int totalOutputPoints = out_cloud_ptr->size();
-  int filteredPoints = totalInputPoints - totalOutputPoints;
+  g_filter_name = string("rad") + string("_") + to_string(min_radius) + string("_") + to_string(max_radius);
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  updateROSParams();
+  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
+  computeStatistics(file_name);
 
-  std::cout << "Total number of input points: " << std::endl;
-  std::cout << totalInputPoints << std::endl;
-  std::cout << "Total number of output points: " << std::endl;
-  std::cout << totalOutputPoints << std::endl;
-  std::cout << "Total number of filtered points: " << std::endl;
-  std::cout << filteredPoints << std::endl;
+
 }
 
 
@@ -387,17 +382,17 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-  int totalInputPoints = in_cloud_ptr->size();
-  int totalOutputPoints = out_cloud_ptr->size();
-  int filteredPoints = totalInputPoints - totalOutputPoints;
 
-  std::cout << "Total number of input points: " << std::endl;
-  std::cout << totalInputPoints << std::endl;
-  std::cout << "Total number of output points: " << std::endl;
-  std::cout << totalOutputPoints << std::endl;
-  std::cout << "Total number of filtered points: " << std::endl;
-  std::cout << filteredPoints << std::endl;
-  std::cout << in_cloud_ptr->header.frame_id;
+  g_filter_name = string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
+                  + string("_") + to_string(ring_max_radius) + string("_") + to_string(ring_height);
+
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  updateROSParams();
+  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
+  computeStatistics(file_name);
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -417,7 +412,20 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
     {
        out_cloud_ptr->points.push_back(*it);
     } 
-  } 
+  }
+
+  g_filter_name = string("box") + string("_")
+                       + to_string(x_axis_min) + string("_") + to_string(x_axis_max)
+                       + to_string(y_axis_min) + string("_") + to_string(y_axis_max)
+                       + to_string(z_axis_min) + string("_") + to_string(z_axis_max);
+
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  updateROSParams();
+  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
+  computeStatistics(file_name);
+
+
 }
 
 

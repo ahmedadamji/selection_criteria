@@ -13,6 +13,9 @@
 
   <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
+  <param name="/dataset" type="string" value="KITTI" />
+  <param name="/sequence" type="string" value="06" />
+  <param name="/filter_name" type="string" value="" />
   <param name="/number_of_frames" type="int" value="0" />
   <param name="/total_input_points" type="int" value="0" />
   <param name="/total_output_points" type="int" value="0" />
