@@ -147,9 +147,9 @@ class SCLocalization
     cylinderCondition(double x,
                       double y,
                       double z,
-                      double x_axis_origin,
-                      double radius,
-                      double height);
+                      float x_axis_origin,
+                      float radius,
+                      float height);
 
       /** \brief Radius Filter Condition 
       *
@@ -167,8 +167,8 @@ class SCLocalization
     radiusCondition(double x,
                     double y,
                     double z,
-                    double min_radius,
-                    double max_radius);
+                    float min_radius,
+                    float max_radius);
 
     /** \brief Ring Filter Condition 
       *
@@ -188,10 +188,10 @@ class SCLocalization
     ringCondition(double x,
                   double y,
                   double z,
-                  double x_axis_origin,
-                  double ring_min_radius,
-                  double ring_max_radius,
-                  double ring_height);
+                  float x_axis_origin,
+                  float ring_min_radius,
+                  float ring_max_radius,
+                  float ring_height);
 
     /** \brief Update ROS Params
       *
@@ -237,9 +237,9 @@ class SCLocalization
     void 
     cylinderFilter (PointCPtr &in_cloud_ptr,
                     PointCPtr &out_cloud_ptr,
-                    double x_axis_origin,
-                    double radius,
-                    double height);
+                    float x_axis_origin,
+                    float radius,
+                    float height);
 
     /** \brief Radius Filter 
       *
@@ -255,8 +255,8 @@ class SCLocalization
     void 
     radiusFilter (PointCPtr &in_cloud_ptr,
                   PointCPtr &out_cloud_ptr,
-                  double min_radius,
-                  double max_radius);
+                  float min_radius,
+                  float max_radius);
     
       /** \brief Ring Filter 
       *
@@ -274,10 +274,10 @@ class SCLocalization
     void 
     ringFilter (PointCPtr &in_cloud_ptr,
                 PointCPtr &out_cloud_ptr,
-                double x_axis_origin,
-                double ring_min_radius,
-                double ring_max_radius,
-                double ring_height);
+                float x_axis_origin,
+                float ring_min_radius,
+                float ring_max_radius,
+                float ring_height);
 
     /** \brief Box Filter 
       *
@@ -298,9 +298,9 @@ class SCLocalization
     void 
     boxFilter (PointCPtr &in_cloud_ptr,
                PointCPtr &out_cloud_ptr,
-               double x_axis_min, double x_axis_max,
-               double y_axis_min, double y_axis_max,
-               double z_axis_min, double z_axis_max);
+               float x_axis_min, float x_axis_max,
+               float y_axis_min, float y_axis_max,
+               float z_axis_min, float z_axis_max);
 
     /** \brief Add 
       *

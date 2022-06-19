@@ -22,6 +22,10 @@
   <param name="/filtered_points" type="int" value="0" />
 
 
+  <arg name="dataset"/>
+  <arg name="sequence"/>
+  <arg name="filter_name"/>
+
   <arg name="enable_gps" default="false" />
   <arg name="enable_imu_acc" default="false" />
   <arg name="enable_imu_ori" default="false" />
@@ -161,6 +165,26 @@
   <!-- node to transform coordinate frame of the recorded bagfile -->
   <node pkg="selection_criteria" type="transform_frame" name="transform_odom_frame" output="screen"/>
 
+  <!-- node to record odometry to a bagfile -->
+  <!-- <node pkg="selection_criteria" type="record_odometry" name="record_odometry" output="screen"/> -->
+
+
+  <!-- <arg name="bag_name" default="$(arg dataset)_$(arg sequence)_$(arg filter_name)" /> -->
+  <arg name="bag_name" default="$(arg dataset)_$(arg sequence)" />
+  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -o /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/trajectories/$(arg bag_name) /odom_transformed"/>   
+<!-- 
+	<arg name="path_save"   default="/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06"/>
+	<arg name="topic"  	default="/odom_transformed"/>
+	<arg name="file_name"  	default="odom"/>
+
+	<group ns="record">
+		<param name="path_save" type="str" value="$(arg path_save)"	/>
+		<param name="topic" 	type="str" value="$(arg topic)"		/>
+		<param name="file_name" type="str" value="$(arg file_name)"	/>
+		<node name="record_ros" pkg="record_ros" type="record_ros" output="screen" respawn="true"/>
+	</group> -->
+
+  <!-- Check this out to view estimation errors -->
   <node pkg="hdl_localization" type="plot_status.py" name="plot_estimation_errors" if="$(arg plot_estimation_errors)" />
 
 

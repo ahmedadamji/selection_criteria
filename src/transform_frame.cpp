@@ -72,27 +72,6 @@ try {
 
     // Publishing Odometry
     odom_pub.publish(odom_out);
-
-    // Recording Odometry to ROSBAG for Evaluation
-
-    string dataset;
-    ros::param::get("/dataset", dataset);
-
-    string sequence;
-    ros::param::get("/sequence", sequence);
-
-    string filter_name;
-    ros::param::get("/filter_name", filter_name);
-
-    string file_name = dataset + "_" + sequence + "_" + filter_name + ".bag";
-
-    string file_path = "/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + dataset + "/" + sequence + "/results/trajectories/" + file_name;
-
-    rosbag::Bag bag;
-    bag.open(file_path, rosbag::bagmode::Write);
-    bag.write("odom", ros::Time::now(), odom_out);
-    bag.close();
-
     
 } catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());

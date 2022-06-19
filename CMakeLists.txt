@@ -254,6 +254,7 @@ add_executable(correct_odometry_kitti src/correct_odometry_kitti.cpp)
 add_executable(remove_floor src/remove_floor.cpp)
 add_executable(error src/error.cpp)
 add_executable(transform_frame src/transform_frame.cpp)
+add_executable(record_odometry src/record_odometry.cpp)
 
 
 target_link_libraries(selection_criteria_mapping ${catkin_LIBRARIES})
@@ -262,4 +263,5 @@ target_link_libraries(correct_odometry_kitti ${catkin_LIBRARIES})
 target_link_libraries(remove_floor ${catkin_LIBRARIES})
 target_link_libraries(error ${catkin_LIBRARIES})
 target_link_libraries(transform_frame ${catkin_LIBRARIES})
+target_link_libraries(record_odometry ${catkin_LIBRARIES})
 

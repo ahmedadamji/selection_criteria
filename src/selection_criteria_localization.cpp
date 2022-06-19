@@ -77,9 +77,9 @@ bool
 SCLocalization::cylinderCondition(double x,
                                   double y,
                                   double z,
-                                  double x_axis_origin = 0,
-                                  double radius = 3,
-                                  double height = 100)
+                                  float x_axis_origin = 0,
+                                  float radius = 3,
+                                  float height = 100)
 {
   // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
   // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
@@ -105,8 +105,8 @@ bool
 SCLocalization::radiusCondition(double x,
                                 double y,
                                 double z,
-                                double min_radius = 0,
-                                double max_radius = 250)
+                                float min_radius = 0,
+                                float max_radius = 250)
 {
 
   if ((( pow(x, 2) + pow(y, 2) ) >= pow(min_radius, 2)) && (( pow(x, 2) + pow(y, 2) ) <= pow(max_radius, 2))) // within the radius limits
@@ -125,10 +125,10 @@ bool
 SCLocalization::ringCondition(double x,
                               double y,
                               double z,
-                              double x_axis_origin = 0,
-                              double ring_min_radius = 3,
-                              double ring_max_radius = 50,
-                              double ring_height = 100)
+                              float x_axis_origin = 0,
+                              float ring_min_radius = 3,
+                              float ring_max_radius = 50,
+                              float ring_height = 100)
 {
 
   // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
@@ -291,9 +291,9 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 void
 SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
                                 PointCPtr &out_cloud_ptr,
-                                double x_axis_origin = 0,
-                                double radius = 3,
-                                double height = 100)
+                                float x_axis_origin = 0,
+                                float radius = 3,
+                                float height = 100)
 {
   // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
   // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
@@ -329,8 +329,8 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
                               PointCPtr &out_cloud_ptr,
-                              double min_radius = 0,
-                              double max_radius = 250)
+                              float min_radius = 0,
+                              float max_radius = 250)
 {
 
   out_cloud_ptr->points.clear();
@@ -361,10 +361,10 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
                                 PointCPtr &out_cloud_ptr,
-                                double x_axis_origin = 0,
-                                double ring_min_radius = 3,
-                                double ring_max_radius = 50,
-                                double ring_height = 100)
+                                float x_axis_origin = 0,
+                                float ring_min_radius = 3,
+                                float ring_max_radius = 50,
+                                float ring_height = 100)
 {
   // This ring filter will remove points in the inner cylinder and retain points within the outter cylinder as this combines certain properties of the cylinder and radius filters
   out_cloud_ptr->points.clear();
@@ -400,9 +400,9 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
                           PointCPtr &out_cloud_ptr,
-                          double x_axis_min = -2.5, double x_axis_max = 0,
-                          double y_axis_min = -20, double y_axis_max = 25,
-                          double z_axis_min = -20, double z_axis_max = 25)
+                          float x_axis_min = -2.5, float x_axis_max = 0,
+                          float y_axis_min = -20, float y_axis_max = 25,
+                          float z_axis_min = -20, float z_axis_max = 25)
 {
   out_cloud_ptr->points.clear();
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
@@ -457,7 +457,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   //pcl::fromROSMsg(*cloud_msg2, *cloud2);
   //////////////////////////////////////////////////
   // add both clouds
-  Filter(cloud1f, cloud_all); //removed suspected unneccesary points
+  //Filter(cloud1f, cloud_all); //removed suspected unneccesary points
 
   // Floor Removal Tests --> Try these with and without removing floor
   // Filter(cloud1f, cloud_all); //removed suspected unneccesary points
@@ -495,13 +495,12 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   // radiusFilter(cloud1f, cloud_all, 4, 50); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(cloud1f, cloud_all, 6, 50); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(cloud1f, cloud_all, 8, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 10, 50); //removed suspected unneccesary points in form of radius filter
+  radiusFilter(cloud1f, cloud_all, 10, 50); //removed suspected unneccesary points in form of radius filter
 
   // To test outer radius of points required to be retained
   // radiusFilter(cloud1f, cloud_all, 0, 40); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(cloud1f, cloud_all, 0, 30); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(cloud1f, cloud_all, 0, 20); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 0, 10); //removed suspected unneccesary points in form of radius filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 

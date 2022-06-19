@@ -96,6 +96,9 @@
   <build_depend>geometry_msgs</build_depend>
   <exec_depend>geometry_msgs</exec_depend>
   
+  <!-- <build_depend>bag_recorder</build_depend>
+  <build_export_depend>bag_recorder</build_export_depend>
+  <exec_depend>bag_recorder</exec_depend> -->
  
 
   <!-- The export tag contains other, unspecified, tags -->
