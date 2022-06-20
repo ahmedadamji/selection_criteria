@@ -22,9 +22,9 @@
   <param name="/filtered_points" type="int" value="0" />
 
 
-  <arg name="dataset"/>
-  <arg name="sequence"/>
-  <arg name="filter_name"/>
+  <arg name="dataset" default="KITTI" />
+  <arg name="sequence" default="06" />
+  <arg name="filter_name" default="" />
 
   <arg name="enable_gps" default="false" />
   <arg name="enable_imu_acc" default="false" />

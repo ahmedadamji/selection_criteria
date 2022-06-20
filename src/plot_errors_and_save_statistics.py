@@ -72,8 +72,8 @@ ListOrArray = typing.Union[typing.Sequence[float], np.ndarray]
 est_file_name = sys.argv[1]
 
 print("loading trajectories")
-traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/06_gt_tum")
-traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/" + est_file_name + ".tum")
+traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/tum/06_gt_tum")
+traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/tum/" + est_file_name + ".tum")
 
 print("registering and aligning trajectories")
 traj_ref, traj_est = sync.associate_trajectories(traj_ref, traj_est)
@@ -197,12 +197,12 @@ ylabel = "$Pitch$ (deg)"
 c = np.tan(x)
 ax.plot(x, rpy_diff_pitch[1:], label = 'APE (deg)', alpha = 1.0, color='grey')
 ax.plot(x, [rmse_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'rmse', color='purple')
-ax.plot(x, [max_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'max', color='red')
-ax.plot(x, [min_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'min', color='green')
-ax.plot(x, [median_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'median', color='yellow')
+# ax.plot(x, [max_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'max', color='yellow')
+# ax.plot(x, [min_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'min', color='blue')
+ax.plot(x, [median_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'median', color='red')
 # ax.plot(x, [sse_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'sse')
-ax.plot(x, [mean_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'mean', color='blue')
-ax.add_patch(Rectangle((x.min(), mean_pitch-std_pitch), x.max(), mean_pitch+std_pitch,label='std'))
+ax.plot(x, [mean_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'mean', color='green')
+ax.add_patch(Rectangle((x.min(), mean_pitch-std_pitch), x.max(), mean_pitch+std_pitch,label='std', color='lightblue'))
 ax.set_xlabel(xlabel)
 ax.set_ylabel(ylabel)
 ax.legend(frameon=True, loc='upper right')

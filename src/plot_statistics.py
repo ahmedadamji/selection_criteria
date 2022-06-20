@@ -31,12 +31,46 @@ from matplotlib.transforms import Affine2D
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 
+# Reference: https://github.com/superjax/plotWindow
+from plotWindow.plotWindow import plotWindow
+
+
 
 
 number_of_parameters = len(sys.argv)-1
+
+
 # This loop itterates through the statistics of each of the files provided in the arguments list
 # This can be used to save the metrics for each in an array that can be used to plot
 # Name of the plot can be the metric and legend of the plot can be the parameter used
+
+#  Declaring arrays to plot
+
+legend_list = [None] * number_of_parameters
+legend_index = [0] * number_of_parameters
+
+for i in range(len(legend_index)):
+    legend_index[i] = i
+
+std_trans_list = [0.0] * number_of_parameters
+rmse_trans_list = [0.0] * number_of_parameters
+max_trans_list = [0.0] * number_of_parameters
+min_trans_list = [0.0] * number_of_parameters
+median_trans_list = [0.0] * number_of_parameters
+sse_trans_list = [0.0] * number_of_parameters
+mean_trans_list = [0.0] * number_of_parameters
+
+
+std_rot_list = [0.0] * number_of_parameters
+rmse_rot_list = [0.0] * number_of_parameters
+max_rot_list = [0.0] * number_of_parameters
+min_rot_list = [0.0] * number_of_parameters
+median_rot_list = [0.0] * number_of_parameters
+sse_rot_list = [0.0] * number_of_parameters
+mean_rot_list = [0.0] * number_of_parameters
+
+
+
 for parameter_idx in range(number_of_parameters):
     est_file_name = sys.argv[parameter_idx+1]
     # print(est_file_name)
@@ -68,6 +102,7 @@ for parameter_idx in range(number_of_parameters):
     keys_list = ['title', 'std', 'rmse', 'max', 'min', 'median', 'sse', 'mean']
 
 
+
     with open(str(est_file_name + ".txt")) as f:
         lines = f.readlines()
         i = 0
@@ -89,7 +124,98 @@ for parameter_idx in range(number_of_parameters):
                     rotation[a_key] = float(text[0].strip('\n'))
             i = i + 1
 
-    print(translation)
-    print(rotation)
+    # print(translation)
+    # print(rotation)
 
 
+    legend_list[parameter_idx] = est_file_name
+
+    std_trans_list[parameter_idx] = translation["std"]
+    rmse_trans_list[parameter_idx] = translation["rmse"]
+    max_trans_list[parameter_idx] = translation["max"]
+    min_trans_list[parameter_idx] = translation["min"]
+    median_trans_list[parameter_idx] = translation["median"]
+    sse_trans_list[parameter_idx] = translation["sse"]
+    mean_trans_list[parameter_idx] = translation["mean"]
+
+    std_rot_list[parameter_idx] = rotation["std"]
+    rmse_rot_list[parameter_idx] = rotation["rmse"]
+    max_rot_list[parameter_idx] = rotation["max"]
+    min_rot_list[parameter_idx] = rotation["min"]
+    median_rot_list[parameter_idx] = rotation["median"]
+    sse_rot_list[parameter_idx] = rotation["sse"]
+    mean_rot_list[parameter_idx] = rotation["mean"]
+
+
+# print(legend_list)
+
+# Creating a plot window to compare data for translation
+pw_trans = plotWindow()
+
+pw_trans.MainWindow.setWindowTitle("Translation Statistics")
+
+fig = plt.figure()
+plt.plot(legend_index, std_trans_list, '--')
+pw_trans.addPlot("std", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, rmse_trans_list, '--')
+pw_trans.addPlot("rmse", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, max_trans_list, '--')
+pw_trans.addPlot("max", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, min_trans_list, '--')
+pw_trans.addPlot("min", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, median_trans_list, '--')
+pw_trans.addPlot("median", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, sse_trans_list, '--')
+pw_trans.addPlot("sse", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, mean_trans_list, '--')
+pw_trans.addPlot("mean", fig)
+
+pw_trans.show()
+
+
+# Creating a plot window to compare data for rotation
+pw_rot = plotWindow()
+
+pw_rot.MainWindow.setWindowTitle("Rotation Statistics")
+
+fig = plt.figure()
+plt.plot(legend_index, std_rot_list, '--')
+pw_rot.addPlot("std", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, rmse_rot_list, '--')
+pw_rot.addPlot("rmse", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, max_rot_list, '--')
+pw_rot.addPlot("max", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, min_rot_list, '--')
+pw_rot.addPlot("min", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, median_rot_list, '--')
+pw_rot.addPlot("median", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, sse_rot_list, '--')
+pw_rot.addPlot("sse", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, mean_rot_list, '--')
+pw_rot.addPlot("mean", fig)
+
+pw_rot.show()
