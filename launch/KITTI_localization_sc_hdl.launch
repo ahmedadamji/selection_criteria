@@ -66,7 +66,7 @@
       <param name="base_link_frame" value="base_link" />
       <!-- <param name="base_link_frame" value="velo_link" /> -->
       <!-- This is similar to my radius filter so makes sense to comment, and describe why in my thesis -->
-      <param name="use_distance_filter" value="true" />
+      <param name="use_distance_filter" value="false" />
       <param name="distance_near_thresh" value="0.1" />
       <param name="distance_far_thresh" value="100.0" />
       <param name="downsample_method" value="VOXELGRID" />
@@ -94,7 +94,10 @@
   <!-- <node pkg="selection_criteria" type="remove_floor" name="remove_floor" output="screen"/> -->
 
   <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen"/>
+  <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen">
+    <remap from="/points_input" to="/filtered_points" />
+  </node>
+
 
     <!-- globalmap_server_nodelet -->
     <!-- <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
@@ -102,7 +105,7 @@
       <param name="convert_utm_to_local" value="true" />
       <param name="downsample_resolution" value="0.1" />
     </node> -->
-    
+
 
   <!-- hdl_localization_nodelet -->
   <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)">

@@ -58,7 +58,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
   // Create a ROS subscriber for the input point cloud
   // sub_ = nh_.subscribe("/filtered_points_without_floor", 3, &SCLocalization::callback, this);
-  sub_ = nh_.subscribe("/filtered_points", 3, &SCLocalization::callback, this);
+  sub_ = nh_.subscribe("/points_input", 3, &SCLocalization::callback, this);
   
   // Create a ROS subscriber for computed odometry
   // odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
@@ -238,7 +238,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    // out_cloud_ptr->points.push_back(*it);
+    out_cloud_ptr->points.push_back(*it);
 
 
     // This is a floor condition where points above the floor are selected based on height, this has not been yet implemented in a function or a filter.
@@ -259,10 +259,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     //   out_cloud_ptr->points.push_back(*it);
     // }
 
-    if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50) && (g_z >= 0.05))
-    {
-      out_cloud_ptr->points.push_back(*it);
-    }
+    // if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50) && (g_z >= 0.05))
+    // {
+    //   out_cloud_ptr->points.push_back(*it);
+    // }
 
     // if (ringCondition(x, y, z))
     // {
@@ -273,7 +273,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 
   }
 
-  g_filter_name = "cyl_0_4_100_rad_0_50_floor";
+  g_filter_name = "vanilla";
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
@@ -361,10 +361,10 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
                                 PointCPtr &out_cloud_ptr,
-                                float x_axis_origin = 0,
-                                float ring_min_radius = 3,
-                                float ring_max_radius = 50,
-                                float ring_height = 100)
+                                float x_axis_origin = 15,
+                                float ring_min_radius = 2,
+                                float ring_max_radius = 40,
+                                float ring_height = 50)
 {
   // This ring filter will remove points in the inner cylinder and retain points within the outter cylinder as this combines certain properties of the cylinder and radius filters
   out_cloud_ptr->points.clear();
@@ -372,15 +372,18 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-    if  ((!((((it->x <= (- x_axis_origin))) && ((it->x >= (x_axis_origin))) && // within the X limits
-        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_min_radius,2))))) && // within the min radius limits
-        ((( (it->x >= (- ring_height)) && (it->x <= (ring_height))) && // within the X limits
-        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
+    if ((!(( it->x >= (-x_axis_origin - ring_height) && it->x <= (x_axis_origin + ring_height)) && // within the X limits
+        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
+        ((( it->x >= (-ring_height) && it->x <= (ring_height)) && // within the X limits
+        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_max_radius,2)))) // within the max radius limits
+       )
     {
       out_cloud_ptr->points.push_back(*it);
     }
 
   }
+  
+
 
 
   g_filter_name = string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
@@ -407,8 +410,9 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
   out_cloud_ptr->points.clear();
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    if ( it->z >= z_axis_min && it->z <= z_axis_max && // within the Z limits
-         it->x >= x_axis_min && it->x <= x_axis_max && it->y >= y_axis_min && it->y <= y_axis_max ) // Not within the central limits
+    if (!( ((it->z >= z_axis_min) && (it->z <= z_axis_max)) &&
+           ((it->x >= x_axis_min) && (it->x <= x_axis_max)) &&
+           ((it->y >= y_axis_min) && (it->y <= y_axis_max)))) // Not within the box limits
     {
        out_cloud_ptr->points.push_back(*it);
     } 
@@ -504,7 +508,11 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
-  ringFilter(cloud1f, cloud_all, 15, 2, 40, 50); //removed suspected unneccesary points in form of ring filter
+  // ringFilter(cloud1f, cloud_all, 15, 2, 40, 50); //removed suspected unneccesary points in form of ring filter
+
+
+  // Box Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
+  boxFilter(cloud1f, cloud_all, -30, 30, -3, 3, -100, 100); //removed suspected unneccesary points in form of ring filter
   
 
   // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)

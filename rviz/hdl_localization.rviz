@@ -8,8 +8,7 @@ Panels:
         - /Status1
         - /MarkerArray1/Namespaces1
         - /Map1/Status1
-        - /Axes1/Status1
-      Splitter Ratio: 0.5970588326454163
+      Splitter Ratio: 0.6015228629112244
     Tree Height: 545
   - Class: rviz/Selection
     Name: Selection
@@ -114,18 +113,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          base_link:
-            imu_link:
-              camera_color_left:
-                {}
-              camera_color_right:
-                {}
-              camera_gray_left:
-                {}
-              camera_gray_right:
-                {}
-              velo_link:
-                {}
+          {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -475,25 +463,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 69.56134033203125
+      Distance: 110.42562866210938
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -22.288894653320312
-        Y: -15.18618392944336
-        Z: 0.00021127736545167863
+        X: 14.960269927978516
+        Y: 8.841804504394531
+        Z: -7.972980529302731e-5
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.37520238757133484
+      Pitch: 0.9997977018356323
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.456645965576172
+      Yaw: 3.201695203781128
     Saved: ~
 Window Geometry:
   Displays:
