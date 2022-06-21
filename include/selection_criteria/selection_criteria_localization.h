@@ -201,14 +201,14 @@ class SCLocalization
     void 
     updateROSParams ();
 
-    /** \brief Compute Statistics 
+    /** \brief Compute FilteredPointsData 
       *
-      * Computes statistics of the points filtered from chosen criteria and displays and stores them to a text file
+      * Computes FilteredPointsData of the points filtered from chosen criteria and displays and stores them to a text file
       * 
-      * \input[in] file_name the name of the file to store the statistics to
+      * \input[in] file_name the name of the file to store the FilteredPointsData to
       */
     void 
-    computeStatistics (string file_name);
+    computeFilteredPointsData (string file_name);
 
     /** \brief Filter 
       *

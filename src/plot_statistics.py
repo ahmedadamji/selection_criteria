@@ -70,6 +70,13 @@ sse_rot_list = [0.0] * number_of_parameters
 mean_rot_list = [0.0] * number_of_parameters
 
 
+total_input_points_list = [0.0] * number_of_parameters
+total_output_points_list = [0.0] * number_of_parameters
+total_filtered_points_list = [0.0] * number_of_parameters
+average_input_points_list = [0.0] * number_of_parameters
+average_output_points_list = [0.0] * number_of_parameters
+average_filtered_points_list = [0.0] * number_of_parameters
+
 
 for parameter_idx in range(number_of_parameters):
     est_file_name = sys.argv[parameter_idx+1]
@@ -98,12 +105,22 @@ for parameter_idx in range(number_of_parameters):
         "mean": 0.0
     }
 
+    points = {
+        "total_input_points": 0.0,
+        "total_output_points": 0.0,
+        "total_filtered_points": 0.0,
+        "average_input_points": 0.0,
+        "average_output_points": 0.0,
+        "average_filtered_points": 0.0,
+    }
+
     # print(thisdict)
     keys_list = ['title', 'std', 'rmse', 'max', 'min', 'median', 'sse', 'mean']
+    points_keys_list = ['total_input_points', 'total_output_points', 'total_filtered_points', 'average_input_points', 'average_output_points', 'average_filtered_points']
 
 
 
-    with open(str(est_file_name + ".txt")) as f:
+    with open(str(est_file_name + "_statistics.txt")) as f:
         lines = f.readlines()
         i = 0
         for line in lines:
@@ -124,8 +141,27 @@ for parameter_idx in range(number_of_parameters):
                     rotation[a_key] = float(text[0].strip('\n'))
             i = i + 1
 
+    with open("points/"+str(est_file_name + ".txt")) as f:
+        lines = f.readlines()
+        i = 0
+        for line in lines:
+            # split by space and converting
+            # string to list and
+            sentence = list(line.split(" "))
+            # length of sentence
+            length = len(sentence)
+            # returning last element in sentence
+            dictionary = " ".join(sentence[:length-1])
+            num_points = sentence[length-1]
+            # print(dictionary)
+            # print(points)
+            a_key = points_keys_list[i]
+            points[a_key] = float(num_points.strip('\n'))
+            i = i + 1
+
     # print(translation)
     # print(rotation)
+    # print(points)
 
 
     legend_list[parameter_idx] = est_file_name
@@ -145,6 +181,13 @@ for parameter_idx in range(number_of_parameters):
     median_rot_list[parameter_idx] = rotation["median"]
     sse_rot_list[parameter_idx] = rotation["sse"]
     mean_rot_list[parameter_idx] = rotation["mean"]
+
+    total_input_points_list[parameter_idx] = points["total_input_points"]
+    total_output_points_list[parameter_idx] = points["total_output_points"]
+    total_filtered_points_list[parameter_idx] = points["total_filtered_points"]
+    average_input_points_list[parameter_idx] = points["average_input_points"]
+    average_output_points_list[parameter_idx] = points["average_output_points"]
+    average_filtered_points_list[parameter_idx] = points["average_filtered_points"]
 
 
 # print(legend_list)
@@ -182,6 +225,22 @@ fig = plt.figure()
 plt.plot(legend_index, mean_trans_list, '--')
 pw_trans.addPlot("mean", fig)
 
+fig = plt.figure()
+plt.plot(legend_index, total_input_points_list, '--')
+pw_trans.addPlot("total_input_points", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, total_filtered_points_list, '--')
+pw_trans.addPlot("total_filtered_points", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, average_input_points_list, '--')
+pw_trans.addPlot("average_input_points", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, average_filtered_points_list, '--')
+pw_trans.addPlot("average_filtered_points", fig)
+
 pw_trans.show()
 
 
@@ -217,5 +276,21 @@ pw_rot.addPlot("sse", fig)
 fig = plt.figure()
 plt.plot(legend_index, mean_rot_list, '--')
 pw_rot.addPlot("mean", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, total_input_points_list, '--')
+pw_rot.addPlot("total_input_points", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, total_filtered_points_list, '--')
+pw_rot.addPlot("total_filtered_points", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, average_input_points_list, '--')
+pw_rot.addPlot("average_input_points", fig)
+
+fig = plt.figure()
+plt.plot(legend_index, average_filtered_points_list, '--')
+pw_rot.addPlot("average_filtered_points", fig)
 
 pw_rot.show()

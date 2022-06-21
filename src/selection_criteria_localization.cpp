@@ -175,7 +175,7 @@ SCLocalization::updateROSParams()
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCLocalization::computeStatistics(string file_name)
+SCLocalization::computeFilteredPointsData(string file_name)
 {
 
   double g_average_input_points = ((1.0 * g_total_input_points)/(1.0 * g_total_number_of_frames));
@@ -195,8 +195,8 @@ SCLocalization::computeStatistics(string file_name)
   cout << "Average number of filtered points per frame: " << endl;
   cout << g_average_filtered_points << endl;
 
-  // defining array of statistics
-  string statistics[6] = { "Total number of input points: " + to_string(g_total_input_points),
+  // defining array of filtered points data
+  string filtered_points_data[6] = { "Total number of input points: " + to_string(g_total_input_points),
                             "Total number of output points: " + to_string(g_total_output_points),
                             "Total number of filtered points: " + to_string(g_total_filtered_points),
                             "Average number of input points per frame: " + to_string(g_average_input_points),
@@ -204,19 +204,19 @@ SCLocalization::computeStatistics(string file_name)
                             "Average number of filtered points per frame: " + to_string(g_average_filtered_points) };
 
   // get array size
-  int arraySize = *(&statistics + 1) - statistics;
+  int arraySize = *(&filtered_points_data + 1) - filtered_points_data;
   //exception handling
   try {
-    cout << "\nSaving Statistics to file " + file_name;
+    cout << "\nSaving Filtered Points Data to file " + file_name;
     // Opening File
-    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/" + file_name, ofstream::out);
+    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/trajectories/statistics/points/" + file_name, ofstream::out);
     
     // If file opened write contents
     if (fw.is_open())
     {
       //store array contents to text file
       for (int i = 0; i < arraySize; i++) {
-        fw << statistics[i] << "\n";
+        fw << filtered_points_data[i] << "\n";
       }
       fw.close();
     }
@@ -278,7 +278,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
   string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeStatistics(file_name);
+  computeFilteredPointsData(file_name);
 
 
 }
@@ -305,7 +305,7 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-    if (!(( it->x >= (-x_axis_origin - height) && it->x <= (x_axis_origin + height)) && // within the Z limits
+    if (!(( it->x >= (-x_axis_origin - height) && it->x <= (x_axis_origin + height)) && // within the X limits
          (( pow(it->z,2) + pow(it->y,2) ) <= pow(radius,2)))) // within the radius limits
     {
       out_cloud_ptr->points.push_back(*it);
@@ -319,7 +319,7 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
   string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeStatistics(file_name);
+  computeFilteredPointsData(file_name);
 
 
 }
@@ -350,7 +350,7 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
   string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeStatistics(file_name);
+  computeFilteredPointsData(file_name);
 
 
 }
@@ -372,9 +372,9 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-    if  ((!(( it->x >= (- x_axis_origin - ring_height) && it->x <= (x_axis_origin + ring_height)) && // within the Z limits
-        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
-        ((( it->x >= (- x_axis_origin - ring_height) && it->x <= (x_axis_origin + ring_height)) && // within the Z limits
+    if  ((!((((it->x <= (- x_axis_origin))) && ((it->x >= (x_axis_origin))) && // within the X limits
+        (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_min_radius,2))))) && // within the min radius limits
+        ((( (it->x >= (- ring_height)) && (it->x <= (ring_height))) && // within the X limits
         (( pow(it->z,2) + pow(it->y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
     {
       out_cloud_ptr->points.push_back(*it);
@@ -390,7 +390,7 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
   string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeStatistics(file_name);
+  computeFilteredPointsData(file_name);
 
 
 }
@@ -423,7 +423,7 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
   string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeStatistics(file_name);
+  computeFilteredPointsData(file_name);
 
 
 }
@@ -467,7 +467,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
 
   // Cylinder Filters
   // To test best thickness of forward points to be eliminated
-  cylinderFilter(cloud1f, cloud_all, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(cloud1f, cloud_all, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(cloud1f, cloud_all, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(cloud1f, cloud_all, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter
 
@@ -504,7 +504,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
-  // ringFilter(cloud1f, cloud_all, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
+  ringFilter(cloud1f, cloud_all, 15, 2, 40, 50); //removed suspected unneccesary points in form of ring filter
   
 
   // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)
