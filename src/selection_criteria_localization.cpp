@@ -164,7 +164,7 @@ SCLocalization::floorFilter(bool filter_floor = false)
   // Investigate if points far away or close from the floor are more useful to filter and conclude why  if  (filter) {
 
   float retained_radius = 15;
-  float floor_height = 0.05;
+  float floor_height = 0.005;
 
   if(filter_floor == true)
   {
@@ -217,7 +217,7 @@ SCLocalization::updateROSParams()
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCLocalization::computeFilteredPointsData(string file_name)
+SCLocalization::computeFilteredPointsData()
 {
 
   double g_average_input_points = ((1.0 * g_total_input_points)/(1.0 * g_total_number_of_frames));
@@ -247,11 +247,23 @@ SCLocalization::computeFilteredPointsData(string file_name)
 
   // get array size
   int arraySize = *(&filtered_points_data + 1) - filtered_points_data;
+
+
+  g_file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name;
+
+  if (g_filter_floor)
+  {
+    g_file_name = g_file_name + "_ff";
+  }
+
+  g_file_name = g_file_name + ".txt";
+
+
   //exception handling
   try {
-    cout << "\nSaving Filtered Points Data to file " + file_name;
+    cout << "\nSaving Filtered Points Data to file " + g_file_name;
     // Opening File
-    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/trajectories/statistics/points/" + file_name, ofstream::out);
+    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/trajectories/statistics/points/" + g_file_name, ofstream::out);
     
     // If file opened write contents
     if (fw.is_open())
@@ -317,8 +329,9 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
-  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeFilteredPointsData(file_name);
+
+
+  computeFilteredPointsData();
 
 
 }
@@ -360,13 +373,18 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-
-  g_filter_name = string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
+  }
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
-  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeFilteredPointsData(file_name);
+  computeFilteredPointsData();
 
 
 }
@@ -399,12 +417,19 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-  g_filter_name = string("rad") + string("_") + to_string(min_radius) + string("_") + to_string(max_radius);
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("rad") + string("_") + to_string(min_radius) + string("_") + to_string(max_radius);
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("rad") + string("_") + to_string(min_radius) + string("_") + to_string(max_radius);
+  }
+
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
-  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeFilteredPointsData(file_name);
+  computeFilteredPointsData();
 
 
 }
@@ -449,15 +474,21 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
   
 
 
-
-  g_filter_name = string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
-                  + string("_") + to_string(ring_max_radius) + string("_") + to_string(ring_height);
-
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
+                    + string("_") + to_string(ring_max_radius) + string("_") + to_string(ring_height);    
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
+                    + string("_") + to_string(ring_max_radius) + string("_") + to_string(ring_height);    
+  }
+  
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
-  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeFilteredPointsData(file_name);
+  computeFilteredPointsData();
 
 
 }
@@ -492,16 +523,29 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
 
   }
 
-  g_filter_name = string("box") + string("_")
-                       + to_string(x_axis_min) + string("_") + to_string(x_axis_max)
-                       + to_string(y_axis_min) + string("_") + to_string(y_axis_max)
-                       + to_string(z_axis_min) + string("_") + to_string(z_axis_max);
+
+
+  if (g_filter_name.empty())
+  {
+
+    g_filter_name = string("box") + string("_")
+                        + to_string(x_axis_min) + string("_") + to_string(x_axis_max)
+                        + to_string(y_axis_min) + string("_") + to_string(y_axis_max)
+                        + to_string(z_axis_min) + string("_") + to_string(z_axis_max);
+  
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("box") + string("_")
+                        + to_string(x_axis_min) + string("_") + to_string(x_axis_max)
+                        + to_string(y_axis_min) + string("_") + to_string(y_axis_max)
+                        + to_string(z_axis_min) + string("_") + to_string(z_axis_max);
+  }
 
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
-  string file_name = g_dataset + "_" + g_sequence + "_" + g_filter_name + ".txt";
-  computeFilteredPointsData(file_name);
+  computeFilteredPointsData();
 
 
 }

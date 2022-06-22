@@ -216,10 +216,9 @@ class SCLocalization
       *
       * Computes FilteredPointsData of the points filtered from chosen criteria and displays and stores them to a text file
       * 
-      * \input[in] file_name the name of the file to store the FilteredPointsData to
       */
     void 
-    computeFilteredPointsData (string file_name);
+    computeFilteredPointsData ();
 
     /** \brief Filter 
       *
@@ -414,8 +413,11 @@ class SCLocalization
     /** \brief Name of Evaluation Sequence. */
     string g_sequence;
 
-    /** \brief Name of used Filer. */
-    string g_filter_name;
+    /** \brief Name of used Filter. */
+    string g_filter_name = "";
+
+    /** \brief Name of File to save statistics to. */
+    string g_file_name;
 
     /** \brief Bool to determine weather to filter the floor. */
     bool g_filter_floor = true;
