@@ -193,6 +193,17 @@ class SCLocalization
                   float ring_max_radius,
                   float ring_height);
 
+    /** \brief Floor Filter Condition 
+      *
+      * used for filtering points that lie on the floor based on a simple height threshold
+      * 
+      * \input[in] filter_floor: a bool indicating weather the floor should be filtered
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    floorFilter (bool filter_floor);
+
     /** \brief Update ROS Params
       *
       * Updates the values stored in ROS parameters to the appropriate values
@@ -352,6 +363,7 @@ class SCLocalization
 
     /** \brief ROS subscribers. */
     ros::Subscriber sub_;
+    ros::Subscriber floor_sub_;
     ros::Subscriber odom_sub_;
     
     /** \brief Point Cloud (input) pointer. */
@@ -404,6 +416,9 @@ class SCLocalization
 
     /** \brief Name of used Filer. */
     string g_filter_name;
+
+    /** \brief Bool to determine weather to filter the floor. */
+    bool g_filter_floor = true;
 
 
 
