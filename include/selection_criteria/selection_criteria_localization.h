@@ -220,6 +220,15 @@ class SCLocalization
     void 
     computeFilteredPointsData ();
 
+    /** \brief Transform Point Coordinates 
+      *
+      * Transforms point coordinates of the robot and feature from the lidar to the world coordinate frame
+      * 
+      */
+    void 
+    transformPointCoordinates ();
+
+
     /** \brief Filter 
       *
       * Selection Criteria Filter
@@ -421,6 +430,19 @@ class SCLocalization
 
     /** \brief Bool to determine weather to filter the floor. */
     bool g_filter_floor = true;
+
+
+    /** \brief Robot coordinate in lidar frame. */
+    geometry_msgs::PointStamped g_robot_lidar_frame_coordinate;
+
+    /** \brief Robot coordinate in world frame. */
+    geometry_msgs::PointStamped g_robot_world_frame_coordinate;
+
+    /** \brief Current point coordinate in lidar frame. */
+    geometry_msgs::PointStamped g_point_lidar_frame_coordinate;
+
+    /** \brief Current point coordinate in world frame. */
+    geometry_msgs::PointStamped g_point_world_frame_coordinate;
 
 
 

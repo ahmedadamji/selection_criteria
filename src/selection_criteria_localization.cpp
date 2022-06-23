@@ -283,6 +283,52 @@ SCLocalization::computeFilteredPointsData()
 
 }
 ////////////////////////////////////////////////////////////////////////////////
+void
+SCLocalization::transformPointCoordinates()
+{
+  // Transform the point to new frame
+
+  //Make Lidar frame id a global variable that can be adjusted from a yaml file alonside other variables later
+  g_robot_lidar_frame_coordinate.header.frame_id = "velo_link";
+  g_robot_lidar_frame_coordinate.header.stamp = ros::Time (0);
+  g_robot_lidar_frame_coordinate.point.x = 0.0;
+  g_robot_lidar_frame_coordinate.point.y = 0.0;
+  g_robot_lidar_frame_coordinate.point.z = 0.0;
+
+  try
+  {
+    g_listener_.transformPoint ("world", 
+                                g_robot_lidar_frame_coordinate,
+                                g_robot_world_frame_coordinate);
+                                
+  }
+  catch (tf::TransformException& ex)
+  {
+    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  }
+  
+
+  g_point_lidar_frame_coordinate.header.frame_id = "velo_link";
+  g_point_lidar_frame_coordinate.header.stamp = ros::Time (0);
+  g_point_lidar_frame_coordinate.point.x = g_x;
+  g_point_lidar_frame_coordinate.point.y = g_y;
+  g_point_lidar_frame_coordinate.point.z = g_z;
+
+
+  try
+  {
+    g_listener_.transformPoint ("world", 
+                                g_point_lidar_frame_coordinate,
+                                g_point_world_frame_coordinate);
+                                
+  }
+  catch (tf::TransformException& ex)
+  {
+    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 void
 SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
@@ -298,7 +344,9 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     g_z = it->z;
     
     // out_cloud_ptr->points.push_back(*it);
-
+    
+    // Transform the points to new frame
+    transformPointCoordinates();
 
 
     if (floorFilter(g_filter_floor))
@@ -360,6 +408,9 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
+    
+    // Transform the points to new frame
+    transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
@@ -406,6 +457,9 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
+    
+    // Transform the points to new frame
+    transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
@@ -454,6 +508,9 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
+    
+    // Transform the points to new frame
+    transformPointCoordinates();
 
 
 
@@ -509,6 +566,9 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
+    
+    // Transform the points to new frame
+    transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
