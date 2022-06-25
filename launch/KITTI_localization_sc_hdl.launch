@@ -19,7 +19,9 @@
   <param name="/number_of_frames" type="int" value="0" />
   <param name="/total_input_points" type="int" value="0" />
   <param name="/total_output_points" type="int" value="0" />
-  <param name="/filtered_points" type="int" value="0" />
+  <param name="/total_filtered_points" type="int" value="0" />
+  <rosparam param="/previous_robot_world_frame_coordinate">[0.0, 0.0, 0.0]</rosparam>
+
 
 
   <arg name="dataset" default="KITTI" />
@@ -45,10 +47,12 @@
   <!-- <arg name="robot_odom_frame_id" value="map" /> -->
   <arg name="plot_estimation_errors" value="false" />
 
-  <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
-
   <!-- transformation between lidar and base_link -->
   <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 100" />
+
+  <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
+
+
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
@@ -95,7 +99,7 @@
 
   <!-- calling the selection_criteria node to filter out point clouds -->
   <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen">
-    <remap from="/floor_points" to="/floor_detection/floor_filtered_points" />
+    <!-- <remap from="/floor_points" to="/floor_detection/floor_filtered_points" /> -->
     <remap from="/points_input" to="/filtered_points" />
   </node>
 
@@ -159,7 +163,6 @@
 
     <param name="use_global_localization" value="$(arg use_global_localization)" />
 
-    <!-- <param name="points_topic" value="/selected_points" /> -->
   </node>
 
 

@@ -45,7 +45,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
   // Define the publishers
   pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("/selected_points", 3, true);
-  odom_abs_pub = nh.advertise<nav_msgs::Odometry> ("/odom_abs", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
+  // odom_abs_pub = nh.advertise<nav_msgs::Odometry> ("/odom_abs", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
 
 
   // // Create a ROS subscriber for the input point cloud and floor
@@ -68,7 +68,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   
   // Create a ROS subscriber for computed odometry
   // odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
-  odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
+  // odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
 
   // Get name of evaluation dataset and sequence:
   ros::param::get("/dataset", g_dataset);
@@ -204,14 +204,17 @@ SCLocalization::updateROSParams()
   g_total_output_points += g_out_cloud_size;
   ros::param::set("/total_output_points", g_total_output_points);
 
-  ros::param::get("/filtered_points", g_total_filtered_points);
+  ros::param::get("/total_filtered_points", g_total_filtered_points);
   g_total_filtered_points += (g_in_cloud_size - g_out_cloud_size);
-  ros::param::set("/filtered_points", g_total_filtered_points);
+  ros::param::set("/total_filtered_points", g_total_filtered_points);
 
   ros::param::get("/number_of_frames", g_total_number_of_frames);
   g_total_number_of_frames += 1;
   ros::param::set("/number_of_frames", g_total_number_of_frames);
 
+
+  // vector<double> previous_robot_world_frame_coordinate{ g_robot_world_frame_coordinate.point.x, g_robot_world_frame_coordinate.point.y, g_robot_world_frame_coordinate.point.z };
+  // ros::param::set("/previous_robot_world_frame_coordinate", previous_robot_world_frame_coordinate);
 
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -295,17 +298,39 @@ SCLocalization::transformPointCoordinates()
   g_robot_lidar_frame_coordinate.point.y = 0.0;
   g_robot_lidar_frame_coordinate.point.z = 0.0;
 
+
+  
+  geometry_msgs::TransformStamped transformStamped;
+  ros::Duration cache_(5);
+  tf2_ros::Buffer tfBuffer(cache_);
+  // tf2_ros::TransformListener tfListener(tfBuffer);
+  //CHECK IF THIS WORKS OR WILL HAVE TO INCLUDE BUFFER AGAIN SOMEHOW
+
+
   try
   {
-    g_listener_.transformPoint ("world", 
-                                g_robot_lidar_frame_coordinate,
-                                g_robot_world_frame_coordinate);
-                                
+    transformStamped = tfBuffer.lookupTransform("velo_link", "velo_link",ros::Time(0));
+    
+    tf2::doTransform(g_robot_lidar_frame_coordinate, g_robot_world_frame_coordinate, transformStamped);
+      
   }
-  catch (tf::TransformException& ex)
+  catch (tf2::TransformException &ex)
   {
-    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+    ROS_WARN("%s", ex.what());
   }
+
+
+  // try
+  // {
+  //   g_listener_.transformPoint ("map", 
+  //                               g_robot_lidar_frame_coordinate,
+  //                               g_robot_world_frame_coordinate);
+                                
+  // }
+  // catch (tf::TransformException& ex)
+  // {
+  //   ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  // }
   
 
   g_point_lidar_frame_coordinate.header.frame_id = "velo_link";
@@ -314,18 +339,29 @@ SCLocalization::transformPointCoordinates()
   g_point_lidar_frame_coordinate.point.y = g_y;
   g_point_lidar_frame_coordinate.point.z = g_z;
 
-
   try
   {
-    g_listener_.transformPoint ("world", 
-                                g_point_lidar_frame_coordinate,
-                                g_point_world_frame_coordinate);
-                                
+    transformStamped = tfBuffer.lookupTransform("velo_link", "velo_link",ros::Time(0));
+    
+    tf2::doTransform(g_point_lidar_frame_coordinate, g_point_world_frame_coordinate, transformStamped);
+      
   }
-  catch (tf::TransformException& ex)
+  catch (tf2::TransformException &ex)
   {
-    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+    ROS_WARN("%s", ex.what());
   }
+
+  // try
+  // {
+  //   g_listener_.transformPoint ("map", 
+  //                               g_point_lidar_frame_coordinate,
+  //                               g_point_world_frame_coordinate);
+                                
+  // }
+  // catch (tf::TransformException& ex)
+  // {
+  //   ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -342,11 +378,19 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
-    
+
+
     // out_cloud_ptr->points.push_back(*it);
     
+    // UNCOMMENT THIS WHEN IT WORKS
     // Transform the points to new frame
-    transformPointCoordinates();
+    //transformPointCoordinates();
+
+
+    // WILL NEED TO SET THIS UP AGAIN IF IT WORKS PROPERLY
+    // vector<double> previous_robot_world_frame_coordinate;
+    // ros::param::get("/previous_robot_world_frame_coordinate", previous_robot_world_frame_coordinate);
+
 
 
     if (floorFilter(g_filter_floor))
@@ -369,6 +413,8 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
       // }
 
     }
+
+
 
 
   }
@@ -410,7 +456,7 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
     g_z = it->z;
     
     // Transform the points to new frame
-    transformPointCoordinates();
+    //transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
@@ -459,7 +505,7 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
     g_z = it->z;
     
     // Transform the points to new frame
-    transformPointCoordinates();
+    //transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
@@ -510,7 +556,7 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
     g_z = it->z;
     
     // Transform the points to new frame
-    transformPointCoordinates();
+    //transformPointCoordinates();
 
 
 
@@ -568,7 +614,7 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
     g_z = it->z;
     
     // Transform the points to new frame
-    transformPointCoordinates();
+    //transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
@@ -631,15 +677,18 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 // SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg, const sensor_msgs::PointCloud2ConstPtr& floor_cloud_msg)
 {// declare type
   PointCPtr filtered_cloud(new PointC);
-  PointCPtr floor_cloud(new PointC);
-  PointCPtr cloud1(new PointC);
+  // PointCPtr floor_cloud(new PointC);
+  // PointCPtr cloud1(new PointC);
   PointCPtr cloud_out(new PointC);
 
   // These are the two synced clouds we are subscribing to, however both of these are currently same
   pcl::fromROSMsg(*filtered_cloud_msg, *filtered_cloud);
   // pcl::fromROSMsg(*floor_cloud_msg, *floor_cloud);
   //////////////////////////////////////////////////
-  // add both clouds
+
+  // Bool to determine weather to filter the floor.
+  g_filter_floor = true;
+
   Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
 
   // Floor Removal Tests --> Try these with and without removing floor
@@ -762,7 +811,7 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // sensor_msgs::PointCloud cloud_world;
   // try
   // {
-  //   g_listener_.transformPointCloud ("world",
+  //   g_listener_.transformPointCloud ("map",
   //                                     cloud_lidar,
   //                                     cloud_world);
                                 

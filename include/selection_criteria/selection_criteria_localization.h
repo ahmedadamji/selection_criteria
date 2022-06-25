@@ -432,17 +432,25 @@ class SCLocalization
     bool g_filter_floor = true;
 
 
+    /** \brief TF listener definition. */
+    tf::TransformListener g_listener_;
+
     /** \brief Robot coordinate in lidar frame. */
     geometry_msgs::PointStamped g_robot_lidar_frame_coordinate;
 
     /** \brief Robot coordinate in world frame. */
     geometry_msgs::PointStamped g_robot_world_frame_coordinate;
 
+    /** \brief Robot coordinate in world frame in the previous position. */
+    geometry_msgs::PointStamped g_previous_robot_world_frame_coordinate;
+
     /** \brief Current point coordinate in lidar frame. */
     geometry_msgs::PointStamped g_point_lidar_frame_coordinate;
 
     /** \brief Current point coordinate in world frame. */
     geometry_msgs::PointStamped g_point_world_frame_coordinate;
+
+
 
 
 

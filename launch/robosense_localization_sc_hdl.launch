@@ -74,7 +74,7 @@
   <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)">
     <remap from="/velodyne_points" to="/selected_points" />
     <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" />
-    <remap from="/odom" to="$(arg scan_matching_output_topic)"/>
+    <!-- <remap from="/odom" to="$(arg scan_matching_output_topic)"/> -->
     <!-- odometry frame_id -->
     <param name="odom_child_frame_id" value="$(arg odom_child_frame_id)" />
     <!-- imu settings -->
