@@ -163,12 +163,32 @@ SCLocalization::floorFilter(bool filter_floor = false)
   // And is there any reason for me to do this?
   // Investigate if points far away or close from the floor are more useful to filter and conclude why  if  (filter) {
 
+  // float retained_radius = 5;
+  // float retained_radius = 10;
   float retained_radius = 15;
-  float floor_height = 0.005;
+  // float retained_radius = 20;
+  // float retained_radius = 25;
+
+
+  // float min_retained_radius = 2;
+  // float min_retained_radius = 5;
+  // float min_retained_radius = 10;
+  // float max_retained_radius = 10;
+  // float max_retained_radius = 15;
+  // float max_retained_radius = 20;
+  // float max_retained_radius = 25;
+
+
+  //This height needs to be converted from the map frame to the velo frame value
+  // To simplify this for now, base link z value is: 0.93 and velo link z value is 0.802724058277
+  // Therefore z value of 0.005 in velo link is 0.1223 in base link
+  float floor_height = 0.50;
+  //BECAUSE OF THE PLANE BEING INCLINED, CANNOT GET RID OF ALL POINTS BASED ON THIS SIMPLE HEIGHT THRESHOLD SO USING A HIGHER VALUE
+  //Say in the future it can be improved by integrating the usage of floor detection
 
   if(filter_floor == true)
   {
-
+    // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_retained_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_retained_radius,2))))
     if ((g_z >= floor_height)||(( pow(g_x,2) + pow(g_y,2) ) <= pow(retained_radius,2)))
     {
       return true;
@@ -470,10 +490,18 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 
   }
 
+  
+
+  ros::param::get("/filter_name", g_filter_name);
+  
   if (g_filter_name.empty())
   {
     g_filter_name = string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
   }
+  else if (g_filter_name.find("cyl") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }  
   else
   {
     g_filter_name = g_filter_name + string("_") + string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
@@ -517,10 +545,18 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 
   }
 
+  
+
+  ros::param::get("/filter_name", g_filter_name);
+  
   if (g_filter_name.empty())
   {
     g_filter_name = string("rad") + string("_") + to_string(min_radius) + string("_") + to_string(max_radius);
   }
+  else if (g_filter_name.find("rad") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }  
   else
   {
     g_filter_name = g_filter_name + string("_") + string("rad") + string("_") + to_string(min_radius) + string("_") + to_string(max_radius);
@@ -574,14 +610,20 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
     }
 
   }
+
   
 
-
+  ros::param::get("/filter_name", g_filter_name);
+  
   if (g_filter_name.empty())
   {
     g_filter_name = string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
                     + string("_") + to_string(ring_max_radius) + string("_") + to_string(ring_height);    
   }
+  else if (g_filter_name.find("ring") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }  
   else
   {
     g_filter_name = g_filter_name + string("_") + string("ring") + string("_") + to_string(x_axis_origin) + string("_") + to_string(ring_min_radius) 
@@ -629,8 +671,10 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
 
   }
 
+  
 
-
+  ros::param::get("/filter_name", g_filter_name);
+  
   if (g_filter_name.empty())
   {
 
@@ -640,6 +684,10 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
                         + to_string(z_axis_min) + string("_") + to_string(z_axis_max);
   
   }
+  else if (g_filter_name.find("box") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }  
   else
   {
     g_filter_name = g_filter_name + string("_") + string("box") + string("_")
@@ -687,9 +735,12 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   //////////////////////////////////////////////////
 
   // Bool to determine weather to filter the floor.
+  // Need to check how many more points apart from the floor are filtered by my filters
   g_filter_floor = true;
 
-  Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
+
+  // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
   // Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
@@ -719,6 +770,14 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // cylinderFilter(filtered_cloud, cloud_out, 30, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(filtered_cloud, cloud_out, 40, 3, 100); //removed suspected unneccesary points in form of cylinder filter
 
+  // To test best range of forward points to be eliminated
+  // cylinderFilter(filtered_cloud, cloud_out, 80, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, 60, 3, 80); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, 40, 3, 60); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, 20, 3, 40); //removed suspected unneccesary points in form of cylinder filter
+  // The height of the filter here should be based on results here and the test from the range evaluations, so i can add them here
+  // 0 to 20 is already tested previously, use it again here
+
 
   // Radius Filters
   // To test inner radius of points required to be removed
@@ -730,9 +789,10 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // radiusFilter(filtered_cloud, cloud_out, 10, 50); //removed suspected unneccesary points in form of radius filter
 
   // To test outer radius of points required to be retained
+  // USe the inner radius herre based on the best inner radius identified and add some more tests to this
   // radiusFilter(filtered_cloud, cloud_out, 0, 40); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, 0, 30); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 0, 20); //removed suspected unneccesary points in form of radius filter
+  radiusFilter(filtered_cloud, cloud_out, 0, 20); //removed suspected unneccesary points in form of radius filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 

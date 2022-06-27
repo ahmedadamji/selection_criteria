@@ -8,8 +8,8 @@
   <arg name="points_topic" default="/kitti/velo/pointcloud" />
   <!-- input clouds are transformed in odom_child_frame, and then localization is performed in that frame -->
   <!-- this is useful to match the LIDAR and IMU coodinate systems -->
-  <!-- <arg name="odom_child_frame_id" default="base_link" /> -->
-  <arg name="odom_child_frame_id" default="velo_link" />
+  <arg name="odom_child_frame_id" default="base_link" />
+  <!-- <arg name="odom_child_frame_id" default="velo_link" /> -->
 
   <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
@@ -47,12 +47,12 @@
   <!-- <arg name="robot_odom_frame_id" value="map" /> -->
   <arg name="plot_estimation_errors" value="false" />
 
-  <!-- transformation between lidar and base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 100" />
 
   <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
 
 
+  <!-- transformation between lidar and base_link -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 100" /> -->
 
   <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
@@ -67,8 +67,8 @@
       <remap from="/imu/data" to="$(arg imu_topic)" />
       <!-- <param name="deskewing" value="true" /> -->
       <!-- <param name="scan_period" value="0.1" /> -->
-      <!-- <param name="base_link_frame" value="base_link" /> -->
-      <param name="base_link_frame" value="velo_link" />
+      <param name="base_link_frame" value="base_link" />
+      <!-- <param name="base_link_frame" value="velo_link" /> -->
       <!-- This is similar to my radius filter so makes sense to comment, and describe why in my thesis -->
       <param name="use_distance_filter" value="false" />
       <param name="distance_near_thresh" value="0.1" />
@@ -178,7 +178,7 @@
 
   <!-- <arg name="bag_name" default="$(arg dataset)_$(arg sequence)_$(arg filter_name)" /> -->
   <arg name="bag_name" default="$(arg dataset)_$(arg sequence)" />
-  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -o /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/trajectories/$(arg bag_name) /odom_transformed"/>   
+  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -O /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/$(arg bag_name) /odom_transformed"/>   
 <!-- 
 	<arg name="path_save"   default="/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06"/>
 	<arg name="topic"  	default="/odom_transformed"/>
