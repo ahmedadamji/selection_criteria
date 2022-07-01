@@ -77,10 +77,21 @@ average_input_points_list = [0.0] * number_of_parameters
 average_output_points_list = [0.0] * number_of_parameters
 average_filtered_points_list = [0.0] * number_of_parameters
 
+mean_translational_error_per_filtered_point_list = [0.0] * number_of_parameters
+mean_rotational_error_per_filtered_point_list = [0.0] * number_of_parameters
+
 
 for parameter_idx in range(number_of_parameters):
     est_file_name = sys.argv[parameter_idx+1]
+
     # print(est_file_name)
+
+    # File name examples:
+    # KITTI_06_cyl_0_2_100_ff
+    # KITTI_06_rad_0_20_ff
+    # KITTI_06_vanilla_ff
+
+    
 
 
     translation = {
@@ -111,14 +122,18 @@ for parameter_idx in range(number_of_parameters):
         "total_filtered_points": 0.0,
         "average_input_points": 0.0,
         "average_output_points": 0.0,
-        "average_filtered_points": 0.0,
+        "average_filtered_points": 0.0
+    }
+
+    additional_metrics = {
+        "mean_translational_error_per_filtered_point": 0.0,
+        "mean_rotational_error_per_filtered_point": 0.0
     }
 
     # print(thisdict)
     keys_list = ['title', 'std', 'rmse', 'max', 'min', 'median', 'sse', 'mean']
     points_keys_list = ['total_input_points', 'total_output_points', 'total_filtered_points', 'average_input_points', 'average_output_points', 'average_filtered_points']
-
-
+    additional_metrics_keys_list = ['mean_translational_error_per_filtered_point','mean_rotational_error_per_filtered_point']
 
     with open(str(est_file_name + "_statistics.txt")) as f:
         lines = f.readlines()
@@ -158,13 +173,52 @@ for parameter_idx in range(number_of_parameters):
             a_key = points_keys_list[i]
             points[a_key] = float(num_points.strip('\n'))
             i = i + 1
+    
+    if points["average_filtered_points"] > 0:
+        additional_metrics['mean_translational_error_per_filtered_point'] = translation['mean'] / points["average_filtered_points"]
+        additional_metrics['mean_rotational_error_per_filtered_point'] = rotation['mean'] / points["average_filtered_points"]
+    else:
+        additional_metrics['mean_translational_error_per_filtered_point'] = 0.0
+        additional_metrics['mean_rotational_error_per_filtered_point'] = 0.0
+
 
     # print(translation)
     # print(rotation)
     # print(points)
 
+    Dataset = "_".join(est_file_name.split("_")[:2])
+    # filter_name = "_".join(est_file_name.split("_")[2:])
+    filter_name = ""
+    filter_name_found = False
+    if ("vanilla" in est_file_name.split("_")[2:]):
+        filter_name = filter_name + "Vanilla" + "\n"
+        filter_name_found = True
 
-    legend_list[parameter_idx] = est_file_name
+    if ("rad" in est_file_name.split("_")[2:]):
+        min_rad_index = est_file_name.split("_")[2:].index('rad') + 1
+        min_rad = est_file_name.split("_")[2:][min_rad_index]
+        max_rad_index = est_file_name.split("_")[2:].index('rad') + 2
+        max_rad = est_file_name.split("_")[2:][max_rad_index]
+        filter_name = filter_name + "Radius\n" + " Min: " + min_rad + " Max: " + max_rad + "\n"
+        filter_name_found = True
+
+    if ("cyl" in est_file_name.split("_")[2:]):
+        origin_index = est_file_name.split("_")[2:].index('cyl') + 1
+        origin = est_file_name.split("_")[2:][origin_index]
+        radius_index = est_file_name.split("_")[2:].index('cyl') + 2
+        radius = est_file_name.split("_")[2:][radius_index]
+        height_index = est_file_name.split("_")[2:].index('cyl') + 3
+        height = est_file_name.split("_")[2:][height_index]
+        filter_name = filter_name + "Cylinder\n" + " O: " + origin + " R: " + radius + " H: " + height + "\n"
+        filter_name_found = True
+
+    if (not filter_name_found):
+        filter_name = "_".join(est_file_name.split("_")[2:-1]) + "\n"
+
+    if ("ff" in est_file_name.split("_")[2:]):
+        filter_name = filter_name + "W/O Floor"
+
+    legend_list[parameter_idx] = filter_name
 
     std_trans_list[parameter_idx] = translation["std"]
     rmse_trans_list[parameter_idx] = translation["rmse"]
@@ -189,6 +243,37 @@ for parameter_idx in range(number_of_parameters):
     average_output_points_list[parameter_idx] = points["average_output_points"]
     average_filtered_points_list[parameter_idx] = points["average_filtered_points"]
 
+    mean_translational_error_per_filtered_point_list[parameter_idx] = additional_metrics["mean_translational_error_per_filtered_point"]
+    mean_rotational_error_per_filtered_point_list[parameter_idx] = additional_metrics["mean_rotational_error_per_filtered_point"]
+
+
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
+
+def createFigure():
+    # Creating the figure
+    fig = plt.figure()  
+    # Setting the background color of the plot 
+    # using set_facecolor() method
+    # Link with list with colours: https://matplotlib.org/stable/gallery/color/named_colors.html
+    ax = plt.axes()
+    ax.set_facecolor("seashell")
+    fig.patch.set_facecolor('gainsboro')
+    # Setting the axis scales
+    plt.yscale('linear')
+    plt.ticklabel_format(style='plain',useOffset=False)
+    plt.xticks(range(len(legend_list)),legend_list)
+    # ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+    # Adding a grid
+    plt.grid()
+    return fig, plt
+
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
 
 # print(legend_list)
 
@@ -197,51 +282,119 @@ pw_trans = plotWindow()
 
 pw_trans.MainWindow.setWindowTitle("Translation Statistics")
 
-fig = plt.figure()
-plt.plot(legend_index, std_trans_list, '--')
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(std_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Standard Deviation in meters (m)")
+plt.title("STD Comparison With " + Dataset)
 pw_trans.addPlot("std", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, rmse_trans_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(rmse_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("RMSE in meters (m)")
+plt.title("RMSE Comparison With " + Dataset)
 pw_trans.addPlot("rmse", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, max_trans_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(max_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Max Error in meters (m)")
+plt.title("Max Error Comparison With " + Dataset)
 pw_trans.addPlot("max", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, min_trans_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(min_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Min error in meters (m)")
+plt.title("Min Error Comparison With " + Dataset)
 pw_trans.addPlot("min", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, median_trans_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(median_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Median error in meters (m)")
+plt.title("Median Error Comparison With " + Dataset)
 pw_trans.addPlot("median", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, sse_trans_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(sse_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("SSE error in meters (m)")
+plt.title("SSE Error Comparison With " + Dataset)
 pw_trans.addPlot("sse", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, mean_trans_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(mean_trans_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Mean error in meters (m)")
+plt.title("Mean Error Comparison With " + Dataset)
 pw_trans.addPlot("mean", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, total_input_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(total_input_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Total Input Points")
+plt.title("Total Input Points Comparison With " + Dataset)
 pw_trans.addPlot("total_input_points", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, total_filtered_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(total_filtered_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Total Filtered Points")
+plt.title("Total Filtered Points Comparison With " + Dataset)
 pw_trans.addPlot("total_filtered_points", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, average_input_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(average_input_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Average Input Points")
+plt.title("Average Input Points Comparison With " + Dataset)
 pw_trans.addPlot("average_input_points", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, average_filtered_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(average_filtered_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Average Filtered Points")
+plt.title("Average Filtered Points Comparison With " + Dataset)
 pw_trans.addPlot("average_filtered_points", fig)
 
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(mean_translational_error_per_filtered_point_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Mean Translational Error Per Filtered Point in meters (m)")
+plt.title("Mean Translational Error Per Filtered Point Comparison With " + Dataset)
+pw_trans.addPlot("mean_translational_error_per_filtered_point", fig)
+
 pw_trans.show()
+
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
 
 
 # Creating a plot window to compare data for rotation
@@ -249,48 +402,112 @@ pw_rot = plotWindow()
 
 pw_rot.MainWindow.setWindowTitle("Rotation Statistics")
 
-fig = plt.figure()
-plt.plot(legend_index, std_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(std_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Standard Deviation in degrees (deg)")
+plt.title("STD Comparison With " + Dataset)
 pw_rot.addPlot("std", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, rmse_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(rmse_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("RMSE in degrees (deg)")
+plt.title("RMSE Error Comparison With " + Dataset)
 pw_rot.addPlot("rmse", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, max_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(max_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Max error in degrees (deg)")
+plt.title("Max Error Comparison With " + Dataset)
 pw_rot.addPlot("max", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, min_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(min_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Min error in degrees (deg)")
+plt.title("Min Error Comparison With " + Dataset)
 pw_rot.addPlot("min", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, median_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(median_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Median error in degrees (deg)")
+plt.title("Median Error Comparison With " + Dataset)
 pw_rot.addPlot("median", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, sse_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(sse_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("SSE error in degrees (deg)")
+plt.title("SSE Error Comparison With " + Dataset)
 pw_rot.addPlot("sse", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, mean_rot_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(mean_rot_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Mean error in degrees (deg)")
+plt.title("Mean Error Comparison With " + Dataset)
 pw_rot.addPlot("mean", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, total_input_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(total_input_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Total Input Points")
+plt.title("Total Input Points Comparison With " + Dataset)
 pw_rot.addPlot("total_input_points", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, total_filtered_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(total_filtered_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Total Filtered Points")
+plt.title("Total Filtered Points Comparison With " + Dataset)
 pw_rot.addPlot("total_filtered_points", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, average_input_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(average_input_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Average Input Points")
+plt.title("Average Input Points Comparison With " + Dataset)
 pw_rot.addPlot("average_input_points", fig)
 
-fig = plt.figure()
-plt.plot(legend_index, average_filtered_points_list, '--')
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(average_filtered_points_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Average Filtered Points")
+plt.title("Average Filtered Points Comparison With " + Dataset)
 pw_rot.addPlot("average_filtered_points", fig)
+
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(mean_rotational_error_per_filtered_point_list, '--')
+plt.xlabel("Selection Algorithm")
+plt.ylabel("Mean Rotational Error Per Filtered Point in degrees (deg)")
+plt.title("Mean Translational Error Per Filtered Point Comparison With " + Dataset)
+pw_rot.addPlot("mean_rotational_error_per_filtered_point", fig)
 
 pw_rot.show()

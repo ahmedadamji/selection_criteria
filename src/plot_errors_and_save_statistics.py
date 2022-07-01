@@ -71,6 +71,14 @@ ListOrArray = typing.Union[typing.Sequence[float], np.ndarray]
 
 est_file_name = sys.argv[1]
 
+# File name examples:
+# KITTI_06_cyl_0_2_100_ff
+# KITTI_06_rad_0_20_ff
+# KITTI_06_vanilla_ff
+
+
+
+
 print("loading trajectories")
 traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/tum/06_gt_tum")
 traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/trajectories/tum/" + est_file_name + ".tum")

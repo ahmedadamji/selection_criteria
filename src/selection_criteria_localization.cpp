@@ -792,7 +792,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // USe the inner radius herre based on the best inner radius identified and add some more tests to this
   // radiusFilter(filtered_cloud, cloud_out, 0, 40); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, 0, 30); //removed suspected unneccesary points in form of radius filter
-  radiusFilter(filtered_cloud, cloud_out, 0, 20); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, 0, 20); //removed suspected unneccesary points in form of radius filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
