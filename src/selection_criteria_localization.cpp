@@ -796,7 +796,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   PointCPtr cloud1(new PointC);
   PointCPtr cloud2(new PointC);
   PointCPtr cloud3(new PointC);
-  
+
   PointCPtr cloud_out(new PointC);
 
   // These are the two synced clouds we are subscribing to, however both of these are currently same
@@ -821,7 +821,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Cylinder Filters
   // To test best thickness of forward points to be eliminated
   // cylinderFilter(filtered_cloud, cloud_out, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
-  cylinderFilter(filtered_cloud, cloud_out, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(filtered_cloud, cloud_out, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter --> works as the best cyliner filter with almost 45% of filtered cloud
   // cylinderFilter(filtered_cloud, cloud_out, 0, 5, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(filtered_cloud, cloud_out, 0, 6, 100); //removed suspected unneccesary points in form of cylinder filter --> note in report that 6 fails
@@ -849,6 +849,11 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // cylinderFilter(filtered_cloud, cloud_out, 20, 3, 40); //removed suspected unneccesary points in form of cylinder filter
   // The height of the filter here should be based on results here and the test from the range evaluations, so i can add them here
   // 0 to 20 is already tested previously, use it again here
+
+
+  // Trying cylinder parameters that worked quite well individually and comparing performance against all other cylinder filters.
+  // cylinderFilter(filtered_cloud, cloud_out, 15, 4, 80); //removed suspected unneccesary points in form of cylinder filter
+  // Need to run the evaluation of radius being 5 again
 
 
   // Radius Filters
