@@ -220,13 +220,30 @@ class SCLocalization
     void 
     computeFilteredPointsData ();
 
+    /** \brief Transform Robot Coordinates 
+      *
+      * Transforms point coordinates of the robot from the lidar to the world coordinate frame
+      * 
+      */
+    void 
+    transformRobotCoordinates ();
+
     /** \brief Transform Point Coordinates 
       *
-      * Transforms point coordinates of the robot and feature from the lidar to the world coordinate frame
+      * Transforms point coordinates of the feature from the lidar to the world coordinate frame
       * 
       */
     void 
     transformPointCoordinates ();
+
+    /** \brief Compute Angle Deviation
+      *
+      * Computes the angle deviation of a point relative to previous frame
+      * 
+      * \output angle The angle deviation of a point relative to previous frame
+      */
+    double
+    computeAngleDeviation ();
 
 
     /** \brief Filter 
@@ -449,6 +466,25 @@ class SCLocalization
 
     /** \brief Current point coordinate in world frame. */
     geometry_msgs::PointStamped g_point_world_frame_coordinate;
+
+
+
+    /** \brief The vector to store the vector the robot has translated with respect to its previous frame */
+    std::vector<double> g_vdt{0.0, 0.0, 0.0};
+    /** \brief The vector to store the vector from the robots previous position to the observed point */
+    std::vector<double> g_d1{0.0, 0.0, 0.0};
+    /** \brief The vector to store the vector from the robots current position to the observed point */
+    std::vector<double> g_d2{0.0, 0.0, 0.0};
+    /** \brief modulus of vdt */
+    double g_mod_vdt;
+    /** \brief modulus of d1 */
+    double g_mod_d1;
+    /** \brief modulus of d2 */
+    double g_mod_d2;
+    /** \brief square of modulus of d1 */
+    double g_mod_d1_sqr;
+    /** \brief square of modulus of d2 */
+    double g_mod_d2_sqr;
 
 
 

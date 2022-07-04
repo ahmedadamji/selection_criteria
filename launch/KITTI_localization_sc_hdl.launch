@@ -20,7 +20,9 @@
   <param name="/total_input_points" type="int" value="0" />
   <param name="/total_output_points" type="int" value="0" />
   <param name="/total_filtered_points" type="int" value="0" />
-  <rosparam param="/previous_robot_world_frame_coordinate">[0.0, 0.0, 0.0]</rosparam>
+  <param name="/previous_robot_world_frame_coordinate_x" type="double" value="0" />
+  <param name="/previous_robot_world_frame_coordinate_y" type="double" value="0" />
+  <param name="/previous_robot_world_frame_coordinate_z" type="double" value="0" />
 
 
 

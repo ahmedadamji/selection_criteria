@@ -234,7 +234,10 @@ SCLocalization::updateROSParams()
 
 
   // vector<double> previous_robot_world_frame_coordinate{ g_robot_world_frame_coordinate.point.x, g_robot_world_frame_coordinate.point.y, g_robot_world_frame_coordinate.point.z };
-  // ros::param::set("/previous_robot_world_frame_coordinate", previous_robot_world_frame_coordinate);
+  // previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::set("/previous_robot_world_frame_coordinate_x", g_robot_world_frame_coordinate.point.x);
+  ros::param::set("/previous_robot_world_frame_coordinate_y", g_robot_world_frame_coordinate.point.y);
+  ros::param::set("/previous_robot_world_frame_coordinate_z", g_robot_world_frame_coordinate.point.z);
 
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -286,7 +289,7 @@ SCLocalization::computeFilteredPointsData()
   try {
     cout << "\nSaving Filtered Points Data to file " + g_file_name;
     // Opening File
-    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/trajectories/statistics/points/" + g_file_name, ofstream::out);
+    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/points/" + g_file_name, ofstream::out);
     
     // If file opened write contents
     if (fw.is_open())
@@ -307,7 +310,7 @@ SCLocalization::computeFilteredPointsData()
 }
 ////////////////////////////////////////////////////////////////////////////////
 void
-SCLocalization::transformPointCoordinates()
+SCLocalization::transformRobotCoordinates()
 {
   // Transform the point to new frame
 
@@ -329,7 +332,7 @@ SCLocalization::transformPointCoordinates()
 
   try
   {
-    transformStamped = tfBuffer.lookupTransform("velo_link", "velo_link",ros::Time(0));
+    transformStamped = tfBuffer.lookupTransform("map", "velo_link",ros::Time(0));
     
     tf2::doTransform(g_robot_lidar_frame_coordinate, g_robot_world_frame_coordinate, transformStamped);
       
@@ -340,18 +343,13 @@ SCLocalization::transformPointCoordinates()
   }
 
 
-  // try
-  // {
-  //   g_listener_.transformPoint ("map", 
-  //                               g_robot_lidar_frame_coordinate,
-  //                               g_robot_world_frame_coordinate);
-                                
-  // }
-  // catch (tf::TransformException& ex)
-  // {
-  //   ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
-  // }
-  
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+SCLocalization::transformPointCoordinates()
+{
+  // Transform the point to new frame
 
   g_point_lidar_frame_coordinate.header.frame_id = "velo_link";
   g_point_lidar_frame_coordinate.header.stamp = ros::Time (0);
@@ -359,29 +357,62 @@ SCLocalization::transformPointCoordinates()
   g_point_lidar_frame_coordinate.point.y = g_y;
   g_point_lidar_frame_coordinate.point.z = g_z;
 
-  try
-  {
-    transformStamped = tfBuffer.lookupTransform("velo_link", "velo_link",ros::Time(0));
-    
-    tf2::doTransform(g_point_lidar_frame_coordinate, g_point_world_frame_coordinate, transformStamped);
-      
-  }
-  catch (tf2::TransformException &ex)
-  {
-    ROS_WARN("%s", ex.what());
-  }
+  g_point_world_frame_coordinate = g_point_lidar_frame_coordinate;
+  g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
+  g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
+  g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
 
-  // try
-  // {
-  //   g_listener_.transformPoint ("map", 
-  //                               g_point_lidar_frame_coordinate,
-  //                               g_point_world_frame_coordinate);
-                                
-  // }
-  // catch (tf::TransformException& ex)
-  // {
-  //   ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
-  // }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+double
+SCLocalization::computeAngleDeviation()
+{
+
+  double angle = 0.0;
+
+
+  // Transform the points to new frame
+  transformPointCoordinates();
+
+
+  g_robot_world_frame_coordinate;
+  g_previous_robot_world_frame_coordinate;
+  g_point_world_frame_coordinate;
+
+
+  g_vdt[0] = g_robot_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x;
+  g_vdt[1] = g_robot_world_frame_coordinate.point.y - g_previous_robot_world_frame_coordinate.point.y;
+  g_vdt[2] = g_robot_world_frame_coordinate.point.z - g_previous_robot_world_frame_coordinate.point.z;
+
+
+  g_d1[0] = g_point_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x;
+  g_d1[1] = g_point_world_frame_coordinate.point.y - g_previous_robot_world_frame_coordinate.point.y;
+  g_d1[2] = g_point_world_frame_coordinate.point.z - g_previous_robot_world_frame_coordinate.point.z;
+
+  g_d2[0] = g_point_world_frame_coordinate.point.x - g_robot_world_frame_coordinate.point.x;
+  g_d2[1] = g_point_world_frame_coordinate.point.y - g_robot_world_frame_coordinate.point.y;
+  g_d2[2] = g_point_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
+
+
+  g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
+  g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
+  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
+
+  // double mod_vdt_sqr = pow(mod_vdt,2);
+  g_mod_d1_sqr = pow(g_mod_d1,2);
+  g_mod_d2_sqr = pow(g_mod_d2,2);
+
+  angle = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2));
+
+
+  // cout << "The angle deviation of the current point is: " << endl;
+  // cout << angle << endl;
+
+  return angle;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -390,6 +421,15 @@ void
 SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 {
   out_cloud_ptr->points.clear();
+
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
 
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
@@ -400,17 +440,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     g_z = it->z;
 
 
+    double angle = computeAngleDeviation();
+
+
     // out_cloud_ptr->points.push_back(*it);
-    
-    // UNCOMMENT THIS WHEN IT WORKS
-    // Transform the points to new frame
-    //transformPointCoordinates();
-
-
-    // WILL NEED TO SET THIS UP AGAIN IF IT WORKS PROPERLY
-    // vector<double> previous_robot_world_frame_coordinate;
-    // ros::param::get("/previous_robot_world_frame_coordinate", previous_robot_world_frame_coordinate);
-
 
 
     if (floorFilter(g_filter_floor))
@@ -443,8 +476,6 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   updateROSParams();
-
-
   computeFilteredPointsData();
 
 
@@ -468,20 +499,29 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
 
   out_cloud_ptr->points.clear();
+
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
+
+    double angle = computeAngleDeviation();
     
-    // Transform the points to new frame
-    //transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
       // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-      if (!(( g_x >= (-x_axis_origin - height) && g_x <= (x_axis_origin + height)) && // within the X limits
+      if (!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
           (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) // within the radius limits
       {
         out_cloud_ptr->points.push_back(*it);
@@ -489,8 +529,8 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
     }
 
   }
-
   
+
 
   ros::param::get("/filter_name", g_filter_name);
   
@@ -501,7 +541,7 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   else if (g_filter_name.find("cyl") != string::npos)
   {
     g_filter_name = g_filter_name;
-  }  
+  }
   else
   {
     g_filter_name = g_filter_name + string("_") + string("cyl") + string("_") + to_string(x_axis_origin) + string("_") + to_string(radius) + string("_") + to_string(height);
@@ -524,6 +564,15 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 {
 
   out_cloud_ptr->points.clear();
+
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -531,9 +580,10 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
+
+
+    double angle = computeAngleDeviation();
     
-    // Transform the points to new frame
-    //transformPointCoordinates();
 
     if (floorFilter(g_filter_floor))
     {
@@ -583,6 +633,15 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
 {
   // This ring filter will remove points in the inner cylinder and retain points within the outter cylinder as this combines certain properties of the cylinder and radius filters
   out_cloud_ptr->points.clear();
+
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -590,10 +649,10 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
-    
-    // Transform the points to new frame
-    //transformPointCoordinates();
 
+
+
+    double angle = computeAngleDeviation();
 
 
     if (floorFilter(g_filter_floor))
@@ -648,15 +707,23 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
                           float z_axis_min = -100, float z_axis_max = 100)
 {
   out_cloud_ptr->points.clear();
+    
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
+
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
 
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
-    
-    // Transform the points to new frame
-    //transformPointCoordinates();
+
+    double angle = computeAngleDeviation();
 
     if (floorFilter(g_filter_floor))
     {
@@ -726,7 +793,10 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 {// declare type
   PointCPtr filtered_cloud(new PointC);
   // PointCPtr floor_cloud(new PointC);
-  // PointCPtr cloud1(new PointC);
+  PointCPtr cloud1(new PointC);
+  PointCPtr cloud2(new PointC);
+  PointCPtr cloud3(new PointC);
+  
   PointCPtr cloud_out(new PointC);
 
   // These are the two synced clouds we are subscribing to, however both of these are currently same
@@ -751,8 +821,10 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Cylinder Filters
   // To test best thickness of forward points to be eliminated
   // cylinderFilter(filtered_cloud, cloud_out, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter
+  cylinderFilter(filtered_cloud, cloud_out, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter --> works as the best cyliner filter with almost 45% of filtered cloud
+  // cylinderFilter(filtered_cloud, cloud_out, 0, 5, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, 0, 6, 100); //removed suspected unneccesary points in form of cylinder filter --> note in report that 6 fails
 
   // To test range of points required to be removed
   // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 10); //removed suspected unneccesary points in form of cylinder filter
@@ -793,6 +865,9 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // radiusFilter(filtered_cloud, cloud_out, 0, 40); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, 0, 30); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, 0, 20); //removed suspected unneccesary points in form of radius filter
+
+  // Trying min and max radius parameters that worked quite well individually and comparing performance against all other radius filters.
+  // radiusFilter(filtered_cloud, cloud_out, 8, 30); //removed suspected unneccesary points in form of radius filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
@@ -850,50 +925,37 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 
   nav_msgs::Odometry robot_odom;
   robot_odom = *odom_in;
-  geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
-  double velocity = getVelocity(robot_twist);
-
-  //need to convert position of robot and observation to world frame to find its previous position of robot based on relative velocity
-  // the position of observation does not change in the world frame 
-  // (Exception is where the observation is not stationary and may need to check if the point is aligned with the map?)
-
-  // Code to change the coordinate frame of the point cloud:
-
-  // // Extract inout point cloud info
-  // g_lidar_frame_id_ = cloud_in->header.frame_id;
-
-  // sensor_msgs::PointCloud2 temp_cloud;
-  // pcl::toROSMsg(*cloud_in, temp_cloud);
-  // sensor_msgs::PointCloud cloud_lidar;
-  // sensor_msgs::convertPointCloud2ToPointCloud(temp_cloud, cloud_lidar);
-  // cloud_lidar.header.frame_id = g_lidar_frame_id_;
-  // cloud_lidar.header.stamp = ros::Time (0);
-  // sensor_msgs::PointCloud cloud_world;
-  // try
-  // {
-  //   g_listener_.transformPointCloud ("map",
-  //                                     cloud_lidar,
-  //                                     cloud_world);
-                                
-  // }
-  // catch (tf::TransformException& ex)
-  // {
-  //   ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
-  // }
-
-  // sensor_msgs::convertPointCloudToPointCloud2(cloud_world, temp_cloud);
-  // PointC cloud_world;
-  // pcl::fromROSMsg(temp_cloud, cloud_world);
+  // geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
+  // double velocity = getVelocity(robot_twist);
 
 
-  // Think of ways I can access the graphical information in hdl, such as associated covariance of each observation
-  // Go through CW2 and CW3 of COMP0130 on 11/06/2022
+  // // Find lidar and robot coordinate using odometry message, as using transform points increases the computational complexity alot for some reason and slam fails.
+  // // But if i can fix this problem, it would be much more accurate
+  // The problem was because of trying to call a rosparm from the server whilte itterating through each point from the cloud, therefore it could not keep up!
 
+  // //Make Lidar frame id a global variable that can be adjusted from a yaml file alonside other variables later
+  // g_robot_lidar_frame_coordinate.header.frame_id = "velo_link";
+  // g_robot_lidar_frame_coordinate.header.stamp = ros::Time (0);
+  // g_robot_lidar_frame_coordinate.point.x = 0.0;
+  // g_robot_lidar_frame_coordinate.point.y = 0.0;
+  // g_robot_lidar_frame_coordinate.point.z = 0.0;  
 
-  // can actually change this to imu callback to access velocity of the robot directly as odometry twist is not published:
-  // Topic of imu --> /kitti/oxts/imu
+  // g_robot_world_frame_coordinate = g_robot_lidar_frame_coordinate;
+  // g_robot_world_frame_coordinate.point.x = robot_odom.pose.pose.position.x;
+  // g_robot_world_frame_coordinate.point.y = robot_odom.pose.pose.position.y;
+  // g_robot_world_frame_coordinate.point.z = robot_odom.pose.pose.position.z;
 
+  // g_point_lidar_frame_coordinate.header.frame_id = "velo_link";
+  // g_point_lidar_frame_coordinate.header.stamp = ros::Time (0);
+  // g_point_lidar_frame_coordinate.point.x = g_x;
+  // g_point_lidar_frame_coordinate.point.y = g_y;
+  // g_point_lidar_frame_coordinate.point.z = g_z;
 
+  // g_point_world_frame_coordinate = g_point_lidar_frame_coordinate;
+  // g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
+  // g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
+  // g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
+      
 
 
 }
