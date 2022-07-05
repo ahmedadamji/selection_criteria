@@ -67,7 +67,7 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
 
 
   // Create a ROS subscriber for the input point cloud
-  sub_ = nh_.subscribe("/filtered_points", 1, &SCMapping::callback, this);
+  sub_ = nh_.subscribe("/points_input", 1, &SCMapping::callback, this);
 
 }
 
@@ -157,38 +157,11 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
-    // out_cloud_ptr->points.push_back(*it);
-
-
-    // This is a floor condition where points above the floor are selected based on height, this has not been yet implemented in a function or a filter.
-    // Can I try to filter the points that have been detected as floor points by the floor detection nodelet.
-    // And is there any reason for me to do this?
-    // if ( it->z >= 0.2)
-    // {
-    //   out_cloud_ptr->points.push_back(*it);
-    // }
-
-
     g_x = it->x;
     g_y = it->y;
     g_z = it->z;
-    
-    // if (cylinderCondition(x, y, z))
-    // {
-    //   out_cloud_ptr->points.push_back(*it);
-    // }
 
-    if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50))
-    {
-      out_cloud_ptr->points.push_back(*it);
-    }
-
-    // if (ringCondition(x, y, z))
-    // {
-    //   out_cloud_ptr->points.push_back(*it);
-    // }
-
-
+    out_cloud_ptr->points.push_back(*it);
 
   }
 
@@ -376,49 +349,6 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1)
   // cylinderFilter(cloud1f, cloud_all, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(cloud1f, cloud_all, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
-
-  // Cylinder Filters
-  // To test best thickness of forward points to be eliminated
-  // cylinderFilter(cloud1f, cloud_all, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter
-
-  // To test range of points required to be removed
-  // cylinderFilter(cloud1f, cloud_all, 0, 3, 10); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 0, 3, 20); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 0, 3, 30); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 0, 3, 40); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 0, 3, 50); //removed suspected unneccesary points in form of cylinder filter
-
-  // To test where to start the cylinder filter from
-  // cylinderFilter(cloud1f, cloud_all, 2, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 5, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 10, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 15, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 20, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 30, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(cloud1f, cloud_all, 40, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-
-
-  // Radius Filters
-  // To test inner radius of points required to be removed
-  // radiusFilter(cloud1f, cloud_all, 0, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 2, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 4, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 6, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 8, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 10, 50); //removed suspected unneccesary points in form of radius filter
-
-  // To test outer radius of points required to be retained
-  // radiusFilter(cloud1f, cloud_all, 0, 40); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 0, 30); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 0, 20); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(cloud1f, cloud_all, 0, 10); //removed suspected unneccesary points in form of radius filter
-
-
-  // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
-  // ringFilter(cloud1f, cloud_all, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
-  
 
   // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)
 

@@ -1,109 +1,90 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- arguments /rs16_tc/rslidar_points-->
-  <arg name="nodelet_manager" default="velodyne_nodelet_manager" />
+<!-- arguments -->
+  <arg name="nodelet_manager" default="rslidar_nodelet_manager" />
+  <arg name="enable_imu_frontend" default="false" />
   <arg name="enable_floor_detection" default="true" />
   <arg name="enable_gps" default="false" />
   <arg name="enable_imu_acc" default="false" />
   <arg name="enable_imu_ori" default="false" />
-  <arg name="points_topic" default="/kitti/velo/pointcloud" />
-
+  <!-- <arg name="points_topic" default="/rs16_tc/rslidar_points" /> -->
+  <arg name="points_topic" default="/points_raw" />
+  <arg name="imu_topic" default="imu/data" />
   <arg name="map_frame_id" default="map" />
   <arg name="lidar_odom_frame_id" default="odom" />
-
+  <arg name="filtered_localization_topic" default="/aide/odometry/filtered/psamap/baselink"/> 
   <!-- optional arguments -->
   <arg name="enable_robot_odometry_init_guess" default="false" />
   <arg name="robot_odom_frame_id" default="robot_odom" />
-
-  <!-- transformation between lidar and base_link -->
-  <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" />
-
-  <!-- in case you use velodyne_driver, comment out the following line -->
+  
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
 
-  <!-- prefiltering_nodelet -->
+  <!-- IMU fusion -->
+  <node name="msf_lidar_scan_matching" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+    <remap from="msf_core/hl_state_input" to="/fcu/ekf_state_out" />
+    <remap from="msf_core/correction" to="/fcu/ekf_state_in" />
+    <remap from="msf_core/imu_state_input" to="$(arg imu_topic)" />
+    <remap from="msf_updates/transform_input" to="/scan_matching_odometry/transform" />
+    <rosparam file="$(find hdl_graph_slam)/launch/msf_config.yaml"/>
+  </node>
+
+  <node pkg="rosservice" type="rosservice" name="initialize" args="call --wait /msf_lidar_scan_matching/pose_sensor/initialize_msf_scale 1"/>
+
+<!-- prefiltering_nodelet -->
   <node pkg="nodelet" type="nodelet" name="prefiltering_nodelet" args="load hdl_graph_slam/PrefilteringNodelet $(arg nodelet_manager)">
-    <remap from="/velodyne_points" to="$(arg points_topic)" /> <!-- is this correct?? -->
+    <remap from="/velodyne_points" to="$(arg points_topic)" />
+    <remap from="/imu/data" to="$(arg imu_topic)" />
+    <param name="deskewing" value="false" />
+    <param name="scan_period" value="0.1" />
     <!-- in case base_link_frame is blank, mapping will be performed in the lidar frame -->
     <param name="base_link_frame" value="base_link" />
     <!-- distance filter -->
     <param name="use_distance_filter" value="true" />
-    <param name="distance_near_thresh" value="0.1" />
-    <param name="distance_far_thresh" value="100.0" />
+    <param name="distance_near_thresh" value="7.0" />
+    <param name="distance_far_thresh" value="40.0" />
     <!-- NONE, VOXELGRID, or APPROX_VOXELGRID -->
     <param name="downsample_method" value="VOXELGRID" />
-    <param name="downsample_resolution" value="0.25" /> <!-- change the downsampling resolution here -->
+    <param name="downsample_resolution" value="0.1" />
     <!-- NONE, RADIUS, or STATISTICAL -->
     <param name="outlier_removal_method" value="RADIUS" />
     <param name="statistical_mean_k" value="30" />
     <param name="statistical_stddev" value="1.2" />
-    <param name="radius_radius" value="0.4" /> <!--was 5 before-->
+    <param name="radius_radius" value="0.5" />
     <param name="radius_min_neighbors" value="2" />
   </node>
-
-  <!-- calling the navsat_odom node to convert from navigation satellite data and inertial measurements into odometry and transforms -->
-  <!-- <node pkg="navsat_odometry" type="nodelet" name="navsat_odometry_nodelet" respawn="true">
-
-    <remap from="/kitti/oxts/imu" to="/imu" />
-    <remap from="/kitti/oxts/gps/fix" to="/gps" />
-
-  </node> -->
-
-  <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_mapping" name="selection_criteria_mapping" output="screen">
-    <!-- <remap from="/floor_points" to="/floor_detection/floor_filtered_points" /> -->
-    <!-- <remap from="/points_input" to="/road_markings_floor" /> -->
-    <remap from="/points_input" to="/filtered_points" />
-  </node>
   
-  <!-- scan_matching_odometry_nodelet -->
-  <node pkg="nodelet" type="nodelet" name="scan_matching_odometry_nodelet" args="load hdl_graph_slam/ScanMatchingOdometryNodelet $(arg nodelet_manager)">
-    <!-- <param name="points_topic" value="/selected_points" /> -->
-    <param name="points_topic" value="$(arg points_topic)" />
-    <remap from="/filtered_points" to="/selected_points" />
-    <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />
-    <!-- <param name="robot_odom_frame_id" value="$(arg robot_odom_frame_id)" /> -->
-    <param name="keyframe_delta_trans" value="5.0" />
-    <param name="keyframe_delta_angle" value="2.0" />
-    <param name="keyframe_delta_time" value="10000.0" />
-    <param name="transform_thresholding" value="false" />
-    <param name="max_acceptable_trans" value="1.0" />
-    <param name="max_acceptable_angle" value="1.0" />
-    <param name="downsample_method" value="NONE" />
-    <param name="downsample_resolution" value="0.1" />
-    <!-- ICP, GICP, NDT, GICP_OMP, NDT_OMP, FAST_GICP(recommended), or FAST_VGICP -->
-    <param name="registration_method" value="FAST_GICP" />
-    <param name="reg_num_threads" value="0" />
-    <param name="reg_transformation_epsilon" value="0.1"/>
-    <param name="reg_maximum_iterations" value="64"/>
-    <param name="reg_max_correspondence_distance" value="2.0"/>
-    <param name="reg_max_optimizer_iterations" value="20"/>
-    <param name="reg_use_reciprocal_correspondences" value="false"/>
-    <param name="reg_correspondence_randomness" value="20"/>
-    <param name="reg_resolution" value="1.0" />
-    <param name="reg_nn_search_method" value="DIRECT7" />
-  </node>
-
   <!-- floor_detection_nodelet -->
   <node pkg="nodelet" type="nodelet" name="floor_detection_nodelet" args="load hdl_graph_slam/FloorDetectionNodelet $(arg nodelet_manager)" if="$(arg enable_floor_detection)">
-    <!-- <param name="points_topic" value="/selected_points" /> -->
     <param name="points_topic" value="$(arg points_topic)" />
-    <remap from="/filtered_points" to="/selected_points" />
     <param name="tilt_deg" value="0.0" />
-    <param name="sensor_height" value="3.0" />
-    <param name="height_clip_range" value="1.0" />
+    <param name="sensor_height" value="2.0" />
+    <param name="height_clip_range" value="4.0" />
     <param name="floor_pts_thresh" value="512" />
     <param name="use_normal_filtering" value="true" />
     <param name="normal_filter_thresh" value="20.0" />
   </node>
 
-  <!-- hdl_graph_slam_nodelet -->
+<!-- calling the road_markings node to detect intensity -->
+<node pkg="road_markings" type="road_markings" name="road_markings" output="screen">
+    <param name="publish_frequency" type="double" value="10.0" />
+    <remap from="/points_input" to="/floor_detection/floor_points" />
+    <!-- <remap from="/points_input" to="/points_raw" /> -->
+</node>
+
+<!-- calling the replace_floor node to replace floor points with road markings-->
+  <node pkg="replace_floor" type="replace_floor" name="replace_floor">
+    <param name="publish_frequency" type="double" value="10.0" />
+  </node>
+
+ <!-- hdl_graph_slam_nodelet -->
   <node pkg="nodelet" type="nodelet" name="hdl_graph_slam_nodelet" args="load hdl_graph_slam/HdlGraphSlamNodelet $(arg nodelet_manager)">
-    <!-- <param name="points_topic" value="/selected_points" /> -->
     <param name="points_topic" value="$(arg points_topic)" />
-    <remap from="/filtered_points" to="/selected_points" />
-    <!-- <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" /> -->
-    <!-- <param name="points_topic" value="/selected_points" /> -->
+    <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" />  
+    <remap from="/gps/navsat"  to="/fix" />
+    <remap from="/odom"  to="$(arg filtered_localization_topic)" />
+    <!-- just make input of 3d with floor of road markings   -->
+    <remap from="/filtered_points" to="/road_markings_floor" />
+    
     <!-- frame settings -->
     <param name="map_frame_id" value="$(arg map_frame_id)" />
     <param name="odom_frame_id" value="$(arg lidar_odom_frame_id)" />
@@ -117,17 +98,18 @@
     <param name="enable_imu_orientation" value="$(arg enable_imu_ori)" />
     <!-- keyframe registration params -->
     <param name="max_keyframes_per_update" value="10" />
-    <param name="keyframe_delta_trans" value="5.0" />
-    <param name="keyframe_delta_angle" value="2.0" />
+    <param name="keyframe_delta_trans" value="1" />
+    <param name="keyframe_delta_angle" value=".10" />
     <!-- fix first node for optimization stability -->
     <param name="fix_first_node" value="true"/>
     <param name="fix_first_node_stddev" value="10 10 10 1 1 1"/>
     <param name="fix_first_node_adaptive" value="true"/>
+   
     <!-- loop closure params -->
-    <param name="distance_thresh" value="30.0" />
-    <param name="accum_distance_thresh" value="25.0" />
-    <param name="min_edge_interval" value="15.0" />
-    <param name="fitness_score_thresh" value="2.5" />
+    <param name="distance_thresh" value="15.0" />
+    <param name="accum_distance_thresh" value="10.0" />
+    <param name="min_edge_interval" value="5.0" />
+    <param name="fitness_score_thresh" value=".50" />
     <!-- scan matching params -->
     <param name="registration_method" value="FAST_GICP" />
     <param name="reg_num_threads" value="0" />
@@ -154,6 +136,7 @@
     <!-- ground plane -->
     <param name="floor_edge_robust_kernel" value="NONE" />
     <param name="floor_edge_stddev" value="10.0" />
+
     <!-- scan matching -->
     <!-- robust kernels: NONE, Cauchy, DCS, Fair, GemanMcClure, Huber, PseudoHuber, Saturated, Tukey, Welsch -->
     <param name="odometry_edge_robust_kernel" value="NONE" />
@@ -163,16 +146,16 @@
     <param name="use_const_inf_matrix" value="false" />
     <param name="const_stddev_x" value="0.5" />
     <param name="const_stddev_q" value="0.1" />
-    <param name="var_gain_a" value="20.0" />
+    <param name="var_gain_a" value="2.0" />
     <param name="min_stddev_x" value="0.1" />
     <param name="max_stddev_x" value="5.0" />
     <param name="min_stddev_q" value="0.05" />
     <param name="max_stddev_q" value="0.2" />
     <!-- update params -->
-    <param name="graph_update_interval" value="3.0" />
-    <param name="map_cloud_update_interval" value="10.0" />
+    <param name="graph_update_interval" value="1.0" />
+    <param name="map_cloud_update_interval" value="1.0" />
     <param name="map_cloud_resolution" value="0.05" />
   </node>
-
+  
   <node pkg="hdl_graph_slam" type="map2odom_publisher.py" name="map2odom_publisher" />
 </launch>
