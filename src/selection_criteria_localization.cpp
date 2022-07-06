@@ -322,25 +322,42 @@ SCLocalization::transformRobotCoordinates()
   g_robot_lidar_frame_coordinate.point.z = 0.0;
 
 
-  
-  geometry_msgs::TransformStamped transformStamped;
-  ros::Duration cache_(5);
-  tf2_ros::Buffer tfBuffer(cache_);
-  // tf2_ros::TransformListener tfListener(tfBuffer);
-  //CHECK IF THIS WORKS OR WILL HAVE TO INCLUDE BUFFER AGAIN SOMEHOW
-
-
   try
   {
-    transformStamped = tfBuffer.lookupTransform("map", "velo_link",ros::Time(0));
-    
-    tf2::doTransform(g_robot_lidar_frame_coordinate, g_robot_world_frame_coordinate, transformStamped);
-      
+    g_listener_.transformPoint ("map", 
+                                g_robot_lidar_frame_coordinate,
+                                g_robot_world_frame_coordinate);
   }
-  catch (tf2::TransformException &ex)
+  catch (tf::TransformException& ex)
   {
-    ROS_WARN("%s", ex.what());
+    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
   }
+
+  
+
+  // geometry_msgs::TransformStamped transformStamped;
+  // ros::Duration cache_(5);
+  // tf2_ros::Buffer tfBuffer(cache_);
+  // // tf2_ros::TransformListener tfListener(tfBuffer);
+  // //CHECK IF THIS WORKS OR WILL HAVE TO INCLUDE BUFFER AGAIN SOMEHOW
+  // try
+  // {
+  //   transformStamped = tfBuffer.lookupTransform("map", "velo_link",ros::Time(0));
+    
+  //   tf2::doTransform(g_robot_lidar_frame_coordinate, g_robot_world_frame_coordinate, transformStamped);
+      
+  // }
+  // catch (tf2::TransformException &ex)
+  // {
+  //   ROS_WARN("%s", ex.what());
+  // }
+
+
+
+
+  // cout << "g_robot_world_frame_coordinate: " << endl;
+  // cout << g_robot_world_frame_coordinate << endl;
+  
 
 
 }
@@ -358,9 +375,9 @@ SCLocalization::transformPointCoordinates()
   g_point_lidar_frame_coordinate.point.z = g_z;
 
   g_point_world_frame_coordinate = g_point_lidar_frame_coordinate;
-  g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
-  g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
-  g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
+  g_point_world_frame_coordinate.point.x += g_robot_world_frame_coordinate.point.x;
+  g_point_world_frame_coordinate.point.y += g_robot_world_frame_coordinate.point.y;
+  g_point_world_frame_coordinate.point.z += g_robot_world_frame_coordinate.point.z;
 
 }
 
@@ -371,16 +388,21 @@ double
 SCLocalization::computeAngleDeviation()
 {
 
-  double angle = 0.0;
+  double angle_deviation = 0.0;
 
 
   // Transform the points to new frame
   transformPointCoordinates();
 
 
-  g_robot_world_frame_coordinate;
-  g_previous_robot_world_frame_coordinate;
-  g_point_world_frame_coordinate;
+  // cout << "g_robot_world_frame_coordinate: " << endl;
+  // cout << g_robot_world_frame_coordinate << endl;
+
+  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
+  // cout << g_previous_robot_world_frame_coordinate << endl;
+
+  // cout << "g_point_world_frame_coordinate: " << endl;
+  // cout << g_point_world_frame_coordinate << endl;
 
 
   g_vdt[0] = g_robot_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x;
@@ -398,18 +420,94 @@ SCLocalization::computeAngleDeviation()
 
 
   g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
+  // cout << "g_mod_vdt: " << endl;
+  // cout << g_mod_vdt << endl;
+
   g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
+  // cout << "g_mod_d1: " << endl;
+  // cout << g_mod_d1 << endl;
+
   g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
+  // cout << "g_mod_d2: " << endl;
+  // cout << g_mod_d2 << endl;
 
   // double mod_vdt_sqr = pow(mod_vdt,2);
   g_mod_d1_sqr = pow(g_mod_d1,2);
+  // cout << "g_mod_d1_sqr: " << endl;
+  // cout << g_mod_d1_sqr << endl;
+
   g_mod_d2_sqr = pow(g_mod_d2,2);
+  // cout << "g_mod_d2_sq: " << endl;
+  // cout << g_mod_d2_sqr << endl;
 
-  angle = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2));
+  // Angle between observation of the point in degrees:
+  // Note: If angle_deviation is nan, means that poisition of point was not estimated by LiDAR.
+  angle_deviation = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2)) * 180 / M_PI;
 
 
-  // cout << "The angle deviation of the current point is: " << endl;
-  // cout << angle << endl;
+  cout << "The angle deviation of the current point is: " << endl;
+  cout << angle_deviation << endl;
+
+  return angle_deviation;
+
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+double
+SCLocalization::computeObservationAngle()
+{
+
+  double observation_angle = 0.0;
+
+
+  // Transform the points to new frame
+  transformPointCoordinates();
+
+
+  // cout << "g_robot_world_frame_coordinate: " << endl;
+  // cout << g_robot_world_frame_coordinate << endl;
+
+  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
+  // cout << g_previous_robot_world_frame_coordinate << endl;
+
+  // cout << "g_point_world_frame_coordinate: " << endl;
+  // cout << g_point_world_frame_coordinate << endl;
+
+
+  g_dp[0] = g_point_world_frame_coordinate.point.x - g_point_world_frame_coordinate.point.x;
+  g_dp[1] = g_point_world_frame_coordinate.point.y - g_point_world_frame_coordinate.point.y;
+  g_dp[2] = g_point_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
+
+  g_do[0] = g_point_world_frame_coordinate.point.x - g_robot_world_frame_coordinate.point.x;
+  g_do[1] = g_point_world_frame_coordinate.point.y - g_robot_world_frame_coordinate.point.y;
+  g_do[2] = g_robot_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
+
+  g_d2[0] = g_point_world_frame_coordinate.point.x - g_robot_world_frame_coordinate.point.x;
+  g_d2[1] = g_point_world_frame_coordinate.point.y - g_robot_world_frame_coordinate.point.y;
+  g_d2[2] = g_point_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
+
+
+  g_mod_do = sqrt(((g_do[0])*(g_do[0])) + ((g_do[1])*(g_do[1])) + ((g_do[2])*(g_do[2])));
+  // cout << "g_mod_do: " << endl;
+  // cout << g_mod_do << endl;
+
+  g_mod_dp = sqrt(((g_dp[0])*(g_dp[0])) + ((g_dp[1])*(g_dp[1])) + ((g_dp[2])*(g_dp[2])));
+  // cout << "g_mod_dp: " << endl;
+  // cout << g_mod_dp << endl;
+
+  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
+  // cout << "g_mod_d2: " << endl;
+  // cout << g_mod_d2 << endl;
+
+  // Angle between observation of the point in degrees:
+  // Note: If angle is nan, means that poisition of point was not estimated by LiDAR.
+  angle = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2)) * 180 / M_PI;
+
+
+  cout << "The angle deviation of the current point is: " << endl;
+  cout << angle << endl;
 
   return angle;
 
@@ -431,6 +529,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
   ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
 
+  // g_previous_robot_world_frame_coordinate
+
+  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
+  // cout << g_previous_robot_world_frame_coordinate << endl;
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -808,7 +910,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Need to check how many more points apart from the floor are filtered by my filters
   g_filter_floor = true;
 
-  // Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 

@@ -113,6 +113,13 @@
       <param name="downsample_resolution" value="0.1" />
     </node> -->
 
+    <!-- globalmap_server_nodelet -->
+    <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
+      <param name="globalmap_pcd" value="src/data/maps/KITTI_06_Vanilla.pcd" />
+      <param name="convert_utm_to_local" value="true" />
+      <param name="downsample_resolution" value="0.1" />
+    </node>
+
 
   <!-- hdl_localization_nodelet -->
   <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)">

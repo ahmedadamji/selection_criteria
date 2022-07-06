@@ -246,6 +246,16 @@ class SCLocalization
     computeAngleDeviation ();
 
 
+    /** \brief Compute Observation Angle
+      *
+      * Computes the angle at which a point was observed from the lidar, relative to the parallel axis.
+      * 
+      * \output angle The observation angle of a point
+      */
+    double
+    computeObservationAngle();
+
+
     /** \brief Filter 
       *
       * Selection Criteria Filter
@@ -468,7 +478,7 @@ class SCLocalization
     geometry_msgs::PointStamped g_point_world_frame_coordinate;
 
 
-
+    // Parameters to compute the angle deviation of points with respect to the previous frame:
     /** \brief The vector to store the vector the robot has translated with respect to its previous frame */
     std::vector<double> g_vdt{0.0, 0.0, 0.0};
     /** \brief The vector to store the vector from the robots previous position to the observed point */
@@ -487,6 +497,15 @@ class SCLocalization
     double g_mod_d2_sqr;
 
 
+    // Additional parameters to compute the observation angle of points:
+    /** \brief The vector to store the vector from the robots current position to where the observed point projects onto lidar's plane*/
+    std::vector<double> g_do{0.0, 0.0, 0.0};
+    /** \brief The vector to store the vector from where the observed point projects onto lidar's plane to the observed point */
+    std::vector<double> g_dp{0.0, 0.0, 0.0};
+    /** \brief modulus of do */
+    double g_mod_do;
+    /** \brief modulus of dp */
+    double g_mod_dp;
 
 
 
