@@ -250,18 +250,18 @@ SCLocalization::computeFilteredPointsData()
   double g_average_output_points = ((1.0 * g_total_output_points)/(1.0 * g_total_number_of_frames));
   double g_average_filtered_points = ((1.0 * g_total_filtered_points)/(1.0 * g_total_number_of_frames));
 
-  cout << "Total number of input points: " << endl;
-  cout << g_total_input_points << endl;
-  cout << "Total number of output points: " << endl;
-  cout << g_total_output_points << endl;
-  cout << "Total number of filtered points: " << endl;
-  cout << g_total_filtered_points << endl;
-  cout << "Average number of input points per frame: " << endl;
-  cout << g_average_input_points << endl;
-  cout << "Average number of output points per frame: " << endl;
-  cout << g_average_output_points << endl;
-  cout << "Average number of filtered points per frame: " << endl;
-  cout << g_average_filtered_points << endl;
+  // cout << "Total number of input points: " << endl;
+  // cout << g_total_input_points << endl;
+  // cout << "Total number of output points: " << endl;
+  // cout << g_total_output_points << endl;
+  // cout << "Total number of filtered points: " << endl;
+  // cout << g_total_filtered_points << endl;
+  // cout << "Average number of input points per frame: " << endl;
+  // cout << g_average_input_points << endl;
+  // cout << "Average number of output points per frame: " << endl;
+  // cout << g_average_output_points << endl;
+  // cout << "Average number of filtered points per frame: " << endl;
+  // cout << g_average_filtered_points << endl;
 
   // defining array of filtered points data
   string filtered_points_data[6] = { "Total number of input points: " + to_string(g_total_input_points),
@@ -391,10 +391,6 @@ SCLocalization::computeAngleDeviation()
   double angle_deviation = 0.0;
 
 
-  // Transform the points to new frame
-  transformPointCoordinates();
-
-
   // cout << "g_robot_world_frame_coordinate: " << endl;
   // cout << g_robot_world_frame_coordinate << endl;
 
@@ -431,7 +427,6 @@ SCLocalization::computeAngleDeviation()
   // cout << "g_mod_d2: " << endl;
   // cout << g_mod_d2 << endl;
 
-  // double mod_vdt_sqr = pow(mod_vdt,2);
   g_mod_d1_sqr = pow(g_mod_d1,2);
   // cout << "g_mod_d1_sqr: " << endl;
   // cout << g_mod_d1_sqr << endl;
@@ -445,8 +440,8 @@ SCLocalization::computeAngleDeviation()
   angle_deviation = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2)) * 180 / M_PI;
 
 
-  cout << "The angle deviation of the current point is: " << endl;
-  cout << angle_deviation << endl;
+  // cout << "The angle deviation of the current point is: " << endl;
+  // cout << angle_deviation << endl;
 
   return angle_deviation;
 
@@ -460,10 +455,6 @@ SCLocalization::computeObservationAngle()
 {
 
   double observation_angle = 0.0;
-
-
-  // Transform the points to new frame
-  transformPointCoordinates();
 
 
   // cout << "g_robot_world_frame_coordinate: " << endl;
@@ -501,15 +492,15 @@ SCLocalization::computeObservationAngle()
   // cout << "g_mod_d2: " << endl;
   // cout << g_mod_d2 << endl;
 
-  // Angle between observation of the point in degrees:
+  // Angle between observation of the point and lidar plane in degrees:
   // Note: If angle is nan, means that poisition of point was not estimated by LiDAR.
-  angle = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2)) * 180 / M_PI;
+  observation_angle = acos((g_mod_dp)/(g_mod_d2)) * 180 / M_PI;
 
 
-  cout << "The angle deviation of the current point is: " << endl;
-  cout << angle << endl;
+  // cout << "The observation angle of the current point is: " << endl;
+  // cout << observation_angle << endl;
 
-  return angle;
+  return observation_angle;
 
 }
 
@@ -541,8 +532,12 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     g_y = it->y;
     g_z = it->z;
 
-
-    double angle = computeAngleDeviation();
+    // Transform the points to new frame
+    transformPointCoordinates();
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    // Computing Observation Angle of point with respect to lidar frame:
+    double observation_angle = computeObservationAngle();
 
 
     // out_cloud_ptr->points.push_back(*it);
@@ -617,7 +612,12 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
     g_y = it->y;
     g_z = it->z;
 
-    double angle = computeAngleDeviation();
+    // Transform the points to new frame
+    transformPointCoordinates();
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    // Computing Observation Angle of point with respect to lidar frame:
+    double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
@@ -683,8 +683,12 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
     g_y = it->y;
     g_z = it->z;
 
-
-    double angle = computeAngleDeviation();
+    // Transform the points to new frame
+    transformPointCoordinates();
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    // Computing Observation Angle of point with respect to lidar frame:
+    double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
@@ -752,9 +756,12 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
     g_y = it->y;
     g_z = it->z;
 
-
-
-    double angle = computeAngleDeviation();
+    // Transform the points to new frame
+    transformPointCoordinates();
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    // Computing Observation Angle of point with respect to lidar frame:
+    double observation_angle = computeObservationAngle();
 
 
     if (floorFilter(g_filter_floor))
@@ -825,7 +832,12 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
     g_y = it->y;
     g_z = it->z;
 
-    double angle = computeAngleDeviation();
+    // Transform the points to new frame
+    transformPointCoordinates();
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    // Computing Observation Angle of point with respect to lidar frame:
+    double observation_angle = computeObservationAngle();
 
     if (floorFilter(g_filter_floor))
     {
