@@ -31,6 +31,8 @@ SOFTWARE. */
 #include <ros/time.h>
 #include <ros/console.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Float32.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PointStamped.h>
@@ -45,7 +47,7 @@ SOFTWARE. */
 #include <tf2/LinearMath/Scalar.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <nav_msgs/Odometry.h>
-
+#include <sensor_msgs/Imu.h>
 
 // PCL specific includes
 #include <pcl_conversions/pcl_conversions.h>
@@ -228,6 +230,14 @@ class SCLocalization
     void 
     transformRobotCoordinates ();
 
+    /** \brief Compute Trajectory Information
+      *
+      * Compute additional robot trajectory information to odometry
+      * 
+      */
+    void 
+    computeTrajectoryInformation ();
+
     /** \brief Transform Point Coordinates 
       *
       * Transforms point coordinates of the feature from the lidar to the world coordinate frame
@@ -261,12 +271,15 @@ class SCLocalization
       * Selection Criteria Filter
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
       *  
       */
     void 
     Filter (PointCPtr &in_cloud_ptr,
-            PointCPtr &out_cloud_ptr);
+            PointCPtr &out_cloud_ptr,
+            PointCPtr &vis_cloud_ptr);
 
     /** \brief Cylinder Filter 
       *
@@ -278,11 +291,13 @@ class SCLocalization
       * \input[in] height: The height of the cylinder
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
       *  
       */
     void 
     cylinderFilter (PointCPtr &in_cloud_ptr,
                     PointCPtr &out_cloud_ptr,
+                    PointCPtr &vis_cloud_ptr,
                     float x_axis_origin,
                     float radius,
                     float height);
@@ -296,11 +311,13 @@ class SCLocalization
       * \input[in] max_radius: The maximum filtering radius
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
       *  
       */
     void 
     radiusFilter (PointCPtr &in_cloud_ptr,
                   PointCPtr &out_cloud_ptr,
+                  PointCPtr &vis_cloud_ptr,
                   float min_radius,
                   float max_radius);
     
@@ -315,11 +332,13 @@ class SCLocalization
       * \input[in] ring_height: The height of the ring
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
       *  
       */
     void 
     ringFilter (PointCPtr &in_cloud_ptr,
                 PointCPtr &out_cloud_ptr,
+                PointCPtr &vis_cloud_ptr,
                 float x_axis_origin,
                 float ring_min_radius,
                 float ring_max_radius,
@@ -339,11 +358,13 @@ class SCLocalization
       * \input[in] z_axis_max: Max filter bound in the z axis
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
       *  
       */
     void 
     boxFilter (PointCPtr &in_cloud_ptr,
                PointCPtr &out_cloud_ptr,
+               PointCPtr &vis_cloud_ptr,
                float x_axis_min, float x_axis_max,
                float y_axis_min, float y_axis_max,
                float z_axis_min, float z_axis_max);
@@ -353,12 +374,13 @@ class SCLocalization
       * Adds point clouds
       * 
       * \input[in] cloud1 the input PointCloud2 pointer
+      * 
       * \input[out] cloud2 the output PointCloud2 pointer with appeded points
       *  
       */
     void 
     Add (PointCPtr &cloud1,
-             PointCPtr &cloud2);
+         PointCPtr &cloud2);
 
 
     /** \brief Point Cloud CallBack function.
@@ -386,6 +408,13 @@ class SCLocalization
     void
     odom_callback(const nav_msgs::OdometryConstPtr& odom_in);
 
+    /** \brief IMU CallBack function.
+      * 
+      * \input[in] IMU_in a IMU sensor_msgs const pointer
+      */
+    void
+    imu_callback(const sensor_msgs::Imu::ConstPtr& imu_in);
+
       
     /* Variables */
 
@@ -394,12 +423,24 @@ class SCLocalization
 
     /** \brief ROS publishers. */
     ros::Publisher pub_;
+    ros::Publisher pub_vis_selected_points_;
     ros::Publisher odom_abs_pub;
+    ros::Publisher pub_angle_deviation_mean_;
+    ros::Publisher pub_angle_deviation_std_;
+    ros::Publisher pub_angle_deviation_min_;
+    ros::Publisher pub_angle_deviation_max_;
 
     /** \brief ROS subscribers. */
     ros::Subscriber sub_;
     ros::Subscriber floor_sub_;
     ros::Subscriber odom_sub_;
+    ros::Subscriber imu_sub_;
+
+    /** \brief ROS Time in seconds. */
+    double g_current_time;
+
+    /** \brief Previous ROS Time in seconds. */
+    double g_previous_time;
     
     /** \brief Point Cloud (input) pointer. */
     PointCPtr g_cloud_ptr;
@@ -478,6 +519,55 @@ class SCLocalization
     geometry_msgs::PointStamped g_point_world_frame_coordinate;
 
 
+    /** \brief Current IMU reading from imu sensor. */
+    sensor_msgs::Imu g_robot_imu;
+
+    /** \brief Current orientation reading from imu sensor. */
+    geometry_msgs::Quaternion g_robot_orientation;
+
+    /** \brief Current angular velocity reading from imu sensor. */
+    geometry_msgs::Vector3 g_robot_angular_velocity;
+    /** \brief Current angular velocity reading in x from imu sensor. */
+    double g_robot_angular_velocity_x;
+    /** \brief Current angular velocity reading in y from imu sensor. */
+    double g_robot_angular_velocity_y;
+    /** \brief Current angular velocity reading in z from imu sensor. */
+    double g_robot_angular_velocity_z;
+    // /** \brief Current absolute angular velocity reading from imu. */
+    // double g_robot_angular_velocity_abs;
+
+    /** \brief Current linear acceleration reading from imu sensor. */
+    geometry_msgs::Vector3 g_robot_linear_acceleration;
+    /** \brief Current linear acceleration reading in x from imu sensor. */
+    double g_robot_linear_acceleration_x;
+    /** \brief Current linear acceleration reading in y from imu sensor. */
+    double g_robot_linear_acceleration_y;
+    /** \brief Current linear acceleration reading in z from imu sensor. */
+    double g_robot_linear_acceleration_z;
+    // /** \brief Current absolute linear acceleration reading in x from imu sensor. */
+    // double g_robot_linear_acceleration_abs;
+
+    /** \brief Current linear velocity computed in x. */
+    double g_robot_linear_velocity_x;
+    /** \brief Current linear velocity computed in y. */
+    double g_robot_linear_velocity_y;
+    /** \brief Current linear velocity computed in z. */
+    double g_robot_linear_velocity_z;
+    /** \brief Current linear velocity computed. */
+    double g_robot_linear_velocity_abs;
+    
+    /** \brief Current previous linear velocity computed in x. */
+    double g_robot_previous_linear_velocity_x;
+    /** \brief Current previous linear velocity computed in y. */
+    double g_robot_previous_linear_velocity_y;
+    /** \brief Current previous linear velocity computed in z. */
+    double g_robot_previous_linear_velocity_z;
+    // /** \brief Previous linear velocity computed. */
+    // double g_robot_previous_linear_velocity_abs;
+
+
+
+
     // Parameters to compute the angle deviation of points with respect to the previous frame:
     /** \brief The vector to store the vector the robot has translated with respect to its previous frame */
     std::vector<double> g_vdt{0.0, 0.0, 0.0};
@@ -497,6 +587,14 @@ class SCLocalization
     double g_mod_d2_sqr;
 
 
+    //The std msg to store the statistics of angle deviation of all points for visualization
+    std_msgs::Float32 angle_deviation_mean;
+    std_msgs::Float32 angle_deviation_std;
+    std_msgs::Float32 angle_deviation_min;
+    std_msgs::Float32 angle_deviation_max;
+
+
+
     // Additional parameters to compute the observation angle of points:
     /** \brief The vector to store the vector from the robots current position to where the observed point projects onto lidar's plane*/
     std::vector<double> g_do{0.0, 0.0, 0.0};
@@ -506,6 +604,8 @@ class SCLocalization
     double g_mod_do;
     /** \brief modulus of dp */
     double g_mod_dp;
+
+
 
 
 

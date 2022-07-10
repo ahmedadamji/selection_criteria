@@ -98,7 +98,7 @@
   </node>
 
   <!-- hdl_graph_slam_nodelet -->
-  <node pkg="nodelet" type="nodelet" name="hdl_graph_slam_nodelet" args="load hdl_graph_slam/HdlGraphSlamNodelet $(arg nodelet_manager)">
+  <node pkg="nodelet" type="nodelet" name="hdl_graph_slam_nodelet" args="load hdl_graph_slam/HdlGraphSlamNodelet $(arg nodelet_manager)" output="screen">
     <!-- <param name="points_topic" value="/selected_points" /> -->
     <param name="points_topic" value="$(arg points_topic)" />
     <remap from="/filtered_points" to="/selected_points" />

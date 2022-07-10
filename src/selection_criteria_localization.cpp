@@ -45,7 +45,14 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
   // Define the publishers
   pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("/selected_points", 3, true);
+  pub_vis_selected_points_ = nh_.advertise<sensor_msgs::PointCloud2> ("/vis_selected_points", 3, true);
   // odom_abs_pub = nh.advertise<nav_msgs::Odometry> ("/odom_abs", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
+  // Publishing to visualize the statistics of angle deviation of points over time:
+  pub_angle_deviation_mean_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_mean_", 3, true);
+  pub_angle_deviation_std_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_std_", 3, true);
+  pub_angle_deviation_min_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_min_", 3, true);
+  pub_angle_deviation_max_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_max_", 3, true);
+
 
 
   // // Create a ROS subscriber for the input point cloud and floor
@@ -69,6 +76,11 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   // Create a ROS subscriber for computed odometry
   // odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
   // odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
+
+
+  // Create a ROS subscriber for recorded IMU Data
+  // May need to transform the coordinate frame for this as well, but may get over this if magnitude for velocity is needed
+  imu_sub_ = nh_.subscribe("/kitti/oxts/imu", 1, &SCLocalization::imu_callback, this);
 
   // Get name of evaluation dataset and sequence:
   ros::param::get("/dataset", g_dataset);
@@ -239,6 +251,17 @@ SCLocalization::updateROSParams()
   ros::param::set("/previous_robot_world_frame_coordinate_y", g_robot_world_frame_coordinate.point.y);
   ros::param::set("/previous_robot_world_frame_coordinate_z", g_robot_world_frame_coordinate.point.z);
 
+
+  ros::param::get("/current_time", g_previous_time);
+  ros::param::set("/previous_time", g_previous_time);
+
+  ros::param::set("/robot_previous_linear_velocity_x", g_robot_linear_velocity_x);
+  ros::param::set("/robot_previous_linear_velocity_y", g_robot_linear_velocity_y);
+  // ros::param::set("/robot_previous_linear_velocity_z", g_robot_linear_velocity_z);
+  // ros::param::set("/robot_previous_linear_velocity_abs", g_robot_linear_velocity_abs);
+
+
+
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -285,9 +308,9 @@ SCLocalization::computeFilteredPointsData()
   g_file_name = g_file_name + ".txt";
 
 
-  //exception handling
+  //Saving statistics regarding filtered points
   try {
-    cout << "\nSaving Filtered Points Data to file " + g_file_name;
+    // cout << "\nSaving Filtered Points Data to file " + g_file_name;
     // Opening File
     ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/points/" + g_file_name, ofstream::out);
     
@@ -299,6 +322,26 @@ SCLocalization::computeFilteredPointsData()
         fw << filtered_points_data[i] << "\n";
       }
       fw.close();
+    }
+    else cout << "Problem with opening file";
+  }
+  catch (const char* msg) {
+    cerr << msg << endl;
+  }
+
+  //Saving information regarding rostime and velocity
+  try {
+    std::ofstream out;
+    out.open("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/time_and_speed/" + g_file_name, std::ios::app);
+    // ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/time_and_speed/" + g_file_name, std::ios_base::app);
+    
+    // If file opened write contents
+    if (out.is_open())
+    {
+      //store array contents to text file
+      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) << "\n";
+
+      out.close();
     }
     else cout << "Problem with opening file";
   }
@@ -358,6 +401,57 @@ SCLocalization::transformRobotCoordinates()
   // cout << "g_robot_world_frame_coordinate: " << endl;
   // cout << g_robot_world_frame_coordinate << endl;
   
+
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+SCLocalization::computeTrajectoryInformation()
+{
+  //Compute and save additional robot trajectory information to odometry
+
+  // Save the data regarding speed and time in a text file here.
+
+  // V = U + AT
+  // speed = distance / time
+
+  // To get the current ros time
+  g_current_time = ros::Time::now().toSec();
+  ros::param::set("/current_time", g_current_time);
+  // To get the previous ros time
+  ros::param::get("/previous_time", g_previous_time);
+  // To get the elapsed ros time
+  double time_elapsed = g_current_time-g_previous_time;
+
+
+  // To get the robot's angular velocity data
+  ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
+  ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
+
+
+  // To get the robot's linear acceleration data
+  // Not concidering z axis as it has acceleration due to gravity, and gives irrelevant readings.
+  ros::param::get("/robot_linear_acceleration_x", g_robot_linear_acceleration_x);
+  ros::param::get("/robot_linear_acceleration_y", g_robot_linear_acceleration_y);
+
+  // To get the robot's previous linear velocity data
+  ros::param::get("/robot_previous_linear_velocity_x", g_robot_previous_linear_velocity_x);
+  ros::param::get("/robot_previous_linear_velocity_y", g_robot_previous_linear_velocity_y);
+
+
+
+  // Do i need to save linear acceleration if I have distance?
+  g_robot_linear_velocity_x = g_robot_previous_linear_velocity_x + (time_elapsed * g_robot_linear_acceleration_x);
+  g_robot_linear_velocity_y = g_robot_previous_linear_velocity_y + (time_elapsed * g_robot_linear_acceleration_y);
+
+  g_robot_linear_velocity_abs = sqrt(pow(g_robot_linear_velocity_x,2) + pow(g_robot_linear_velocity_y,2));
+
+
+  // cout << fixed << g_robot_linear_velocity_abs << endl; //fixed opeartor used to not print the velocity in decimals
+
+
+
 
 
 }
@@ -439,6 +533,11 @@ SCLocalization::computeAngleDeviation()
   // Note: If angle_deviation is nan, means that poisition of point was not estimated by LiDAR.
   angle_deviation = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2)) * 180 / M_PI;
 
+  // if(isnan(angle_deviation))
+  // {
+  //   angle_deviation = 0.0;
+  // }
+
 
   // cout << "The angle deviation of the current point is: " << endl;
   // cout << angle_deviation << endl;
@@ -507,9 +606,14 @@ SCLocalization::computeObservationAngle()
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
+SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr)
 {
+
+  // Need to show fianl oerformance agianst vanilla visually, without saving metric data to show true performance and say how saving metrics have a small affect.
+
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
   out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
 
 
   // Transform the points to new frame
@@ -519,6 +623,10 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
   ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
   ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
   ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
+
+
+  // Compute and save additional robot trajectory information to odometry
+  computeTrajectoryInformation();
 
   // g_previous_robot_world_frame_coordinate
 
@@ -547,6 +655,9 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
     {
       out_cloud_ptr->points.push_back(*it);
 
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 1;
+
       // if (cylinderCondition(x, y, z))
       // {
       //   out_cloud_ptr->points.push_back(*it);
@@ -567,13 +678,14 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 
 
 
+
   }
 
   g_filter_name = "vanilla";
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
-  updateROSParams();
   computeFilteredPointsData();
+  updateROSParams();
 
 
 }
@@ -586,6 +698,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr)
 void
 SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
                                 PointCPtr &out_cloud_ptr,
+                                PointCPtr &vis_cloud_ptr,
                                 float x_axis_origin = 0,
                                 float radius = 3,
                                 float height = 100)
@@ -595,7 +708,20 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
   // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
 
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
   out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
+
+
+  //The vector to store the angle deviation of all points in a vector for visualization
+  std::vector<double> angle_deviation_vec;
+  angle_deviation_mean.data = 0.0;
+  angle_deviation_std.data = 0.0;
+  angle_deviation_min.data = 0.0;
+  angle_deviation_max.data = 0.0;
+
+
+  // g_angle_deviation_vec.clear();
 
 
   // Transform the points to new frame
@@ -616,21 +742,88 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
     transformPointCoordinates();
     // Computing Angle Deviation of point with respect to previous frame:
     double angle_deviation = computeAngleDeviation();
+    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
+    if(not isnan(angle_deviation))
+    {
+      angle_deviation_vec.push_back(angle_deviation);
+    }
+    
     // Computing Observation Angle of point with respect to lidar frame:
     double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
     {
+      // If i need to start cylinder from the ground (as in a half cylinder), it will require a z axis origin of: g_robot_world_frame_coordinate.point.z
+      // But i am interested in points in the direction of the lidar, and therefore this may not be the best option
+      // Include this argument in the report.
+
+
       // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
       if (!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
           (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) // within the radius limits
       {
         out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
+      else
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.3;
       }
     }
 
   }
+
+  // Finding the sum, mean, square of sums and std of angle deviation
+  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
+  // double mean = sum / angle_deviation_vec.size();
+  // double sq_sum = std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0);
+  // double std = std::sqrt(sq_sum / angle_deviation_vec.size() - mean * mean);
+
+  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
+  // double mean = sum / angle_deviation_vec.size();
+  // std::vector<double> diff(angle_deviation_vec.size());
+  // std::transform(angle_deviation_vec.begin(), angle_deviation_vec.end(), diff.begin(),
+  //               std::bind2nd(std::minus<double>(), mean));
+  // double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  // double std = std::sqrt(sq_sum / angle_deviation_vec.size());
+
+  double sum = 0.0;
+  for(int i=0;i<angle_deviation_vec.size();i++)
+          sum+=angle_deviation_vec[i];
+  double mean = sum/angle_deviation_vec.size();
+
+  double E=0;
+  // Quick Question - Can vector::size() return 0?
+  double inverse = 1.0 / static_cast<double>(angle_deviation_vec.size());
+  for(unsigned int i=0;i<angle_deviation_vec.size();i++)
+  {
+      E += pow(static_cast<double>(angle_deviation_vec[i]) - mean, 2);
+  }
+  double stdev =  sqrt(inverse * E);
+
+
+  auto minmax = std::minmax_element(angle_deviation_vec.begin(), angle_deviation_vec.end());
+  angle_deviation_mean.data = mean;
+  angle_deviation_std.data = stdev;
+  angle_deviation_min.data = *minmax.first;
+  angle_deviation_max.data = *minmax.second;
+
+  if(isnan(sum))
+  {
+    angle_deviation_mean.data = 0.0;
+    angle_deviation_std.data = 0.0;
+    angle_deviation_min.data = 0.0;
+    angle_deviation_max.data = 0.0;
+  }
+
+  pub_angle_deviation_mean_.publish (angle_deviation_mean);
+  pub_angle_deviation_std_.publish (angle_deviation_std);
+  pub_angle_deviation_min_.publish (angle_deviation_min);
+  pub_angle_deviation_max_.publish (angle_deviation_max);
   
 
 
@@ -650,8 +843,8 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   }
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
-  updateROSParams();
   computeFilteredPointsData();
+  updateROSParams();
 
 
 }
@@ -661,11 +854,14 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
                               PointCPtr &out_cloud_ptr,
+                              PointCPtr &vis_cloud_ptr,
                               float min_radius = 0,
                               float max_radius = 250)
 {
 
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
   out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
 
 
   // Transform the points to new frame
@@ -696,6 +892,14 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
       if ((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_radius,2)))
       {
         out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
+      else
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.3;
       }
     }
 
@@ -720,8 +924,8 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
-  updateROSParams();
   computeFilteredPointsData();
+  updateROSParams();
 
 
 }
@@ -732,13 +936,17 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
                                 PointCPtr &out_cloud_ptr,
+                                PointCPtr &vis_cloud_ptr,
                                 float x_axis_origin = 15,
                                 float ring_min_radius = 2,
                                 float ring_max_radius = 40,
                                 float ring_height = 50)
 {
   // This ring filter will remove points in the inner cylinder and retain points within the outter cylinder as this combines certain properties of the cylinder and radius filters
+
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
   out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
 
 
   // Transform the points to new frame
@@ -774,6 +982,14 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
         )
       {
         out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
+      else
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.3;
       }
     }
 
@@ -800,8 +1016,8 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
   
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
-  updateROSParams();
   computeFilteredPointsData();
+  updateROSParams();
 
 
 }
@@ -811,11 +1027,14 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
 void
 SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
                           PointCPtr &out_cloud_ptr,
+                          PointCPtr &vis_cloud_ptr,
                           float x_axis_min = -30, float x_axis_max = 30,
                           float y_axis_min = -3, float y_axis_max = 3,
                           float z_axis_min = -100, float z_axis_max = 100)
 {
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
   out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
     
   // Transform the points to new frame
   transformRobotCoordinates();
@@ -847,6 +1066,14 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
             ((g_y >= y_axis_min) && (g_y <= y_axis_max)))) // Not within the box limits
       {
         out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
+      else
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.3;
       }
     }
 
@@ -879,8 +1106,8 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
 
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
-  updateROSParams();
   computeFilteredPointsData();
+  updateROSParams();
 
 
 }
@@ -912,6 +1139,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   PointCPtr cloud3(new PointC);
 
   PointCPtr cloud_out(new PointC);
+  PointCPtr vis_cloud(new PointC);
 
   // These are the two synced clouds we are subscribing to, however both of these are currently same
   pcl::fromROSMsg(*filtered_cloud_msg, *filtered_cloud);
@@ -922,79 +1150,79 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Need to check how many more points apart from the floor are filtered by my filters
   g_filter_floor = true;
 
-  Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  // Filter(filtered_cloud, cloud_out); //removed suspected unneccesary points
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // radiusFilter(filtered_cloud, cloud_out, 0, 50); //removed suspected unneccesary points in form of radius filter
-  // ringFilter(filtered_cloud, cloud_out, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
+  // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
 
   // Cylinder Filters
   // To test best thickness of forward points to be eliminated
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter --> works as the best cyliner filter with almost 45% of filtered cloud
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 5, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 6, 100); //removed suspected unneccesary points in form of cylinder filter --> note in report that 6 fails
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter --> works as the best cyliner filter with almost 45% of filtered cloud
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 5, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 6, 100); //removed suspected unneccesary points in form of cylinder filter --> note in report that 6 fails
 
   // To test range of points required to be removed
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 10); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 20); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 30); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 40); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 0, 3, 50); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 10); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 20); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 30); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 40); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50); //removed suspected unneccesary points in form of cylinder filter
 
   // To test where to start the cylinder filter from
-  // cylinderFilter(filtered_cloud, cloud_out, 2, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 5, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 10, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 15, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 20, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 30, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 40, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 2, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 5, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 10, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 15, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 20, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 30, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 40, 3, 100); //removed suspected unneccesary points in form of cylinder filter
 
   // To test best range of forward points to be eliminated
-  // cylinderFilter(filtered_cloud, cloud_out, 80, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 60, 3, 80); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 40, 3, 60); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, 20, 3, 40); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 80, 3, 100); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 60, 3, 80); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 40, 3, 60); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 20, 3, 40); //removed suspected unneccesary points in form of cylinder filter
   // The height of the filter here should be based on results here and the test from the range evaluations, so i can add them here
   // 0 to 20 is already tested previously, use it again here
 
 
   // Trying cylinder parameters that worked quite well individually and comparing performance against all other cylinder filters.
-  // cylinderFilter(filtered_cloud, cloud_out, 15, 4, 80); //removed suspected unneccesary points in form of cylinder filter
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 15, 4, 80); //removed suspected unneccesary points in form of cylinder filter
   // Need to run the evaluation of radius being 5 again
 
 
   // Radius Filters
   // To test inner radius of points required to be removed
-  // radiusFilter(filtered_cloud, cloud_out, 0, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 2, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 4, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 6, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 8, 50); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 10, 50); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 2, 50); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 4, 50); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 6, 50); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 8, 50); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 10, 50); //removed suspected unneccesary points in form of radius filter
 
   // To test outer radius of points required to be retained
   // USe the inner radius herre based on the best inner radius identified and add some more tests to this
-  // radiusFilter(filtered_cloud, cloud_out, 0, 40); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 0, 30); //removed suspected unneccesary points in form of radius filter
-  // radiusFilter(filtered_cloud, cloud_out, 0, 20); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 40); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 20); //removed suspected unneccesary points in form of radius filter
 
   // Trying min and max radius parameters that worked quite well individually and comparing performance against all other radius filters.
-  // radiusFilter(filtered_cloud, cloud_out, 8, 30); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 8, 30); //removed suspected unneccesary points in form of radius filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
-  // ringFilter(filtered_cloud, cloud_out, 15, 2, 40, 50); //removed suspected unneccesary points in form of ring filter
+  // ringFilter(filtered_cloud, cloud_out, vis_cloud, 15, 2, 40, 50); //removed suspected unneccesary points in form of ring filter
 
 
   // Box Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
-  // boxFilter(filtered_cloud, cloud_out, -30, 30, -3, 3, -100, 100); //removed suspected unneccesary points in form of ring filter
+  // boxFilter(filtered_cloud, cloud_out, vis_cloud, -30, 30, -3, 3, -100, 100); //removed suspected unneccesary points in form of ring filter
   
 
   // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)
@@ -1012,10 +1240,14 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // write head and publish output
   sensor_msgs::PointCloud2 output;
+  sensor_msgs::PointCloud2 vis_output;
   
   pcl::toROSMsg(*cloud_out, output);
+  pcl::toROSMsg(*vis_cloud, vis_output);
   output.header = filtered_cloud_msg->header;
+  vis_output.header = filtered_cloud_msg->header;
   pub_.publish (output);
+  pub_vis_selected_points_.publish (vis_output);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1075,6 +1307,31 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
   // g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
       
+
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::imu_callback(const sensor_msgs::Imu::ConstPtr& imu_in)
+{
+
+  g_robot_imu = *imu_in;
+
+  g_robot_orientation = g_robot_imu.orientation;
+
+  g_robot_angular_velocity = g_robot_imu.angular_velocity;
+  ros::param::set("/robot_angular_velocity_x", g_robot_angular_velocity.x);
+  ros::param::set("/robot_angular_velocity_y", g_robot_angular_velocity.y);
+  ros::param::set("/robot_angular_velocity_z", g_robot_angular_velocity.z);
+
+  g_robot_linear_acceleration = g_robot_imu.linear_acceleration;
+  ros::param::set("/robot_linear_acceleration_x", g_robot_linear_acceleration.x);
+  ros::param::set("/robot_linear_acceleration_y", g_robot_linear_acceleration.y);
+  ros::param::set("/robot_linear_acceleration_z", g_robot_linear_acceleration.z);
+
 
 
 }

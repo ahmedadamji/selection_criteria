@@ -23,6 +23,23 @@
   <param name="/previous_robot_world_frame_coordinate_x" type="double" value="0" />
   <param name="/previous_robot_world_frame_coordinate_y" type="double" value="0" />
   <param name="/previous_robot_world_frame_coordinate_z" type="double" value="0" />
+  <param name="/robot_angular_velocity_x" type="double" value="0" />
+  <param name="/robot_angular_velocity_y" type="double" value="0" />
+  <param name="/robot_angular_velocity_z" type="double" value="0" />
+  <param name="/robot_linear_acceleration_x" type="double" value="0" />
+  <param name="/robot_linear_acceleration_y" type="double" value="0" />
+  <param name="/robot_linear_acceleration_z" type="double" value="0" />
+  <param name="/current_time" type="double" value="0" />
+  <param name="/robot_linear_velocity_x" type="double" value="0" />
+  <param name="/robot_linear_velocity_y" type="double" value="0" />
+  <param name="/robot_linear_velocity_z" type="double" value="0" />
+  <param name="/robot_linear_velocity_abs" type="double" value="0" />
+  <param name="/robot_previous_linear_velocity_x" type="double" value="0" />
+  <param name="/robot_previous_linear_velocity_y" type="double" value="0" />
+  <param name="/robot_previous_linear_velocity_z" type="double" value="0" />
+  <!-- <param name="/robot_previous_linear_velocity_abs" type="double" value="0" /> -->
+  <param name="/previous_time" type="double" value="1317384506.40" />
+ 
 
 
 
@@ -114,11 +131,11 @@
     </node> -->
 
     <!-- globalmap_server_nodelet -->
-    <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
+    <!-- <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
       <param name="globalmap_pcd" value="src/data/maps/KITTI_06_Vanilla.pcd" />
       <param name="convert_utm_to_local" value="true" />
       <param name="downsample_resolution" value="0.1" />
-    </node>
+    </node> -->
 
 
   <!-- hdl_localization_nodelet -->
@@ -202,6 +219,10 @@
 
   <!-- Check this out to view estimation errors -->
   <node pkg="hdl_localization" type="plot_status.py" name="plot_estimation_errors" if="$(arg plot_estimation_errors)" />
+
+  <!-- start plotjuggler -->
+  <!-- To install this need to run: sudo apt-get install ros-melodic-plotjuggler -->
+  <!-- <node pkg="plotjuggler" type="plotjuggler" name="my_plot_Juggler" args="" /> -->
 
 
 </launch>
