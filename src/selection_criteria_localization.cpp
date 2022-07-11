@@ -339,7 +339,7 @@ SCLocalization::computeFilteredPointsData()
     if (out.is_open())
     {
       //store array contents to text file
-      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) << "\n";
+      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) + "," + to_string(g_robot_angular_velocity_y) << "\n";
 
       out.close();
     }
@@ -430,6 +430,7 @@ SCLocalization::computeTrajectoryInformation()
   ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
 
 
+
   // To get the robot's linear acceleration data
   // Not concidering z axis as it has acceleration due to gravity, and gives irrelevant readings.
   ros::param::get("/robot_linear_acceleration_x", g_robot_linear_acceleration_x);
@@ -453,8 +454,8 @@ SCLocalization::computeTrajectoryInformation()
 
   g_robot_linear_velocity_abs = sqrt(pow(g_robot_linear_velocity_x,2) + pow(g_robot_linear_velocity_y,2));
 
-  cout << g_robot_linear_velocity_x << endl;
-  cout << g_robot_linear_velocity_y << endl;
+  // cout << g_robot_linear_velocity_x << endl;
+  // cout << g_robot_linear_velocity_y << endl;
 
 
   // cout << fixed << g_robot_linear_velocity_abs << endl; //fixed opeartor used to not print the velocity in decimals
