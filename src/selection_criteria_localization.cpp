@@ -312,7 +312,7 @@ SCLocalization::computeFilteredPointsData()
   try {
     // cout << "\nSaving Filtered Points Data to file " + g_file_name;
     // Opening File
-    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/points/" + g_file_name, ofstream::out);
+    ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/localization/statistics/points/" + g_file_name, ofstream::out);
     
     // If file opened write contents
     if (fw.is_open())
@@ -332,8 +332,8 @@ SCLocalization::computeFilteredPointsData()
   //Saving information regarding rostime and velocity
   try {
     std::ofstream out;
-    out.open("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/time_and_speed/" + g_file_name, std::ios::app);
-    // ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/statistics/time_and_speed/" + g_file_name, std::ios_base::app);
+    out.open("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/localization/statistics/time_and_speed/" + g_file_name, std::ios::app);
+    // ofstream fw("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + g_dataset + "/" + g_sequence + "/results/localization/statistics/time_and_speed/" + g_file_name, std::ios_base::app);
     
     // If file opened write contents
     if (out.is_open())
@@ -441,11 +441,20 @@ SCLocalization::computeTrajectoryInformation()
 
 
 
-  // Do i need to save linear acceleration if I have distance?
-  g_robot_linear_velocity_x = g_robot_previous_linear_velocity_x + (time_elapsed * g_robot_linear_acceleration_x);
-  g_robot_linear_velocity_y = g_robot_previous_linear_velocity_y + (time_elapsed * g_robot_linear_acceleration_y);
+  // Not using odometry data and purely IMU readings, therefore coordinate frame may not affect this.
+  // g_robot_linear_velocity_x = g_robot_previous_linear_velocity_x + (time_elapsed * g_robot_linear_acceleration_x);
+  // g_robot_linear_velocity_y = g_robot_previous_linear_velocity_y + (time_elapsed * g_robot_linear_acceleration_y);
+
+  // The following formula for velocity uses odometry data and no acceleration information from IMU, to check if the imu is giving reliable data:
+  g_robot_linear_velocity_x = (g_robot_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x) / time_elapsed;
+  g_robot_linear_velocity_x = ((g_robot_linear_velocity_x + g_robot_previous_linear_velocity_x) / 2); //To get a smoother velocity chart
+  g_robot_linear_velocity_y = (g_robot_world_frame_coordinate.point.y - g_previous_robot_world_frame_coordinate.point.y) / time_elapsed;
+  g_robot_linear_velocity_y = ((g_robot_linear_velocity_y + g_robot_previous_linear_velocity_y) / 2); //To get a smoother velocity chart
 
   g_robot_linear_velocity_abs = sqrt(pow(g_robot_linear_velocity_x,2) + pow(g_robot_linear_velocity_y,2));
+
+  cout << g_robot_linear_velocity_x << endl;
+  cout << g_robot_linear_velocity_y << endl;
 
 
   // cout << fixed << g_robot_linear_velocity_abs << endl; //fixed opeartor used to not print the velocity in decimals
