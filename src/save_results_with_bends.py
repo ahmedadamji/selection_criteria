@@ -10,9 +10,9 @@ import math
 # This script was used to check the timestamp from the tum files and only save the results to a new file within a specific time range.
 # This was used firstly to extract the straight portion of the trajectory, and can be used to even extract specifically the portion with turns.
 
-upper_time_bound = float(1317384534.20)
-lower_time_bound = float(0.00)
-directory_to_save = 'straight_path/'
+upper_time_bound = float(1317384541)
+lower_time_bound = float(1317384535)
+directory_to_save = 'bends/'
 
 
 # Saving the ground truth to the requested directory
