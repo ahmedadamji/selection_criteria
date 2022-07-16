@@ -255,6 +255,14 @@ class SCLocalization
     double
     computeAngleDeviation ();
 
+    /** \brief Compute Angle Deviation Statistics
+      *
+      * Computes the statistics of the cpmputed angle deviation of all the points relative to previous frame
+      * 
+      */
+    void
+    computeAngleDeviationStatistics ();
+
 
     /** \brief Compute Observation Angle
       *
@@ -368,6 +376,26 @@ class SCLocalization
                float x_axis_min, float x_axis_max,
                float y_axis_min, float y_axis_max,
                float z_axis_min, float z_axis_max);
+
+
+    /** \brief Angle Deviation Filter 
+      *
+      * Will return points that have moved within a certain angle threshold
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] min_angle: The min angle threshold by which a point has been predicted to move by
+      * \input[in] max_angle: The max angle threshold by which a point has been predicted to move by
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
+      *  
+      */
+    void 
+    angleDeviationFilter (PointCPtr &in_cloud_ptr,
+                          PointCPtr &out_cloud_ptr,
+                          PointCPtr &vis_cloud_ptr,
+                          float min_angle,
+                          float max_angle);
 
     /** \brief Add 
       *
@@ -587,6 +615,8 @@ class SCLocalization
     double g_mod_d2_sqr;
 
 
+    //The vector to store the angle deviation of all points in a vector for visualization
+    std::vector<double> angle_deviation_vec;
     //The std msg to store the statistics of angle deviation of all points for visualization
     std_msgs::Float32 angle_deviation_mean;
     std_msgs::Float32 angle_deviation_std;

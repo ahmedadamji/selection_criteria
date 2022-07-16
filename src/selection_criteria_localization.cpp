@@ -556,6 +556,66 @@ SCLocalization::computeAngleDeviation()
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void
+SCLocalization::computeAngleDeviationStatistics()
+{
+  // Finding the sum, mean, square of sums and std of angle deviation
+  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
+  // double mean = sum / angle_deviation_vec.size();
+  // double sq_sum = std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0);
+  // double E = 0.0;
+  // // Quick Question - Can vector::size() return 0?
+  // double inverse = 1.0 / static_cast<double>(angle_deviation_vec.size());
+  // for(unsigned int i=0;i<angle_deviation_vec.size();i++)
+  // {
+  //     E += pow(static_cast<double>(angle_deviation_vec[i]) - mean, 2);
+  // }
+  // double stdev =  sqrt(inverse * E);
+
+  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
+  // double mean = sum / angle_deviation_vec.size();
+  // std::vector<double> diff(angle_deviation_vec.size());
+  // std::transform(angle_deviation_vec.begin(), angle_deviation_vec.end(), diff.begin(),
+  //               std::bind2nd(std::minus<double>(), mean));
+  // double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  // double std = std::sqrt(sq_sum / angle_deviation_vec.size());
+
+  // Finding the sum of the vector of stored angle deviations
+  double sum = 0.0;
+  for(int i=0;i<angle_deviation_vec.size();i++)
+          sum+=angle_deviation_vec[i];
+
+  // Finding the mean of the vector of stored angle deviations
+  double mean = sum/angle_deviation_vec.size();
+
+  // Finding the standard deviation of the vector of stored angle deviations
+  double stdev = std::sqrt(std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0)
+                 / angle_deviation_vec.size() - mean * mean);
+
+
+
+  auto minmax = std::minmax_element(angle_deviation_vec.begin(), angle_deviation_vec.end());
+  angle_deviation_mean.data = mean;
+  angle_deviation_std.data = stdev;
+  angle_deviation_min.data = *minmax.first;
+  angle_deviation_max.data = *minmax.second;
+
+  if(isnan(sum))
+  {
+    angle_deviation_mean.data = 0.0;
+    angle_deviation_std.data = 0.0;
+    angle_deviation_min.data = 0.0;
+    angle_deviation_max.data = 0.0;
+  }
+
+  pub_angle_deviation_mean_.publish (angle_deviation_mean);
+  pub_angle_deviation_std_.publish (angle_deviation_std);
+  pub_angle_deviation_min_.publish (angle_deviation_min);
+  pub_angle_deviation_max_.publish (angle_deviation_max);
+
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -723,15 +783,14 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   vis_cloud_ptr->points.clear();
 
 
-  //The vector to store the angle deviation of all points in a vector for visualization
-  std::vector<double> angle_deviation_vec;
+  angle_deviation_vec.clear();
+
   angle_deviation_mean.data = 0.0;
   angle_deviation_std.data = 0.0;
   angle_deviation_min.data = 0.0;
   angle_deviation_max.data = 0.0;
 
 
-  // g_angle_deviation_vec.clear();
 
 
   // Transform the points to new frame
@@ -787,53 +846,8 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-  // Finding the sum, mean, square of sums and std of angle deviation
-  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
-  // double mean = sum / angle_deviation_vec.size();
-  // double sq_sum = std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0);
-  // double std = std::sqrt(sq_sum / angle_deviation_vec.size() - mean * mean);
 
-  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
-  // double mean = sum / angle_deviation_vec.size();
-  // std::vector<double> diff(angle_deviation_vec.size());
-  // std::transform(angle_deviation_vec.begin(), angle_deviation_vec.end(), diff.begin(),
-  //               std::bind2nd(std::minus<double>(), mean));
-  // double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  // double std = std::sqrt(sq_sum / angle_deviation_vec.size());
-
-  double sum = 0.0;
-  for(int i=0;i<angle_deviation_vec.size();i++)
-          sum+=angle_deviation_vec[i];
-  double mean = sum/angle_deviation_vec.size();
-
-  double E=0;
-  // Quick Question - Can vector::size() return 0?
-  double inverse = 1.0 / static_cast<double>(angle_deviation_vec.size());
-  for(unsigned int i=0;i<angle_deviation_vec.size();i++)
-  {
-      E += pow(static_cast<double>(angle_deviation_vec[i]) - mean, 2);
-  }
-  double stdev =  sqrt(inverse * E);
-
-
-  auto minmax = std::minmax_element(angle_deviation_vec.begin(), angle_deviation_vec.end());
-  angle_deviation_mean.data = mean;
-  angle_deviation_std.data = stdev;
-  angle_deviation_min.data = *minmax.first;
-  angle_deviation_max.data = *minmax.second;
-
-  if(isnan(sum))
-  {
-    angle_deviation_mean.data = 0.0;
-    angle_deviation_std.data = 0.0;
-    angle_deviation_min.data = 0.0;
-    angle_deviation_max.data = 0.0;
-  }
-
-  pub_angle_deviation_mean_.publish (angle_deviation_mean);
-  pub_angle_deviation_std_.publish (angle_deviation_std);
-  pub_angle_deviation_min_.publish (angle_deviation_min);
-  pub_angle_deviation_max_.publish (angle_deviation_max);
+  computeAngleDeviationStatistics();
   
 
 
@@ -1121,6 +1135,119 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
 
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr,
+                            float min_angle = 0, float max_angle = 35)
+{
+
+  // Need to show fianl oerformance agianst vanilla visually, without saving metric data to show true performance and say how saving metrics have a small affect.
+
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
+  out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
+
+
+  angle_deviation_vec.clear();
+  
+  angle_deviation_mean.data = 0.0;
+  angle_deviation_std.data = 0.0;
+  angle_deviation_min.data = 0.0;
+  angle_deviation_max.data = 0.0;
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
+
+
+  // Compute and save additional robot trajectory information to odometry
+  computeTrajectoryInformation();
+
+  // g_previous_robot_world_frame_coordinate
+
+  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
+  // cout << g_previous_robot_world_frame_coordinate << endl;
+  
+  for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
+  {
+
+    g_x = it->x;
+    g_y = it->y;
+    g_z = it->z;
+
+    // Transform the points to new frame
+    transformPointCoordinates();
+
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
+    if(not isnan(angle_deviation))
+    {
+      angle_deviation_vec.push_back(angle_deviation);
+    }
+    
+    // Computing Observation Angle of point with respect to lidar frame:
+    // double observation_angle = computeObservationAngle();
+
+
+    // out_cloud_ptr->points.push_back(*it);
+
+
+    if (floorFilter(g_filter_floor))
+    {
+
+      // Condition on the angle deviation on observed points.
+      if ( (angle_deviation > min_angle) && (angle_deviation < max_angle) ) // within the angle deviation limits
+      {
+        out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
+      else // Condition to visualize unselected points with a different intensity
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.3;
+      }
+
+    }
+
+
+
+  }
+
+  computeAngleDeviationStatistics();
+  
+
+
+  ros::param::get("/filter_name", g_filter_name);
+  
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
+  }
+  else if (g_filter_name.find("ang_dev") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
+  }
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  computeFilteredPointsData();
+  updateROSParams();
+
+
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
