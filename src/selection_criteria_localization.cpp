@@ -261,6 +261,9 @@ SCLocalization::updateROSParams()
   // ros::param::set("/robot_previous_linear_velocity_abs", g_robot_linear_velocity_abs);
 
 
+  ros::param::get("/g_robot_previous_angle", g_robot_angle);
+
+
   ros::param::set("/previous_angle_deviation_min", angle_deviation_min.data);
   ros::param::set("/previous_angle_deviation_max", angle_deviation_max.data);
   ros::param::set("/previous_angle_deviation_mean", angle_deviation_mean.data);
@@ -351,7 +354,7 @@ SCLocalization::computeFilteredPointsData()
     if (out.is_open())
     {
       //store array contents to text file
-      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) + "," + to_string(g_robot_angular_velocity_y) << "\n";
+      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) + "," + to_string(g_robot_angular_velocity) << "\n";
 
       out.close();
     }
@@ -434,12 +437,22 @@ SCLocalization::computeTrajectoryInformation()
   // To get the previous ros time
   ros::param::get("/previous_time", g_previous_time);
   // To get the elapsed ros time
-  double time_elapsed = g_current_time-g_previous_time;
+  double time_elapsed = g_current_time - g_previous_time;
 
 
-  // To get the robot's angular velocity data
-  ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
-  ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
+  // // To get the robot's angular velocity data
+  // ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
+  // ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
+
+
+  // double robot_position_vector_abs = sqrt(pow(g_robot_world_frame_coordinate.point.x,2)
+  //                                    + pow(g_robot_world_frame_coordinate.point.y,2));
+  g_robot_angle = (atan2(g_robot_world_frame_coordinate.point.y , g_robot_world_frame_coordinate.point.x)) * 180 / M_PI;
+  ros::param::get("/g_robot_previous_angle", g_robot_previous_angle);
+
+  g_robot_angular_velocity = (g_robot_angle - g_robot_previous_angle) / time_elapsed;
+
+
 
 
 
@@ -1217,8 +1230,8 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   int previous_matched_angle_deviation;
   ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
-  min_angle = previous_angle_deviation_mean;
-  max_angle = previous_angle_deviation_max;
+  // min_angle = previous_angle_deviation_mean;
+  // max_angle = previous_angle_deviation_max;
 
   // cout << "Min Angle: " << endl;
   // cout << min_angle << endl;
@@ -1337,22 +1350,9 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
 
   ros::param::get("/filter_name", g_filter_name);
 
-  // if (g_filter_name.empty())
-  // {
-  //   g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
-  // }
-  // else if (g_filter_name.find("ang_dev") != string::npos)
-  // {
-  //   g_filter_name = g_filter_name;
-  // }
-  // else
-  // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
-  // }
-
   if (g_filter_name.empty())
   {
-    g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max";
+    g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
   }
   else if (g_filter_name.find("ang_dev") != string::npos)
   {
@@ -1360,8 +1360,21 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max";
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
   }
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max";
+  // }
   
 
   g_in_cloud_size = in_cloud_ptr->size();
@@ -1480,8 +1493,8 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
-  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
-  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
+  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
@@ -1589,10 +1602,10 @@ SCLocalization::imu_callback(const sensor_msgs::Imu::ConstPtr& imu_in)
 
   g_robot_orientation = g_robot_imu.orientation;
 
-  g_robot_angular_velocity = g_robot_imu.angular_velocity;
-  ros::param::set("/robot_angular_velocity_x", g_robot_angular_velocity.x);
-  ros::param::set("/robot_angular_velocity_y", g_robot_angular_velocity.y);
-  ros::param::set("/robot_angular_velocity_z", g_robot_angular_velocity.z);
+  // g_robot_angular_velocity = g_robot_imu.angular_velocity;
+  // ros::param::set("/robot_angular_velocity_x", g_robot_angular_velocity.x);
+  // ros::param::set("/robot_angular_velocity_y", g_robot_angular_velocity.y);
+  // ros::param::set("/robot_angular_velocity_z", g_robot_angular_velocity.z);
 
   g_robot_linear_acceleration = g_robot_imu.linear_acceleration;
   ros::param::set("/robot_linear_acceleration_x", g_robot_linear_acceleration.x);

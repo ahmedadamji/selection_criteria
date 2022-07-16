@@ -553,14 +553,14 @@ class SCLocalization
     /** \brief Current orientation reading from imu sensor. */
     geometry_msgs::Quaternion g_robot_orientation;
 
-    /** \brief Current angular velocity reading from imu sensor. */
-    geometry_msgs::Vector3 g_robot_angular_velocity;
-    /** \brief Current angular velocity reading in x from imu sensor. */
-    double g_robot_angular_velocity_x;
-    /** \brief Current angular velocity reading in y from imu sensor. */
-    double g_robot_angular_velocity_y;
-    /** \brief Current angular velocity reading in z from imu sensor. */
-    double g_robot_angular_velocity_z;
+    // /** \brief Current angular velocity reading from imu sensor. */
+    // geometry_msgs::Vector3 g_robot_angular_velocity;
+    // /** \brief Current angular velocity reading in x from imu sensor. */
+    // double g_robot_angular_velocity_x;
+    // /** \brief Current angular velocity reading in y from imu sensor. */
+    // double g_robot_angular_velocity_y;
+    // /** \brief Current angular velocity reading in z from imu sensor. */
+    // double g_robot_angular_velocity_z;
     // /** \brief Current absolute angular velocity reading from imu. */
     // double g_robot_angular_velocity_abs;
 
@@ -592,6 +592,13 @@ class SCLocalization
     double g_robot_previous_linear_velocity_z;
     // /** \brief Previous linear velocity computed. */
     // double g_robot_previous_linear_velocity_abs;
+
+    /** \brief Current angular velocity computed. */
+    double g_robot_angular_velocity;
+    /** \brief Current Robot angle. */
+    double g_robot_angle;
+    /** \brief Previous Robot angle. */
+    double g_robot_previous_angle;
 
 
 
