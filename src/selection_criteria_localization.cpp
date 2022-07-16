@@ -177,15 +177,15 @@ SCLocalization::floorFilter(bool filter_floor = false)
 
   // float retained_radius = 5;
   // float retained_radius = 10;
-  float retained_radius = 15;
+  // float retained_radius = 15;
   // float retained_radius = 20;
   // float retained_radius = 25;
 
 
-  // float min_retained_radius = 2;
+  float min_retained_radius = 0;
   // float min_retained_radius = 5;
   // float min_retained_radius = 10;
-  // float max_retained_radius = 10;
+  float max_retained_radius = 10;
   // float max_retained_radius = 15;
   // float max_retained_radius = 20;
   // float max_retained_radius = 25;
@@ -201,7 +201,7 @@ SCLocalization::floorFilter(bool filter_floor = false)
   if(filter_floor == true)
   {
     // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_retained_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_retained_radius,2))))
-    if ((g_z >= floor_height)||(( pow(g_x,2) + pow(g_y,2) ) <= pow(retained_radius,2)))
+    if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(max_retained_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(min_retained_radius,2))))
     {
       return true;
     }
@@ -1158,8 +1158,13 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
       else
       {
         vis_cloud_ptr->points.push_back(*it);
-        vis_cloud_ptr->points.back().intensity = 0.3;
+        vis_cloud_ptr->points.back().intensity = 0.75;
       }
+    }
+    else
+    {
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 0.5;
     }
 
   }
@@ -1334,9 +1339,14 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
       else // Condition to visualize unselected points with a different intensity
       {
         vis_cloud_ptr->points.push_back(*it);
-        vis_cloud_ptr->points.back().intensity = 0.3;
+        vis_cloud_ptr->points.back().intensity = 0.75;
       }
 
+    }
+    else
+    {
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 0.5;
     }
 
 
