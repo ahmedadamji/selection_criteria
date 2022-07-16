@@ -63,6 +63,7 @@ legend_index = [0] * number_of_parameters
 linear_velocity_list = [0.0] * number_of_parameters
 angular_velocity_list = [0.0] * number_of_parameters
 time_list = [0.0] * number_of_parameters
+xyz_diff_magnitude_list = [0.0] * number_of_parameters
 
 synced_linear_velocity_list = [0.0] * number_of_parameters
 synced_angular_velocity_list = [0.0] * number_of_parameters
@@ -179,6 +180,7 @@ for file_num in range(len(sys.argv)-1):
 
     # Only finding for x and y as z does not matter
     xyz_diff_magnitude = np.sqrt(np.square(xyz_diff_x)+np.square(xyz_diff_y))
+    # xyz_diff_magnitude_list[file_num] = xyz_diff_magnitude
 
 
     # print (np.size(xyz_diff_magnitude))
@@ -265,6 +267,14 @@ for file_num in range(len(sys.argv)-1):
         filter_name = filter_name + "Cylinder\n" + " O: " + origin + " R: " + radius + " H: " + height + "\n"
         filter_name_found = True
 
+    if ("ang" in est_file_name.split("_")[2:]):
+        min_angle_index = est_file_name.split("_")[2:].index('ang') + 2
+        min_angle = est_file_name.split("_")[2:][min_angle_index]
+        max_angle_index = est_file_name.split("_")[2:].index('ang') + 3
+        max_angle = est_file_name.split("_")[2:][max_angle_index]
+        filter_name = filter_name + "Angle Dev\n" + " Min: " + min_angle + " Max: " + max_angle + "\n"
+        filter_name_found = True
+
     if (not filter_name_found):
         filter_name = "_".join(est_file_name.split("_")[2:-1]) + "\n"
 
@@ -291,10 +301,14 @@ for file_num in range(len(sys.argv)-1):
     synced_time_list[file_num] = np.array([time_series[i] for i in index_list])
     synced_linear_velocity_list[file_num] = np.array([linear_velocity_series[i] for i in index_list])
     synced_angular_velocity_list[file_num] = np.array([angular_velocity_series[i] for i in index_list])
+    xyz_diff_magnitude_list[file_num] = np.array([xyz_diff_magnitude[i] for i in range(len(index_list))])
     # print(np.size(time_list))
     # print(synced_time_list)
     # print(np.float64(time_list))
     # print(np.float64(x))
+    # print(len(synced_time_list[file_num]))
+    # print(len(synced_linear_velocity_list[file_num]))
+    # print(len(xyz_diff_magnitude))
 
 
 
@@ -366,7 +380,7 @@ pw_results.addPlot("Angular Velocity vs Time", fig)
 # fig, plt = createFigure()
 
 # for i in range(number_of_parameters):
-#     plt.plot((synced_time_list[i]-1317384506.40), xyz_diff_magnitude, linewidth=2, label = legend_list[i])
+#     plt.plot((synced_time_list[i]-1317384506.40), xyz_diff_magnitude_list[i], linewidth=2, label = legend_list[i])
 #     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
 # plt.xlabel("Time (s)", fontsize=13, fontweight='bold')
 # plt.ylabel("ATE (m)", fontsize=13, fontweight='bold')
@@ -380,7 +394,7 @@ pw_results.addPlot("Angular Velocity vs Time", fig)
 # fig, plt = createFigure()
 
 # for i in range(number_of_parameters):
-#     plt.scatter(synced_linear_velocity_list[i], xyz_diff_magnitude, s=2, label = legend_list[i])
+#     plt.scatter(synced_linear_velocity_list[i], xyz_diff_magnitude_list[i], s=2, label = legend_list[i])
 #     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
 # plt.xlabel("Linear Velocity (m/s)", fontsize=13, fontweight='bold')
 # plt.ylabel("ATE (m)", fontsize=13, fontweight='bold')
@@ -394,7 +408,7 @@ pw_results.addPlot("Angular Velocity vs Time", fig)
 # fig, plt = createFigure()
 
 # for i in range(number_of_parameters):
-#     plt.scatter(synced_angular_velocity_list[i], xyz_diff_magnitude, s=2, label = legend_list[i])
+#     plt.scatter(synced_angular_velocity_list[i], xyz_diff_magnitude_list[i], s=2, label = legend_list[i])
 #     # plt.plot(synced_time_list[i], synced_angular_velocity_list[i], linewidth=2, label = legend_list[i])
 # plt.xlabel("Angular Velocity (m/s)", fontsize=13, fontweight='bold')
 # plt.ylabel("ATE (m)", fontsize=13, fontweight='bold')
@@ -410,11 +424,11 @@ fig, plt = createFigure()
 # Reference for the line of best fit: np.polyfit and https://stackoverflow.com/a/31800660
 
 for i in range(number_of_parameters):
-    # plt.scatter(xyz_diff_magnitude, synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i]), s=2, label = str("Linear Velocity: " + legend_list[i]))
-    x = xyz_diff_magnitude
+    plt.scatter(xyz_diff_magnitude_list[i], synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i]), s=2, label = str("Linear Velocity: " + legend_list[i]))
+    x = xyz_diff_magnitude_list[i]
     y = synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i])
     plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Linear Velocity: " + legend_list[i]))
-    # plt.scatter(xyz_diff_magnitude, synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i]), s=2, label = str("Angular Velocity: " + legend_list[i]))
+    plt.scatter(xyz_diff_magnitude_list[i], synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i]), s=2, label = str("Angular Velocity: " + legend_list[i]))
     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
     y = synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i])
     plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Angular Velocity: " + legend_list[i]))
@@ -473,11 +487,11 @@ pw_results.addPlot("ATE vs Velocity", fig)
 fig, plt = createFigure()
 
 for i in range(number_of_parameters):
-    # plt.scatter(rpy_diff_pitch[:np.size(synced_time_list[i])], synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i]), s=2, label = str("Linear Velocity: " + legend_list[i]))
+    plt.scatter(rpy_diff_pitch[:np.size(synced_time_list[i])], synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i]), s=2, label = str("Linear Velocity: " + legend_list[i]))
     x = rpy_diff_pitch[:np.size(synced_time_list[i])]
     y = synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i])
     plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Linear Velocity: " + legend_list[i]))
-    # plt.scatter(rpy_diff_pitch[:np.size(synced_time_list[i])], synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i]), s=2, label = str("Angular Velocity: " + legend_list[i]))
+    plt.scatter(rpy_diff_pitch[:np.size(synced_time_list[i])], synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i]), s=2, label = str("Angular Velocity: " + legend_list[i]))
     x = rpy_diff_pitch[:np.size(synced_time_list[i])]
     y = synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i])
     plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Angular Velocity: " + legend_list[i]))

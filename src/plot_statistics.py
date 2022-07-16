@@ -76,9 +76,17 @@ total_filtered_points_list = [0.0] * number_of_parameters
 average_input_points_list = [0.0] * number_of_parameters
 average_output_points_list = [0.0] * number_of_parameters
 average_filtered_points_list = [0.0] * number_of_parameters
+percentage_of_cloud_filtered_list = [0.0] * number_of_parameters
 
+# Here from mean can change this to the metric that I identified from literature that is most useful.
+# Also they had created their own metric, can calculate this and add it here as well.
+
+# Can replace this metric where the denominator is normaized with respect to total number of points, but that would only change the scale -->
 mean_translational_error_per_filtered_point_list = [0.0] * number_of_parameters
 mean_rotational_error_per_filtered_point_list = [0.0] * number_of_parameters
+mean_translational_error_per_filtered_cloud_list = [0.0] * number_of_parameters
+mean_rotational_error_per_filtered_cloud_list = [0.0] * number_of_parameters
+# Probably create graph that compares gradient of error per filtered cloud as well.
 
 
 for parameter_idx in range(number_of_parameters):
@@ -122,18 +130,21 @@ for parameter_idx in range(number_of_parameters):
         "total_filtered_points": 0.0,
         "average_input_points": 0.0,
         "average_output_points": 0.0,
-        "average_filtered_points": 0.0
+        "average_filtered_points": 0.0,
+        "percentage_of_cloud_filtered": 0.0
     }
 
     additional_metrics = {
         "mean_translational_error_per_filtered_point": 0.0,
-        "mean_rotational_error_per_filtered_point": 0.0
+        "mean_rotational_error_per_filtered_point": 0.0,
+        "mean_translational_error_per_filtered_cloud": 0.0,
+        "mean_rotational_error_per_filtered_cloud": 0.0
     }
 
     # print(thisdict)
     keys_list = ['title', 'std', 'rmse', 'max', 'min', 'median', 'sse', 'mean']
-    points_keys_list = ['total_input_points', 'total_output_points', 'total_filtered_points', 'average_input_points', 'average_output_points', 'average_filtered_points']
-    additional_metrics_keys_list = ['mean_translational_error_per_filtered_point','mean_rotational_error_per_filtered_point']
+    points_keys_list = ['total_input_points', 'total_output_points', 'total_filtered_points', 'average_input_points', 'average_output_points', 'average_filtered_points','percentage_of_cloud_filtered']
+    additional_metrics_keys_list = ['mean_translational_error_per_filtered_point','mean_rotational_error_per_filtered_point', 'mean_translational_error_per_filtered_cloud','mean_rotational_error_per_filtered_cloud']
 
     with open(str(est_file_name + "_statistics.txt")) as f:
         lines = f.readlines()
@@ -177,9 +188,15 @@ for parameter_idx in range(number_of_parameters):
     if points["average_filtered_points"] > 0:
         additional_metrics['mean_translational_error_per_filtered_point'] = translation['mean'] / points["average_filtered_points"]
         additional_metrics['mean_rotational_error_per_filtered_point'] = rotation['mean'] / points["average_filtered_points"]
+        points["percentage_of_cloud_filtered"] = (100*points["average_filtered_points"]/points["average_input_points"])
+        additional_metrics['mean_translational_error_per_filtered_cloud'] = translation['mean'] / points["percentage_of_cloud_filtered"]
+        additional_metrics['mean_rotational_error_per_filtered_cloud'] = rotation['mean'] / points["percentage_of_cloud_filtered"]
     else:
         additional_metrics['mean_translational_error_per_filtered_point'] = 0.0
         additional_metrics['mean_rotational_error_per_filtered_point'] = 0.0
+        additional_metrics['mean_translational_error_per_filtered_cloud'] = 0.0
+        additional_metrics['mean_rotational_error_per_filtered_cloud'] = 0.0
+        points["percentage_of_cloud_filtered"] = 0.0
 
 
     # print(translation)
@@ -212,6 +229,14 @@ for parameter_idx in range(number_of_parameters):
         filter_name = filter_name + "Cylinder\n" + " O: " + origin + " R: " + radius + " H: " + height + "\n"
         filter_name_found = True
 
+    if ("ang" in est_file_name.split("_")[2:]):
+        min_angle_index = est_file_name.split("_")[2:].index('ang') + 2
+        min_angle = est_file_name.split("_")[2:][min_angle_index]
+        max_angle_index = est_file_name.split("_")[2:].index('ang') + 3
+        max_angle = est_file_name.split("_")[2:][max_angle_index]
+        filter_name = filter_name + "Angle Dev\n" + " Min: " + min_angle + " Max: " + max_angle + "\n"
+        filter_name_found = True
+
     if (not filter_name_found):
         filter_name = "_".join(est_file_name.split("_")[2:-1]) + "\n"
 
@@ -242,9 +267,13 @@ for parameter_idx in range(number_of_parameters):
     average_input_points_list[parameter_idx] = points["average_input_points"]
     average_output_points_list[parameter_idx] = points["average_output_points"]
     average_filtered_points_list[parameter_idx] = points["average_filtered_points"]
+    average_filtered_points_list[parameter_idx] = points["average_filtered_points"]
+    percentage_of_cloud_filtered_list[parameter_idx] = points["percentage_of_cloud_filtered"]
 
     mean_translational_error_per_filtered_point_list[parameter_idx] = additional_metrics["mean_translational_error_per_filtered_point"]
     mean_rotational_error_per_filtered_point_list[parameter_idx] = additional_metrics["mean_rotational_error_per_filtered_point"]
+    mean_translational_error_per_filtered_cloud_list[parameter_idx] = additional_metrics["mean_translational_error_per_filtered_cloud"]
+    mean_rotational_error_per_filtered_cloud_list[parameter_idx] = additional_metrics["mean_rotational_error_per_filtered_cloud"]
 
 
 
@@ -260,6 +289,7 @@ def createFigure():
     # Link with list with colours: https://matplotlib.org/stable/gallery/color/named_colors.html
     ax = plt.axes()
     ax.set_facecolor("seashell")
+
     fig.patch.set_facecolor('gainsboro')
     # Setting the axis scales
     plt.yscale('linear')
@@ -284,110 +314,129 @@ pw_trans.MainWindow.setWindowTitle("Translation Statistics")
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(std_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Standard Deviation in meters (m)")
-plt.title("STD Comparison With " + Dataset)
+plt.plot(std_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Standard Deviation in meters (m)", fontsize=13, fontweight='bold')
+plt.title("STD Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("std", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(rmse_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("RMSE in meters (m)")
-plt.title("RMSE Comparison With " + Dataset)
+plt.plot(rmse_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("RMSE in meters (m)", fontsize=13, fontweight='bold')
+plt.title("RMSE Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("rmse", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(max_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Max Error in meters (m)")
-plt.title("Max Error Comparison With " + Dataset)
+plt.plot(max_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Max Error in meters (m)", fontsize=13, fontweight='bold')
+plt.title("Max Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("max", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(min_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Min error in meters (m)")
-plt.title("Min Error Comparison With " + Dataset)
+plt.plot(min_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Min error in meters (m)", fontsize=13, fontweight='bold')
+plt.title("Min Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("min", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(median_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Median error in meters (m)")
-plt.title("Median Error Comparison With " + Dataset)
+plt.plot(median_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Median error in meters (m)", fontsize=13, fontweight='bold')
+plt.title("Median Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("median", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(sse_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("SSE error in meters (m)")
-plt.title("SSE Error Comparison With " + Dataset)
+plt.plot(sse_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("SSE error in meters (m)", fontsize=13, fontweight='bold')
+plt.title("SSE Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("sse", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(mean_trans_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Mean error in meters (m)")
-plt.title("Mean Error Comparison With " + Dataset)
+plt.plot(mean_trans_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Mean error in meters (m)", fontsize=13, fontweight='bold')
+plt.title("Mean Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("mean", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(total_input_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Total Input Points")
-plt.title("Total Input Points Comparison With " + Dataset)
+plt.plot(total_input_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Total Input Points", fontsize=13, fontweight='bold')
+plt.title("Total Input Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("total_input_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(total_filtered_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Total Filtered Points")
-plt.title("Total Filtered Points Comparison With " + Dataset)
+plt.plot(total_filtered_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Total Filtered Points", fontsize=13, fontweight='bold')
+plt.title("Total Filtered Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("total_filtered_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(average_input_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Average Input Points")
-plt.title("Average Input Points Comparison With " + Dataset)
+plt.plot(average_input_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Average Input Points", fontsize=13, fontweight='bold')
+plt.title("Average Input Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("average_input_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(average_filtered_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Average Filtered Points")
-plt.title("Average Filtered Points Comparison With " + Dataset)
+plt.plot(average_filtered_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Average Filtered Points", fontsize=13, fontweight='bold')
+plt.title("Average Filtered Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("average_filtered_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(mean_translational_error_per_filtered_point_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Mean Translational Error Per Filtered Point in meters (m)")
-plt.title("Mean Translational Error Per Filtered Point Comparison With " + Dataset)
+plt.plot(percentage_of_cloud_filtered_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Percentage of Cloud Filtered", fontsize=13, fontweight='bold')
+plt.title("Percentage of Cloud Filtered Comparison With " + Dataset, fontsize=15, fontweight='bold')
+pw_trans.addPlot("percentage_of_cloud_filtered", fig)
+
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(mean_translational_error_per_filtered_point_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Mean Translational Error Per Filtered Point in meters (m)", fontsize=13, fontweight='bold')
+plt.title("Mean Translational Error Per Filtered Point Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_trans.addPlot("mean_translational_error_per_filtered_point", fig)
+
+
+# Creating the plot
+# This plot expresses the metric of error per portion of cloud that is filtered, instead of per point, which makes more sense intuitively
+fig, plt = createFigure()
+plt.plot(mean_translational_error_per_filtered_cloud_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Mean Translational Error Per Filtered Cloud in meters (m)", fontsize=13, fontweight='bold')
+plt.title("Mean Translational Error Per Filtered Cloud Comparison With " + Dataset, fontsize=15, fontweight='bold')
+pw_trans.addPlot("mean_translational_error_per_filtered_cloud", fig)
 
 pw_trans.show()
 
@@ -405,109 +454,130 @@ pw_rot.MainWindow.setWindowTitle("Rotation Statistics")
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(std_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Standard Deviation in degrees (deg)")
-plt.title("STD Comparison With " + Dataset)
+plt.plot(std_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Standard Deviation in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("STD Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("std", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(rmse_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("RMSE in degrees (deg)")
-plt.title("RMSE Error Comparison With " + Dataset)
+plt.plot(rmse_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("RMSE in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("RMSE Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("rmse", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(max_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Max error in degrees (deg)")
-plt.title("Max Error Comparison With " + Dataset)
+plt.plot(max_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Max error in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("Max Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("max", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(min_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Min error in degrees (deg)")
-plt.title("Min Error Comparison With " + Dataset)
+plt.plot(min_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Min error in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("Min Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("min", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(median_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Median error in degrees (deg)")
-plt.title("Median Error Comparison With " + Dataset)
+plt.plot(median_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Median error in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("Median Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("median", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(sse_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("SSE error in degrees (deg)")
-plt.title("SSE Error Comparison With " + Dataset)
+plt.plot(sse_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("SSE error in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("SSE Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("sse", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(mean_rot_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Mean error in degrees (deg)")
-plt.title("Mean Error Comparison With " + Dataset)
+plt.plot(mean_rot_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Mean error in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("Mean Error Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("mean", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(total_input_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Total Input Points")
-plt.title("Total Input Points Comparison With " + Dataset)
+plt.plot(total_input_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Total Input Points", fontsize=13, fontweight='bold')
+plt.title("Total Input Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("total_input_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(total_filtered_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Total Filtered Points")
-plt.title("Total Filtered Points Comparison With " + Dataset)
+plt.plot(total_filtered_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Total Filtered Points", fontsize=13, fontweight='bold')
+plt.title("Total Filtered Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("total_filtered_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(average_input_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Average Input Points")
-plt.title("Average Input Points Comparison With " + Dataset)
+plt.plot(average_input_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Average Input Points", fontsize=13, fontweight='bold')
+plt.title("Average Input Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("average_input_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(average_filtered_points_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Average Filtered Points")
-plt.title("Average Filtered Points Comparison With " + Dataset)
+plt.plot(average_filtered_points_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Average Filtered Points", fontsize=13, fontweight='bold')
+plt.title("Average Filtered Points Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("average_filtered_points", fig)
 
 
 # Creating the plot
 fig, plt = createFigure()
-plt.plot(mean_rotational_error_per_filtered_point_list, '--')
-plt.xlabel("Selection Algorithm")
-plt.ylabel("Mean Rotational Error Per Filtered Point in degrees (deg)")
-plt.title("Mean Translational Error Per Filtered Point Comparison With " + Dataset)
+plt.plot(percentage_of_cloud_filtered_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Percentage of Cloud Filtered", fontsize=13, fontweight='bold')
+plt.title("Percentage of Cloud Filtered Comparison With " + Dataset, fontsize=15, fontweight='bold')
+pw_rot.addPlot("percentage_of_cloud_filtered", fig)
+
+
+# Creating the plot
+fig, plt = createFigure()
+plt.plot(mean_rotational_error_per_filtered_point_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Mean Rotational Error Per Filtered Point in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("Mean Rotational Error Per Filtered Point Comparison With " + Dataset, fontsize=15, fontweight='bold')
 pw_rot.addPlot("mean_rotational_error_per_filtered_point", fig)
 
+
+# Creating the plot
+# This plot expresses the metric of error per portion of cloud that is filtered, instead of per point, which makes more sense intuitively
+fig, plt = createFigure()
+plt.plot(mean_rotational_error_per_filtered_cloud_list, '--', marker='o')
+plt.xlabel("Selection Algorithm", fontsize=13, fontweight='bold')
+plt.ylabel("Mean Rotational Error Per Filtered Cloud in degrees (deg)", fontsize=13, fontweight='bold')
+plt.title("Mean Rotational Error Per Filtered Cloud Comparison With " + Dataset, fontsize=15, fontweight='bold')
+pw_rot.addPlot("mean_rotational_error_per_filtered_cloud", fig)
+
 pw_rot.show()
+
+

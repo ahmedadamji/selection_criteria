@@ -39,6 +39,11 @@
   <param name="/robot_previous_linear_velocity_z" type="double" value="0" />
   <!-- <param name="/robot_previous_linear_velocity_abs" type="double" value="0" /> -->
   <param name="/previous_time" type="double" value="1317384506.40" />
+  <param name="/previous_angle_deviation_min" type="double" value="0.0" />
+  <param name="/previous_angle_deviation_max" type="double" value="0.0" />
+  <param name="/previous_angle_deviation_mean" type="double" value="0.0" />
+  <param name="/previous_angle_deviation_std" type="double" value="0.0" />
+  <param name="/previous_matched_angle_deviation" type="int" value="0" />
  
 
 

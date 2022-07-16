@@ -622,6 +622,13 @@ class SCLocalization
     std_msgs::Float32 angle_deviation_std;
     std_msgs::Float32 angle_deviation_min;
     std_msgs::Float32 angle_deviation_max;
+    double previous_angle_deviation_mean;
+    double previous_angle_deviation_std;
+    double previous_angle_deviation_min;
+    double previous_angle_deviation_max;
+
+    /** \brief number of points that satisfied the constraints of the angle deviation filter */
+    int g_matched_angle_deviation;
 
 
 
