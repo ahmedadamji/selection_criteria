@@ -175,20 +175,14 @@ SCLocalization::floorFilter(bool filter_floor = false)
   // And is there any reason for me to do this?
   // Investigate if points far away or close from the floor are more useful to filter and conclude why  if  (filter) {
 
-  // float retained_radius = 5;
-  // float retained_radius = 10;
-  // float retained_radius = 15;
-  // float retained_radius = 20;
-  // float retained_radius = 25;
 
-
-  float min_retained_radius = 0;
-  // float min_retained_radius = 5;
-  // float min_retained_radius = 10;
-  float max_retained_radius = 10;
-  // float max_retained_radius = 15;
-  // float max_retained_radius = 20;
-  // float max_retained_radius = 25;
+  // g_min_retained_floor_radius = 0;
+  // g_min_retained_floor_radius = 5;
+  // g_min_retained_floor_radius = 10;
+  // g_max_retained_floor_radius = 10;
+  // g_max_retained_floor_radius = 15;
+  // g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 25;
 
 
   //This height needs to be converted from the map frame to the velo frame value
@@ -200,9 +194,13 @@ SCLocalization::floorFilter(bool filter_floor = false)
 
   if(filter_floor == true)
   {
-    // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_retained_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_retained_radius,2))))
-    if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(max_retained_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(min_retained_radius,2))))
+    // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2))))
+    if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2))))
     {
+      return true;
+    }
+    else if((g_double_floor_ring) && ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius + g_gap_to_next_floor_ring,2))
+                                      && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius + g_gap_to_next_floor_ring,2))))) {
       return true;
     }
     else
@@ -215,7 +213,6 @@ SCLocalization::floorFilter(bool filter_floor = false)
   {
     return true;
   }
-
 
 }
 
@@ -782,6 +779,34 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
     // out_cloud_ptr->points.push_back(*it);
 
 
+    // Based on the results it seems that a double ring does not help for this particular dataset
+    // and the best results occur when the retained floor is between the radius of 10 and 20 m,
+    // again for particularly for the KITTI_06 dataset based on experiments conducted
+
+
+    // g_min_retained_floor_radius = 0;
+    // g_min_retained_floor_radius = 5;
+    // g_min_retained_floor_radius = 10;
+    // g_min_retained_floor_radius = 15;
+    // g_min_retained_floor_radius = 20;
+    g_min_retained_floor_radius = 10;
+    // g_min_retained_floor_radius = 30;
+    // g_min_retained_floor_radius = 50;
+    // g_min_retained_floor_radius = 70;
+    // g_max_retained_floor_radius = 10;
+    // g_max_retained_floor_radius = 15;
+    // g_max_retained_floor_radius = 20;
+    // g_max_retained_floor_radius = 25;
+    // g_max_retained_floor_radius = 1000;
+    // g_max_retained_floor_radius = 30;
+    g_max_retained_floor_radius = 20;
+    // g_max_retained_floor_radius = 40;
+    // g_max_retained_floor_radius = 60;
+    // g_max_retained_floor_radius = 80;
+
+    g_double_floor_ring = false;
+    g_gap_to_next_floor_ring = 35.0;
+
     if (floorFilter(g_filter_floor))
     {
       out_cloud_ptr->points.push_back(*it);
@@ -811,8 +836,13 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
 
 
   }
-
   g_filter_name = "vanilla";
+
+
+  // g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius);
+  // if(g_double_floor_ring) {
+  //   g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius) + "_" + to_string(g_gap_to_next_floor_ring);
+  // }
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   computeFilteredPointsData();
@@ -1439,7 +1469,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1503,7 +1533,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
-  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
+  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 

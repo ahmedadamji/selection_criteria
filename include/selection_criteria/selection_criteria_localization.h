@@ -526,6 +526,18 @@ class SCLocalization
 
     /** \brief Bool to determine weather to filter the floor. */
     bool g_filter_floor = true;
+    
+    /** \brief float to determine minimum ratius to retain points from the floor. */
+    float g_min_retained_floor_radius;
+
+    /** \brief float to determine maximum ratius to retain points from the floor. */
+    float g_max_retained_floor_radius;
+
+    /** \brief Bool to determine if a second ring of the floor should be retained far away. */
+    bool g_double_floor_ring;
+
+    /** \brief float to determine how far the next ring of the floor should be retained. */
+    float g_gap_to_next_floor_ring;
 
 
     /** \brief TF listener definition. */
@@ -648,6 +660,8 @@ class SCLocalization
     double g_mod_do;
     /** \brief modulus of dp */
     double g_mod_dp;
+
+
 
 
 
