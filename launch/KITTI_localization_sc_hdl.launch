@@ -26,6 +26,7 @@
   <param name="/robot_angular_velocity_x" type="double" value="0" />
   <param name="/robot_angular_velocity_y" type="double" value="0" />
   <param name="/robot_angular_velocity_z" type="double" value="0" />
+  <param name="/robot_previous_angular_velocity" type="double" value="0" />
   <param name="/robot_previous_angle" type="double" value="0" />
   <param name="/robot_linear_acceleration_x" type="double" value="0" />
   <param name="/robot_linear_acceleration_y" type="double" value="0" />

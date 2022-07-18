@@ -74,7 +74,7 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   // floor_sub_ = nh_.subscribe("/floor_points", 3, &SCLocalization::callback, this);
   
   // Create a ROS subscriber for computed odometry
-  // odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
+  odom_sub_ = nh_.subscribe("/odom", 1, &SCLocalization::odom_callback, this);
   // odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCLocalization::odom_callback, this);
 
 
@@ -258,7 +258,10 @@ SCLocalization::updateROSParams()
   // ros::param::set("/robot_previous_linear_velocity_abs", g_robot_linear_velocity_abs);
 
 
-  ros::param::get("/g_robot_previous_angle", g_robot_angle);
+  ros::param::set("/robot_previous_angular_velocity", g_robot_angular_velocity);
+
+
+  ros::param::get("/robot_previous_angle", g_robot_angle);
 
 
   ros::param::set("/previous_angle_deviation_min", angle_deviation_min.data);
@@ -441,16 +444,22 @@ SCLocalization::computeTrajectoryInformation()
   // ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
   // ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
 
+  ros::param::get("/robot_previous_angular_velocity", g_robot_previous_angular_velocity);
+
 
   // double robot_position_vector_abs = sqrt(pow(g_robot_world_frame_coordinate.point.x,2)
   //                                    + pow(g_robot_world_frame_coordinate.point.y,2));
-  g_robot_angle = (atan2(g_robot_world_frame_coordinate.point.y , g_robot_world_frame_coordinate.point.x)) * 180 / M_PI;
-  ros::param::get("/g_robot_previous_angle", g_robot_previous_angle);
+  // g_robot_angle = (atan2(g_robot_world_frame_coordinate.point.y , g_robot_world_frame_coordinate.point.x)) * 180 / M_PI;
+
+  ros::param::get("/robot_previous_angle", g_robot_previous_angle);
+  if(g_robot_angle == 0.0) {
+    g_robot_angle = g_robot_previous_angle;
+  }
+  // cout << "g_robot_angle: " << endl;
+  // cout << g_robot_angle << endl;
 
   g_robot_angular_velocity = (g_robot_angle - g_robot_previous_angle) / time_elapsed;
-
-
-
+  g_robot_angular_velocity = ((g_robot_angular_velocity + g_robot_previous_angular_velocity) / 2); //To get a smoother velocity chart
 
 
   // To get the robot's linear acceleration data
@@ -639,6 +648,8 @@ SCLocalization::computeAngleDeviationStatistics()
   for(int i=0;i<angle_deviation_vec.size();i++)
           sum+=angle_deviation_vec[i];
 
+  // cout << sum << endl;
+
   // Finding the mean of the vector of stored angle deviations
   double mean = sum/angle_deviation_vec.size();
 
@@ -669,6 +680,8 @@ SCLocalization::computeAngleDeviationStatistics()
   pub_angle_deviation_std_.publish (angle_deviation_std);
   pub_angle_deviation_min_.publish (angle_deviation_min);
   pub_angle_deviation_max_.publish (angle_deviation_max);
+
+  // cout << angle_deviation_max << endl;
 
   
 
@@ -1380,24 +1393,11 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   
 
 
-  ros::param::get("/filter_name", g_filter_name);
-
-  if (g_filter_name.empty())
-  {
-    g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
-  }
-  else if (g_filter_name.find("ang_dev") != string::npos)
-  {
-    g_filter_name = g_filter_name;
-  }
-  else
-  {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
-  }
+  // ros::param::get("/filter_name", g_filter_name);
 
   // if (g_filter_name.empty())
   // {
-  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max";
+  //   g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
   // }
   // else if (g_filter_name.find("ang_dev") != string::npos)
   // {
@@ -1405,8 +1405,25 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   // }
   // else
   // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max";
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
   // }
+
+  // cout << max_angle << endl;
+
+  ros::param::get("/filter_name", g_filter_name);
+
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max";
+  }
+  else if (g_filter_name.find("ang_dev") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max";
+  }
   
 
   g_in_cloud_size = in_cloud_ptr->size();
@@ -1618,6 +1635,28 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
   // g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
   // g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
+
+
+
+  // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:
+  double q_x = robot_odom.pose.pose.orientation.x;
+  double q_y = robot_odom.pose.pose.orientation.y;
+  double q_z = robot_odom.pose.pose.orientation.z;
+  double q_w = robot_odom.pose.pose.orientation.w;
+
+  // Quaternion
+  tf2::Quaternion q(q_x, q_y, q_z, q_w);
+  // 3x3 Rotation matrix from quaternion
+  tf2::Matrix3x3 m(q);
+  // Roll Pitch and Yaw from rotation matrix
+  double roll;
+  double pitch;
+  double yaw;
+  m.getRPY(roll, pitch, yaw);
+
+
+  g_robot_angle = abs(yaw * 180 / M_PI);
+
       
 
 

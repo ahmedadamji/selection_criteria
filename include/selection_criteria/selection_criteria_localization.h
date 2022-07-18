@@ -607,8 +607,10 @@ class SCLocalization
 
     /** \brief Current angular velocity computed. */
     double g_robot_angular_velocity;
+    /** \brief Previous angular velocity computed. */
+    double g_robot_previous_angular_velocity;
     /** \brief Current Robot angle. */
-    double g_robot_angle;
+    double g_robot_angle = 0.0;
     /** \brief Previous Robot angle. */
     double g_robot_previous_angle;
 
