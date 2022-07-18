@@ -768,14 +768,6 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
     g_y = it->y;
     g_z = it->z;
 
-    // Transform the points to new frame
-    transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
-
-
     // out_cloud_ptr->points.push_back(*it);
 
 
@@ -1265,8 +1257,8 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   int previous_matched_angle_deviation;
   ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
-  // min_angle = previous_angle_deviation_mean;
-  // max_angle = previous_angle_deviation_max;
+  min_angle = previous_angle_deviation_mean;
+  max_angle = previous_angle_deviation_max;
 
   // cout << "Min Angle: " << endl;
   // cout << min_angle << endl;
@@ -1469,7 +1461,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1534,7 +1526,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
-  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
