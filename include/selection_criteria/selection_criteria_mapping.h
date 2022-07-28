@@ -255,6 +255,22 @@ class SCMapping
     double
     computeAngleDeviation ();
 
+    /** \brief Compute Angle Deviation Statistics
+      *
+      * Computes the statistics of the computed angle deviation of all the points relative to previous frame
+      * 
+      */
+    void
+    computeAngleDeviationStatistics ();
+
+    /** \brief Compute Point Observability
+      *
+      * Computes the eucledian distance of the point from the robot in the previous frame, and checks if it was within its observability range.
+      * 
+      */
+    bool
+    computePointObservability();
+
 
     /** \brief Compute Observation Angle
       *
@@ -368,6 +384,26 @@ class SCMapping
                float x_axis_min, float x_axis_max,
                float y_axis_min, float y_axis_max,
                float z_axis_min, float z_axis_max);
+
+
+    /** \brief Angle Deviation Filter 
+      *
+      * Will return points that have moved within a certain angle threshold
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] min_angle: The min angle threshold by which a point has been predicted to move by
+      * \input[in] max_angle: The max angle threshold by which a point has been predicted to move by
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
+      *  
+      */
+    void 
+    angleDeviationFilter (PointCPtr &in_cloud_ptr,
+                          PointCPtr &out_cloud_ptr,
+                          PointCPtr &vis_cloud_ptr,
+                          float min_angle,
+                          float max_angle);
 
     /** \brief Add 
       *
@@ -498,6 +534,18 @@ class SCMapping
 
     /** \brief Bool to determine weather to filter the floor. */
     bool g_filter_floor = true;
+    
+    /** \brief float to determine minimum ratius to retain points from the floor. */
+    float g_min_retained_floor_radius;
+
+    /** \brief float to determine maximum ratius to retain points from the floor. */
+    float g_max_retained_floor_radius;
+
+    /** \brief Bool to determine if a second ring of the floor should be retained far away. */
+    bool g_double_floor_ring;
+
+    /** \brief float to determine how far the next ring of the floor should be retained. */
+    float g_gap_to_next_floor_ring;
 
 
     /** \brief TF listener definition. */
@@ -525,14 +573,14 @@ class SCMapping
     /** \brief Current orientation reading from imu sensor. */
     geometry_msgs::Quaternion g_robot_orientation;
 
-    /** \brief Current angular velocity reading from imu sensor. */
-    geometry_msgs::Vector3 g_robot_angular_velocity;
-    /** \brief Current angular velocity reading in x from imu sensor. */
-    double g_robot_angular_velocity_x;
-    /** \brief Current angular velocity reading in y from imu sensor. */
-    double g_robot_angular_velocity_y;
-    /** \brief Current angular velocity reading in z from imu sensor. */
-    double g_robot_angular_velocity_z;
+    // /** \brief Current angular velocity reading from imu sensor. */
+    // geometry_msgs::Vector3 g_robot_angular_velocity;
+    // /** \brief Current angular velocity reading in x from imu sensor. */
+    // double g_robot_angular_velocity_x;
+    // /** \brief Current angular velocity reading in y from imu sensor. */
+    // double g_robot_angular_velocity_y;
+    // /** \brief Current angular velocity reading in z from imu sensor. */
+    // double g_robot_angular_velocity_z;
     // /** \brief Current absolute angular velocity reading from imu. */
     // double g_robot_angular_velocity_abs;
 
@@ -565,6 +613,15 @@ class SCMapping
     // /** \brief Previous linear velocity computed. */
     // double g_robot_previous_linear_velocity_abs;
 
+    /** \brief Current angular velocity computed. */
+    double g_robot_angular_velocity;
+    /** \brief Previous angular velocity computed. */
+    double g_robot_previous_angular_velocity;
+    /** \brief Current Robot angle. */
+    double g_robot_angle = 0.0;
+    /** \brief Previous Robot angle. */
+    double g_robot_previous_angle;
+
 
 
 
@@ -587,11 +644,20 @@ class SCMapping
     double g_mod_d2_sqr;
 
 
+    //The vector to store the angle deviation of all points in a vector for visualization
+    std::vector<double> angle_deviation_vec;
     //The std msg to store the statistics of angle deviation of all points for visualization
     std_msgs::Float32 angle_deviation_mean;
     std_msgs::Float32 angle_deviation_std;
     std_msgs::Float32 angle_deviation_min;
     std_msgs::Float32 angle_deviation_max;
+    double previous_angle_deviation_mean;
+    double previous_angle_deviation_std;
+    double previous_angle_deviation_min;
+    double previous_angle_deviation_max;
+
+    /** \brief number of points that satisfied the constraints of the angle deviation filter */
+    int g_matched_angle_deviation;
 
 
 
@@ -604,6 +670,8 @@ class SCMapping
     double g_mod_do;
     /** \brief modulus of dp */
     double g_mod_dp;
+
+
 
 
 

@@ -3,17 +3,33 @@
   <!-- arguments /rs16_tc/rslidar_points-->
   <arg name="nodelet_manager" default="velodyne_nodelet_manager" />
   <arg name="enable_floor_detection" default="true" />
-  <arg name="enable_gps" default="false" />
-  <arg name="enable_imu_acc" default="false" />
-  <arg name="enable_imu_ori" default="false" />
+  <arg name="enable_gps" default="true" />
+  <arg name="enable_imu_acc" default="true" />
+  <arg name="enable_imu_ori" default="true" />
   <arg name="points_topic" default="/kitti/velo/pointcloud" />
 
   <arg name="map_frame_id" default="map" />
   <arg name="lidar_odom_frame_id" default="odom" />
 
+
+
+  <arg name="dataset" default="KITTI" />
+  <!-- <arg name="sequence" default="06" /> -->
+  <arg name="sequence" default="00" />
+  <arg name="filter_name" default="" />
+
   <!-- optional arguments -->
   <arg name="enable_robot_odometry_init_guess" default="false" />
   <arg name="robot_odom_frame_id" default="robot_odom" />
+
+
+
+  <!-- optional arguments -->
+
+   <!-- Use the IMU topic seperately to Find Twist Information --> 
+  <arg name="use_imu" default="true" /><!-- Disable to maximise the effect of selected points upon visualization of performance-->
+
+  <arg name="imu_topic" default="/kitti/oxts/imu" />
 
   <!-- transformation between lidar and base_link -->
   <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" />
@@ -50,7 +66,7 @@
   </node> -->
 
   <!-- calling the selection_criteria node to filter out point clouds -->
-  <node pkg="selection_criteria" type="selection_criteria_localization" name="selection_criteria_localization" output="screen">
+  <node pkg="selection_criteria" type="selection_criteria_mapping" name="selection_criteria_mapping" output="screen">
     <!-- <remap from="/floor_points" to="/floor_detection/floor_filtered_points" /> -->
     <remap from="/points_input" to="/filtered_points" />
   </node>
@@ -182,10 +198,9 @@
   <!-- node to record odometry to a bagfile -->
   <!-- <node pkg="selection_criteria" type="record_odometry" name="record_odometry" output="screen"/> -->
 
-
   <!-- <arg name="bag_name" default="$(arg dataset)_$(arg sequence)_$(arg filter_name)" /> -->
   <arg name="bag_name" default="$(arg dataset)_$(arg sequence)" />
-  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -O /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/graph_slam/$(arg bag_name) /odom_transformed"/>   
+  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -O /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/localization/$(arg bag_name) /odom_transformed"/>   
   
 
 

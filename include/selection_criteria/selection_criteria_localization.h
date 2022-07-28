@@ -257,11 +257,36 @@ class SCLocalization
 
     /** \brief Compute Angle Deviation Statistics
       *
-      * Computes the statistics of the cpmputed angle deviation of all the points relative to previous frame
+      * Computes the statistics of the computed angle deviation of all the points relative to previous frame
       * 
       */
     void
     computeAngleDeviationStatistics ();
+
+    /** \brief Compute Distance
+      *
+      * Computes the distance of a point relative to robot
+      * 
+      * \output distance The eucledian distance of a point relative to robot
+      */
+    double
+    computeDistance ();
+
+    /** \brief Compute Distance Statistics
+      *
+      * Computes the statistics of the computed distance of all the points relative to robot
+      * 
+      */
+    void
+    computeDistanceStatistics ();
+
+    /** \brief Compute Point Observability
+      *
+      * Computes the eucledian distance of the point from the robot in the previous frame, and checks if it was within its observability range.
+      * 
+      */
+    bool
+    computePointObservability();
 
 
     /** \brief Compute Observation Angle
@@ -272,6 +297,19 @@ class SCLocalization
       */
     double
     computeObservationAngle();
+
+
+    /** \brief Compute Distance T Score
+      *
+      * computes the probability of a point being at a certian distance from the robot based on a student t distribution and chosen parameters
+      * 
+      * \input[in] std: the standard deviation of the student t distribution
+      * \input[in] sample_size: the sample size for the student t distribution
+      * 
+      * \output t_Score The probability based on a student t distribution
+      */
+    double
+    computeDistanceTScore(double std, int sample_size);
 
 
     /** \brief Filter 
@@ -397,6 +435,24 @@ class SCLocalization
                           float min_angle,
                           float max_angle);
 
+
+    /** \brief Beta Filter 
+      *
+      * Will return points that are expected to be spaced maximally with respect to each other
+      * 
+      * \input[in] in_cloud_ptr the input PointCloud2 pointer
+      * \input[in] std: The standard deviation of points spacing based on their distance from the robot
+      * 
+      * \input[out] out_cloud_ptr the output PointCloud2 pointer
+      * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
+      *  
+      */
+    void 
+    betaFilter (PointCPtr &in_cloud_ptr,
+                PointCPtr &out_cloud_ptr,
+                PointCPtr &vis_cloud_ptr,
+                float std);
+
     /** \brief Add 
       *
       * Adds point clouds
@@ -457,6 +513,10 @@ class SCLocalization
     ros::Publisher pub_angle_deviation_std_;
     ros::Publisher pub_angle_deviation_min_;
     ros::Publisher pub_angle_deviation_max_;
+    ros::Publisher pub_distance_mean_;
+    ros::Publisher pub_distance_std_;
+    ros::Publisher pub_distance_min_;
+    ros::Publisher pub_distance_max_;
 
     /** \brief ROS subscribers. */
     ros::Subscriber sub_;
@@ -650,6 +710,23 @@ class SCLocalization
 
     /** \brief number of points that satisfied the constraints of the angle deviation filter */
     int g_matched_angle_deviation;
+
+
+    //The vector to store the distance of all points from the robot in a vector for visualization
+    std::vector<double> distance_vec;
+    //The std msg to store the statistics of distance of all points from robot for visualization
+    std_msgs::Float32 distance_mean;
+    std_msgs::Float32 distance_std;
+    std_msgs::Float32 distance_min;
+    std_msgs::Float32 distance_max;
+    double previous_distance_mean;
+    double previous_distance_std;
+    double previous_distance_min;
+    double previous_distance_max;
+
+    /** \brief number of points that satisfied the constraints of the angle deviation filter */
+    int g_matched_distance;
+
 
 
 

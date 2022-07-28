@@ -53,6 +53,11 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   pub_angle_deviation_min_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_min_", 3, true);
   pub_angle_deviation_max_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_max_", 3, true);
 
+  // Publishing to visualize the statistics of distance of points from robot over time:
+  pub_distance_mean_ = nh_.advertise<std_msgs::Float32> ("/points_distance_mean_", 3, true);
+  pub_distance_std_ = nh_.advertise<std_msgs::Float32> ("/points_distance_std_", 3, true);
+  pub_distance_min_ = nh_.advertise<std_msgs::Float32> ("/points_distance_min_", 3, true);
+  pub_distance_max_ = nh_.advertise<std_msgs::Float32> ("/points_distance_max_", 3, true);
 
 
   // // Create a ROS subscriber for the input point cloud and floor
@@ -104,9 +109,10 @@ SCLocalization::cylinderCondition(double x,
   // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
   // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
 
+
   // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-  if (!(( x >= (-x_axis_origin - height) && x <= (x_axis_origin + height)) && // within the Z limits
-        (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
+  if (!(((( (-height <= x) && (x <= -x_axis_origin) ) || ((x_axis_origin <= x) && (x <=  height)))) && // within the X limits
+      (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
   {
     return true;
   }
@@ -261,7 +267,7 @@ SCLocalization::updateROSParams()
   ros::param::set("/robot_previous_angular_velocity", g_robot_angular_velocity);
 
 
-  ros::param::get("/robot_previous_angle", g_robot_angle);
+  ros::param::set("/robot_previous_angle", g_robot_angle);
 
 
   ros::param::set("/previous_angle_deviation_min", angle_deviation_min.data);
@@ -273,6 +279,15 @@ SCLocalization::updateROSParams()
   ros::param::set("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
   // cout << previous_matched_angle_deviation << endl;
+
+
+  ros::param::set("/previous_distance_min", distance_min.data);
+  ros::param::set("/previous_distance_max", distance_max.data);
+  ros::param::set("/previous_distance_mean", distance_mean.data);
+  ros::param::set("/previous_distance_std", distance_std.data);
+
+  int previous_matched_distance = g_matched_distance;
+  ros::param::set("/previous_matched_distance", previous_matched_distance);
 
 
 
@@ -455,12 +470,12 @@ SCLocalization::computeTrajectoryInformation()
   if(g_robot_angle == 0.0) {
     g_robot_angle = g_robot_previous_angle;
   }
-  // cout << "g_robot_angle: " << endl;
-  // cout << g_robot_angle << endl;
 
-  g_robot_angular_velocity = (g_robot_angle - g_robot_previous_angle) / time_elapsed;
-  g_robot_angular_velocity = ((g_robot_angular_velocity + g_robot_previous_angular_velocity) / 2); //To get a smoother velocity chart
+  g_robot_angular_velocity = (abs(g_robot_angle) - abs(g_robot_previous_angle)) / time_elapsed;
+  g_robot_angular_velocity = ((abs(g_robot_angular_velocity) + abs(g_robot_previous_angular_velocity)) / 2); //To get a smoother velocity chart
 
+
+  // g_robot_angular_velocity = (abs(g_robot_angle));
 
   // To get the robot's linear acceleration data
   // Not concidering z axis as it has acceleration due to gravity, and gives irrelevant readings.
@@ -550,17 +565,22 @@ SCLocalization::computeAngleDeviation()
   g_d2[2] = g_point_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
 
 
-  g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
+  g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])));
   // cout << "g_mod_vdt: " << endl;
   // cout << g_mod_vdt << endl;
 
-  g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
+  g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])));
   // cout << "g_mod_d1: " << endl;
   // cout << g_mod_d1 << endl;
 
-  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
+  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])));
   // cout << "g_mod_d2: " << endl;
   // cout << g_mod_d2 << endl;
+
+
+  // g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
+  // g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
+  // g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
 
   g_mod_d1_sqr = pow(g_mod_d1,2);
   // cout << "g_mod_d1_sqr: " << endl;
@@ -691,6 +711,101 @@ SCLocalization::computeAngleDeviationStatistics()
 
 ////////////////////////////////////////////////////////////////////////////////
 double
+SCLocalization::computeDistance()
+{
+
+  double distance = 0.0;
+
+
+  g_d2[0] = g_point_world_frame_coordinate.point.x - g_robot_world_frame_coordinate.point.x;
+  g_d2[1] = g_point_world_frame_coordinate.point.y - g_robot_world_frame_coordinate.point.y;
+  g_d2[2] = g_point_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
+
+
+  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])));
+  // cout << "g_mod_d2: " << endl;
+  // cout << g_mod_d2 << endl;
+
+  distance = g_mod_d2;
+
+
+
+  return distance;
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void
+SCLocalization::computeDistanceStatistics()
+{
+
+
+  // Finding the sum of the vector of stored distances
+  double sum = 0.0;
+  for(int i=0;i<distance_vec.size();i++)
+          sum+=distance_vec[i];
+
+  // cout << sum << endl;
+
+  // Finding the mean of the vector of stored angle deviations
+  double mean = sum/distance_vec.size();
+
+  // Finding the standard deviation of the vector of stored angle deviations
+  double stdev = std::sqrt(std::inner_product(distance_vec.begin(), distance_vec.end(), distance_vec.begin(), 0.0)
+                 / distance_vec.size() - mean * mean);
+
+
+
+  auto minmax = std::minmax_element(distance_vec.begin(), distance_vec.end());
+  // Smoothning the computed statistics based on previous data
+  distance_mean.data = ((mean + previous_distance_mean) / 2);
+  distance_std.data = ((stdev + previous_distance_std) / 2);
+  distance_min.data = ((*minmax.first + previous_distance_min) / 2);
+  distance_max.data = ((*minmax.second + previous_distance_max) / 2);
+
+  // Making sure the statistics of the angle are smoothened, even in instances of unexpected erroes
+  if(isnan(sum))
+  {
+    distance_mean.data = previous_distance_mean;
+    distance_std.data = previous_distance_std;
+    distance_min.data = previous_distance_min;
+    distance_max.data = previous_distance_max;
+  }
+
+  // Publishing the smoothened angles
+  pub_distance_mean_.publish (distance_mean);
+  pub_distance_std_.publish (distance_std);
+  pub_distance_min_.publish (distance_min);
+  pub_distance_max_.publish (distance_max);
+
+  
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool
+SCLocalization::computePointObservability()
+{
+  bool observable = false;
+  
+  // Checking if the point was observable in the previous frame:
+  double eu_distance = sqrt(pow(g_point_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x, 2)
+                            + pow(g_point_world_frame_coordinate.point.y - g_previous_robot_world_frame_coordinate.point.y, 2));
+
+  // Measurement Range of LiDAR: Up to 120 m
+  if (eu_distance < 120) {
+    observable = true;
+  }
+
+  return observable;
+
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+double
 SCLocalization::computeObservationAngle()
 {
 
@@ -744,6 +859,23 @@ SCLocalization::computeObservationAngle()
 
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+double
+SCLocalization::computeDistanceTScore(double std, int sample_size)
+{
+
+  double t_score = 0.0;
+  double eu_distance = sqrt(pow(g_x,2) + pow(g_y,2));
+
+
+  t_score = (eu_distance / (std / sqrt(sample_size)));
+
+
+  return t_score;
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void
@@ -784,30 +916,6 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
     // out_cloud_ptr->points.push_back(*it);
 
 
-    // Based on the results it seems that a double ring does not help for this particular dataset
-    // and the best results occur when the retained floor is between the radius of 10 and 20 m,
-    // again for particularly for the KITTI_06 dataset based on experiments conducted
-
-
-    // g_min_retained_floor_radius = 0;
-    // g_min_retained_floor_radius = 5;
-    // g_min_retained_floor_radius = 10;
-    // g_min_retained_floor_radius = 15;
-    // g_min_retained_floor_radius = 20;
-    g_min_retained_floor_radius = 10;
-    // g_min_retained_floor_radius = 30;
-    // g_min_retained_floor_radius = 50;
-    // g_min_retained_floor_radius = 70;
-    // g_max_retained_floor_radius = 10;
-    // g_max_retained_floor_radius = 15;
-    // g_max_retained_floor_radius = 20;
-    // g_max_retained_floor_radius = 25;
-    // g_max_retained_floor_radius = 1000;
-    // g_max_retained_floor_radius = 30;
-    g_max_retained_floor_radius = 20;
-    // g_max_retained_floor_radius = 40;
-    // g_max_retained_floor_radius = 60;
-    // g_max_retained_floor_radius = 80;
 
     g_double_floor_ring = false;
     g_gap_to_next_floor_ring = 35.0;
@@ -905,16 +1013,6 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
-    if(not isnan(angle_deviation))
-    {
-      angle_deviation_vec.push_back(angle_deviation);
-    }
-    
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
@@ -927,6 +1025,7 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
       // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
       if (!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
           (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) // within the radius limits
+          
       {
         out_cloud_ptr->points.push_back(*it);
 
@@ -943,7 +1042,6 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
   }
 
 
-  computeAngleDeviationStatistics();
   
 
 
@@ -1001,10 +1099,6 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
@@ -1086,10 +1180,6 @@ SCLocalization::ringFilter( PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
 
 
     if (floorFilter(g_filter_floor))
@@ -1173,10 +1263,6 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
 
     if (floorFilter(g_filter_floor))
     {
@@ -1237,6 +1323,7 @@ SCLocalization::boxFilter(PointCPtr &in_cloud_ptr,
 
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void
@@ -1270,8 +1357,12 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   int previous_matched_angle_deviation;
   ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
+  // min_angle = previous_angle_deviation_mean;
+  // max_angle = previous_angle_deviation_max;
+
   min_angle = previous_angle_deviation_mean;
   max_angle = previous_angle_deviation_max;
+
 
   // cout << "Min Angle: " << endl;
   // cout << min_angle << endl;
@@ -1308,14 +1399,7 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
     // Transform the points to new frame
     transformPointCoordinates();
 
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
-    if(not isnan(angle_deviation))
-    {
-      angle_deviation_vec.push_back(angle_deviation);
-      
-    }
+
     
     // Computing Observation Angle of point with respect to lidar frame:
     // double observation_angle = computeObservationAngle();
@@ -1323,11 +1407,26 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
 
     // out_cloud_ptr->points.push_back(*it);
 
+    float floor_height = 0.50;
+
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
+    if((not isnan(angle_deviation)))
+    {
+      angle_deviation_vec.push_back(angle_deviation);
+      
+    }
+
 
     if (floorFilter(g_filter_floor))
     {
+
+
+      bool observable = computePointObservability();
+
       // Condition on the angle deviation on observed points.
-      if((not isnan(angle_deviation)) && (angle_deviation > min_angle) && (angle_deviation < max_angle)) {
+      if((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation < max_angle) && (observable)) {
 
         out_cloud_ptr->points.push_back(*it);
 
@@ -1338,6 +1437,24 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
         // cout << previous_matched_angle_deviation << endl;
 
       }
+
+      // else if ((g_z < floor_height) || (((( pow(g_x,2) + pow(g_y,2) ) >= pow(70,2)) || (( pow(g_x,2) + pow(g_y,2) ) <= pow(30,2)))
+      // && cylinderCondition(g_x, g_y, g_z, 0, 4, 100))) {
+      // else if ((g_z < floor_height) || ((( pow(g_x,2) + pow(g_y,2) ) >= pow(70,2)) || (( pow(g_x,2) + pow(g_y,2) ) <= pow(30,2)))) {
+
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+      // }
+
+      // else if ((!cylinderCondition(g_x, g_y, g_z, 0, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5)) {
+
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+      // }
 
       // else if (angle_deviation_vec.size() < 100) { // To ensure that if the angle deviation cannot be computed for at least 100 points as well as the current point, include the point either way.
       
@@ -1362,7 +1479,8 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
       // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
       // Can also create an adaptive threshold while this happens
       // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
-      else if ((previous_matched_angle_deviation < 2500) || (g_matched_angle_deviation < 10)) { 
+      else if ((g_matched_angle_deviation < 10)) { 
+        // cout <<"something is wrong" <<endl;
         out_cloud_ptr->points.push_back(*it);
 
         vis_cloud_ptr->points.push_back(*it);
@@ -1412,9 +1530,22 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
 
   ros::param::get("/filter_name", g_filter_name);
 
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed";
+  // }
+
   if (g_filter_name.empty())
   {
-    g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max";
+    g_filter_name = string("ang_dev") + string("_") + "show" + string("_") + "show";
   }
   else if (g_filter_name.find("ang_dev") != string::npos)
   {
@@ -1422,8 +1553,9 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max";
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "show" + string("_") + "show";
   }
+  
   
 
   g_in_cloud_size = in_cloud_ptr->size();
@@ -1434,6 +1566,128 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
 
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr,
+                           float std = 0.0)
+{
+
+  // Need to show fianl oerformance agianst vanilla visually, without saving metric data to show true performance and say how saving metrics have a small affect.
+
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
+  out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
+
+
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
+
+
+  // Compute and save additional robot trajectory information to odometry
+  computeTrajectoryInformation();
+
+  // g_previous_robot_world_frame_coordinate
+
+  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
+  // cout << g_previous_robot_world_frame_coordinate << endl;
+  
+  int sample_size = in_cloud_ptr->size();
+  
+  for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
+  {
+
+    g_x = it->x;
+    g_y = it->y;
+    g_z = it->z;
+
+    // Transform the points to new frame
+    transformPointCoordinates();
+
+
+    
+    // Computing Observation Angle of point with respect to lidar frame:
+    // double observation_angle = computeObservationAngle();
+
+
+    // out_cloud_ptr->points.push_back(*it);
+
+    float floor_height = 0.50;
+
+
+
+    if (floorFilter(g_filter_floor))
+    {
+
+
+      bool observable = computePointObservability();
+
+      double std = 0.0;
+      float sample_probability = (float) rand()/RAND_MAX;
+
+      double t_score = computeDistanceTScore(std, sample_size);
+
+      // Condition on the angle deviation on observed points.
+      if(t_score > sample_probability) {
+
+        out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+
+      }
+      
+
+      else // Condition to visualize unselected points with a different intensity
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.75;
+      }
+
+    }
+    else
+    {
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 0.5;
+    }
+
+
+  }
+
+
+
+  ros::param::get("/filter_name", g_filter_name);
+
+
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("beta") + string("_") + "show" + string("_") + "show";
+  }
+  else if (g_filter_name.find("beta") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("beta") + string("_") + "show" + string("_") + "show";
+  }
+  
+  
+
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  computeFilteredPointsData();
+  updateROSParams();
+
+
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1471,14 +1725,40 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Bool to determine weather to filter the floor.
   // Need to check how many more points apart from the floor are filtered by my filters
-  g_filter_floor = false;
+  g_filter_floor = true;
+
+
+  // Based on the results it seems that a double ring does not help for this particular dataset
+  // and the best results occur when the retained floor is between the radius of 10 and 20 m,
+  // again for particularly for the KITTI_06 dataset based on experiments conducted
+
+
+  // g_min_retained_floor_radius = 0;
+  // g_min_retained_floor_radius = 5;
+  // g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 15;
+  // g_min_retained_floor_radius = 20;
+  g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 30;
+  // g_min_retained_floor_radius = 50;
+  // g_min_retained_floor_radius = 70;
+  // g_max_retained_floor_radius = 10;
+  // g_max_retained_floor_radius = 15;
+  // g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 25;
+  // g_max_retained_floor_radius = 1000;
+  // g_max_retained_floor_radius = 30;
+  g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 40;
+  // g_max_retained_floor_radius = 60;
+  // g_max_retained_floor_radius = 80;
 
   // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1544,6 +1824,10 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // To test inner radius of points required to be removed
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+
+
+  // Beta Filters
+  betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
@@ -1656,6 +1940,12 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 
 
   g_robot_angle = abs(yaw * 180 / M_PI);
+
+  ros::param::get("/robot_previous_angle", g_robot_previous_angle);
+
+  if ((abs(g_robot_previous_angle) > 175) && (abs(g_robot_angle) < 0.5)) { //Can probably reduce this from 0.5
+    g_robot_angle = 180;
+  }
 
       
 

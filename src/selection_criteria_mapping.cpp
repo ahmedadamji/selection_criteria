@@ -74,7 +74,7 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
   // floor_sub_ = nh_.subscribe("/floor_points", 3, &SCMapping::callback, this);
   
   // Create a ROS subscriber for computed odometry
-  // odom_sub_ = nh_.subscribe("/odom", 1, &SCMapping::odom_callback, this);
+  odom_sub_ = nh_.subscribe("/odom", 1, &SCMapping::odom_callback, this);
   // odom_sub_ = nh_.subscribe("/odom_transformed", 1, &SCMapping::odom_callback, this);
 
 
@@ -104,9 +104,10 @@ SCMapping::cylinderCondition(double x,
   // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
   // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
 
+
   // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-  if (!(( x >= (-x_axis_origin - height) && x <= (x_axis_origin + height)) && // within the Z limits
-        (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
+  if (!(((( (-height <= x) && (x <= -x_axis_origin) ) || ((x_axis_origin <= x) && (x <=  height)))) && // within the X limits
+      (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
   {
     return true;
   }
@@ -175,20 +176,14 @@ SCMapping::floorFilter(bool filter_floor = false)
   // And is there any reason for me to do this?
   // Investigate if points far away or close from the floor are more useful to filter and conclude why  if  (filter) {
 
-  // float retained_radius = 5;
-  // float retained_radius = 10;
-  float retained_radius = 15;
-  // float retained_radius = 20;
-  // float retained_radius = 25;
 
-
-  // float min_retained_radius = 2;
-  // float min_retained_radius = 5;
-  // float min_retained_radius = 10;
-  // float max_retained_radius = 10;
-  // float max_retained_radius = 15;
-  // float max_retained_radius = 20;
-  // float max_retained_radius = 25;
+  // g_min_retained_floor_radius = 0;
+  // g_min_retained_floor_radius = 5;
+  // g_min_retained_floor_radius = 10;
+  // g_max_retained_floor_radius = 10;
+  // g_max_retained_floor_radius = 15;
+  // g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 25;
 
 
   //This height needs to be converted from the map frame to the velo frame value
@@ -200,9 +195,13 @@ SCMapping::floorFilter(bool filter_floor = false)
 
   if(filter_floor == true)
   {
-    // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_retained_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_retained_radius,2))))
-    if ((g_z >= floor_height)||(( pow(g_x,2) + pow(g_y,2) ) <= pow(retained_radius,2)))
+    // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2))))
+    if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2))))
     {
+      return true;
+    }
+    else if((g_double_floor_ring) && ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius + g_gap_to_next_floor_ring,2))
+                                      && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius + g_gap_to_next_floor_ring,2))))) {
       return true;
     }
     else
@@ -215,7 +214,6 @@ SCMapping::floorFilter(bool filter_floor = false)
   {
     return true;
   }
-
 
 }
 
@@ -259,6 +257,24 @@ SCMapping::updateROSParams()
   ros::param::set("/robot_previous_linear_velocity_y", g_robot_linear_velocity_y);
   // ros::param::set("/robot_previous_linear_velocity_z", g_robot_linear_velocity_z);
   // ros::param::set("/robot_previous_linear_velocity_abs", g_robot_linear_velocity_abs);
+
+
+  ros::param::set("/robot_previous_angular_velocity", g_robot_angular_velocity);
+
+
+  ros::param::set("/robot_previous_angle", g_robot_angle);
+
+
+  ros::param::set("/previous_angle_deviation_min", angle_deviation_min.data);
+  ros::param::set("/previous_angle_deviation_max", angle_deviation_max.data);
+  ros::param::set("/previous_angle_deviation_mean", angle_deviation_mean.data);
+  ros::param::set("/previous_angle_deviation_std", angle_deviation_std.data);
+
+  int previous_matched_angle_deviation = g_matched_angle_deviation;
+  ros::param::set("/previous_matched_angle_deviation", previous_matched_angle_deviation);
+
+  // cout << previous_matched_angle_deviation << endl;
+
 
 
 
@@ -339,7 +355,7 @@ SCMapping::computeFilteredPointsData()
     if (out.is_open())
     {
       //store array contents to text file
-      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) + "," + to_string(g_robot_angular_velocity_y) << "\n";
+      out << to_string(g_current_time) + "," + to_string(g_robot_linear_velocity_abs) + "," + to_string(g_robot_angular_velocity) << "\n";
 
       out.close();
     }
@@ -422,14 +438,30 @@ SCMapping::computeTrajectoryInformation()
   // To get the previous ros time
   ros::param::get("/previous_time", g_previous_time);
   // To get the elapsed ros time
-  double time_elapsed = g_current_time-g_previous_time;
+  double time_elapsed = g_current_time - g_previous_time;
 
 
-  // To get the robot's angular velocity data
-  ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
-  ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
+  // // To get the robot's angular velocity data
+  // ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
+  // ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
+
+  ros::param::get("/robot_previous_angular_velocity", g_robot_previous_angular_velocity);
 
 
+  // double robot_position_vector_abs = sqrt(pow(g_robot_world_frame_coordinate.point.x,2)
+  //                                    + pow(g_robot_world_frame_coordinate.point.y,2));
+  // g_robot_angle = (atan2(g_robot_world_frame_coordinate.point.y , g_robot_world_frame_coordinate.point.x)) * 180 / M_PI;
+
+  ros::param::get("/robot_previous_angle", g_robot_previous_angle);
+  if(g_robot_angle == 0.0) {
+    g_robot_angle = g_robot_previous_angle;
+  }
+
+  g_robot_angular_velocity = (abs(g_robot_angle) - abs(g_robot_previous_angle)) / time_elapsed;
+  g_robot_angular_velocity = ((abs(g_robot_angular_velocity) + abs(g_robot_previous_angular_velocity)) / 2); //To get a smoother velocity chart
+
+
+  // g_robot_angular_velocity = (abs(g_robot_angle));
 
   // To get the robot's linear acceleration data
   // Not concidering z axis as it has acceleration due to gravity, and gives irrelevant readings.
@@ -519,17 +551,22 @@ SCMapping::computeAngleDeviation()
   g_d2[2] = g_point_world_frame_coordinate.point.z - g_robot_world_frame_coordinate.point.z;
 
 
-  g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
+  g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])));
   // cout << "g_mod_vdt: " << endl;
   // cout << g_mod_vdt << endl;
 
-  g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
+  g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])));
   // cout << "g_mod_d1: " << endl;
   // cout << g_mod_d1 << endl;
 
-  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
+  g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])));
   // cout << "g_mod_d2: " << endl;
   // cout << g_mod_d2 << endl;
+
+
+  // g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
+  // g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
+  // g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
 
   g_mod_d1_sqr = pow(g_mod_d1,2);
   // cout << "g_mod_d1_sqr: " << endl;
@@ -540,12 +577,43 @@ SCMapping::computeAngleDeviation()
   // cout << g_mod_d2_sqr << endl;
 
   // Angle between observation of the point in degrees:
-  // Note: If angle_deviation is nan, means that poisition of point was not estimated by LiDAR.
-  angle_deviation = acos((g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2)) * 180 / M_PI;
+  // Note: If angle_deviation is nan, may mean that poisition of point was not estimated by LiDAR.
+  double ratio = (g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2);
+  if (ratio > 1.0) {
+    ratio = 1.0;
+  }
+  else if (ratio < -1.0) {
+    ratio = -1.0;
+  }
+  angle_deviation = (acos(ratio)) * 180 / M_PI;
+
+  // if (angle_deviation == 0.0) {
+  //   cout << "0.0 Angle Problem: " << endl;
+  //   cout << "g_mod_d1_sqr: " << endl;
+  //   cout << g_mod_d1_sqr << endl;
+  //   cout << "g_mod_d2_sqr: " << endl;
+  //   cout << g_mod_d2_sqr << endl;
+  //   cout << "g_mod_vdt: " << endl;
+  //   cout << g_mod_vdt << endl;
+  //   cout << "g_mod_d1: " << endl;
+  //   cout << g_mod_d1 << endl;
+  //   cout << "g_mod_d2: " << endl;
+  //   cout << g_mod_d2 << endl;
+  // }
 
   // if(isnan(angle_deviation))
   // {
-  //   angle_deviation = 0.0;
+  //   cout << "NaN Angle Problem: " << endl;
+  //   cout << "g_mod_d1_sqr: " << endl;
+  //   cout << g_mod_d1_sqr << endl;
+  //   cout << "g_mod_d2_sqr: " << endl;
+  //   cout << g_mod_d2_sqr << endl;
+  //   cout << "g_mod_vdt: " << endl;
+  //   cout << g_mod_vdt << endl;
+  //   cout << "g_mod_d1: " << endl;
+  //   cout << g_mod_d1 << endl;
+  //   cout << "g_mod_d2: " << endl;
+  //   cout << g_mod_d2 << endl;
   // }
 
 
@@ -553,6 +621,94 @@ SCMapping::computeAngleDeviation()
   // cout << angle_deviation << endl;
 
   return angle_deviation;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+SCMapping::computeAngleDeviationStatistics()
+{
+  // Finding the sum, mean, square of sums and std of angle deviation
+  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
+  // double mean = sum / angle_deviation_vec.size();
+  // double sq_sum = std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0);
+  // double E = 0.0;
+  // // Quick Question - Can vector::size() return 0?
+  // double inverse = 1.0 / static_cast<double>(angle_deviation_vec.size());
+  // for(unsigned int i=0;i<angle_deviation_vec.size();i++)
+  // {
+  //     E += pow(static_cast<double>(angle_deviation_vec[i]) - mean, 2);
+  // }
+  // double stdev =  sqrt(inverse * E);
+
+  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
+  // double mean = sum / angle_deviation_vec.size();
+  // std::vector<double> diff(angle_deviation_vec.size());
+  // std::transform(angle_deviation_vec.begin(), angle_deviation_vec.end(), diff.begin(),
+  //               std::bind2nd(std::minus<double>(), mean));
+  // double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  // double std = std::sqrt(sq_sum / angle_deviation_vec.size());
+
+  // Finding the sum of the vector of stored angle deviations
+  double sum = 0.0;
+  for(int i=0;i<angle_deviation_vec.size();i++)
+          sum+=angle_deviation_vec[i];
+
+  // cout << sum << endl;
+
+  // Finding the mean of the vector of stored angle deviations
+  double mean = sum/angle_deviation_vec.size();
+
+  // Finding the standard deviation of the vector of stored angle deviations
+  double stdev = std::sqrt(std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0)
+                 / angle_deviation_vec.size() - mean * mean);
+
+
+
+  auto minmax = std::minmax_element(angle_deviation_vec.begin(), angle_deviation_vec.end());
+  // Smoothning the computed statistics based on previous data
+  angle_deviation_mean.data = ((mean + previous_angle_deviation_mean) / 2);
+  angle_deviation_std.data = ((stdev + previous_angle_deviation_std) / 2);
+  angle_deviation_min.data = ((*minmax.first + previous_angle_deviation_min) / 2);
+  angle_deviation_max.data = ((*minmax.second + previous_angle_deviation_max) / 2);
+
+  // Making sure the statistics of the angle are smoothened, even in instances of unexpected erroes
+  if(isnan(sum))
+  {
+    angle_deviation_mean.data = previous_angle_deviation_mean;
+    angle_deviation_std.data = previous_angle_deviation_std;
+    angle_deviation_min.data = previous_angle_deviation_min;
+    angle_deviation_max.data = previous_angle_deviation_max;
+  }
+
+  // Publishing the smoothened angles
+  pub_angle_deviation_mean_.publish (angle_deviation_mean);
+  pub_angle_deviation_std_.publish (angle_deviation_std);
+  pub_angle_deviation_min_.publish (angle_deviation_min);
+  pub_angle_deviation_max_.publish (angle_deviation_max);
+
+  // cout << angle_deviation_max << endl;
+
+  
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool
+SCMapping::computePointObservability()
+{
+  bool observable = false;
+  
+  // Checking if the point was observable in the previous frame:
+  double eu_distance = sqrt(pow(g_point_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x, 2)
+                            + pow(g_point_world_frame_coordinate.point.y - g_previous_robot_world_frame_coordinate.point.y, 2));
+
+  // Measurement Range of LiDAR: Up to 120 m
+  if (eu_distance < 120) {
+    observable = true;
+  }
+
+  return observable;
 
 }
 
@@ -650,16 +806,12 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
     g_y = it->y;
     g_z = it->z;
 
-    // Transform the points to new frame
-    transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
-
-
     // out_cloud_ptr->points.push_back(*it);
 
+
+
+    g_double_floor_ring = false;
+    g_gap_to_next_floor_ring = 35.0;
 
     if (floorFilter(g_filter_floor))
     {
@@ -668,20 +820,6 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
       vis_cloud_ptr->points.push_back(*it);
       vis_cloud_ptr->points.back().intensity = 1;
 
-      // if (cylinderCondition(x, y, z))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-      // }
-
-      // if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50) && (g_z >= 0.05))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-      // }
-
-      // if (ringCondition(x, y, z))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-      // }
 
     }
 
@@ -690,8 +828,13 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
   }
-
   g_filter_name = "vanilla";
+
+
+  // g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius);
+  // if(g_double_floor_ring) {
+  //   g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius) + "_" + to_string(g_gap_to_next_floor_ring);
+  // }
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   computeFilteredPointsData();
@@ -723,15 +866,14 @@ SCMapping::cylinderFilter( PointCPtr &in_cloud_ptr,
   vis_cloud_ptr->points.clear();
 
 
-  //The vector to store the angle deviation of all points in a vector for visualization
-  std::vector<double> angle_deviation_vec;
+  angle_deviation_vec.clear();
+
   angle_deviation_mean.data = 0.0;
   angle_deviation_std.data = 0.0;
   angle_deviation_min.data = 0.0;
   angle_deviation_max.data = 0.0;
 
 
-  // g_angle_deviation_vec.clear();
 
 
   // Transform the points to new frame
@@ -750,16 +892,6 @@ SCMapping::cylinderFilter( PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
-    if(not isnan(angle_deviation))
-    {
-      angle_deviation_vec.push_back(angle_deviation);
-    }
-    
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
@@ -772,6 +904,7 @@ SCMapping::cylinderFilter( PointCPtr &in_cloud_ptr,
       // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
       if (!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
           (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) // within the radius limits
+          
       {
         out_cloud_ptr->points.push_back(*it);
 
@@ -787,53 +920,7 @@ SCMapping::cylinderFilter( PointCPtr &in_cloud_ptr,
 
   }
 
-  // Finding the sum, mean, square of sums and std of angle deviation
-  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
-  // double mean = sum / angle_deviation_vec.size();
-  // double sq_sum = std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0);
-  // double std = std::sqrt(sq_sum / angle_deviation_vec.size() - mean * mean);
 
-  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
-  // double mean = sum / angle_deviation_vec.size();
-  // std::vector<double> diff(angle_deviation_vec.size());
-  // std::transform(angle_deviation_vec.begin(), angle_deviation_vec.end(), diff.begin(),
-  //               std::bind2nd(std::minus<double>(), mean));
-  // double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  // double std = std::sqrt(sq_sum / angle_deviation_vec.size());
-
-  double sum = 0.0;
-  for(int i=0;i<angle_deviation_vec.size();i++)
-          sum+=angle_deviation_vec[i];
-  double mean = sum/angle_deviation_vec.size();
-
-  double E=0;
-  // Quick Question - Can vector::size() return 0?
-  double inverse = 1.0 / static_cast<double>(angle_deviation_vec.size());
-  for(unsigned int i=0;i<angle_deviation_vec.size();i++)
-  {
-      E += pow(static_cast<double>(angle_deviation_vec[i]) - mean, 2);
-  }
-  double stdev =  sqrt(inverse * E);
-
-
-  auto minmax = std::minmax_element(angle_deviation_vec.begin(), angle_deviation_vec.end());
-  angle_deviation_mean.data = mean;
-  angle_deviation_std.data = stdev;
-  angle_deviation_min.data = *minmax.first;
-  angle_deviation_max.data = *minmax.second;
-
-  if(isnan(sum))
-  {
-    angle_deviation_mean.data = 0.0;
-    angle_deviation_std.data = 0.0;
-    angle_deviation_min.data = 0.0;
-    angle_deviation_max.data = 0.0;
-  }
-
-  pub_angle_deviation_mean_.publish (angle_deviation_mean);
-  pub_angle_deviation_std_.publish (angle_deviation_std);
-  pub_angle_deviation_min_.publish (angle_deviation_min);
-  pub_angle_deviation_max_.publish (angle_deviation_max);
   
 
 
@@ -891,10 +978,6 @@ SCMapping::radiusFilter( PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
     
 
     if (floorFilter(g_filter_floor))
@@ -976,10 +1059,6 @@ SCMapping::ringFilter( PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
 
 
     if (floorFilter(g_filter_floor))
@@ -1063,10 +1142,6 @@ SCMapping::boxFilter(PointCPtr &in_cloud_ptr,
 
     // Transform the points to new frame
     transformPointCoordinates();
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
-    // Computing Observation Angle of point with respect to lidar frame:
-    double observation_angle = computeObservationAngle();
 
     if (floorFilter(g_filter_floor))
     {
@@ -1083,8 +1158,13 @@ SCMapping::boxFilter(PointCPtr &in_cloud_ptr,
       else
       {
         vis_cloud_ptr->points.push_back(*it);
-        vis_cloud_ptr->points.back().intensity = 0.3;
+        vis_cloud_ptr->points.back().intensity = 0.75;
       }
+    }
+    else
+    {
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 0.5;
     }
 
   }
@@ -1122,6 +1202,249 @@ SCMapping::boxFilter(PointCPtr &in_cloud_ptr,
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void
+SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr,
+                            float min_angle = 0, float max_angle = 35)
+{
+
+  // Need to show fianl oerformance agianst vanilla visually, without saving metric data to show true performance and say how saving metrics have a small affect.
+
+  // Doing this may not allow me to super impose filters, so need to think about how to go about this later
+  out_cloud_ptr->points.clear();
+  vis_cloud_ptr->points.clear();
+
+
+  angle_deviation_vec.clear();
+  
+  angle_deviation_mean.data = 0.0;
+  angle_deviation_std.data = 0.0;
+  angle_deviation_min.data = 0.0;
+  angle_deviation_max.data = 0.0;
+
+  g_matched_angle_deviation = 0;
+
+
+
+  ros::param::get("/previous_angle_deviation_mean", previous_angle_deviation_mean);
+  ros::param::get("/previous_angle_deviation_std", previous_angle_deviation_std);
+  ros::param::get("/previous_angle_deviation_mean", previous_angle_deviation_min);
+  ros::param::get("/previous_angle_deviation_max", previous_angle_deviation_max);
+
+  int previous_matched_angle_deviation;
+  ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
+
+  // min_angle = previous_angle_deviation_mean;
+  // max_angle = previous_angle_deviation_max;
+
+  min_angle = previous_angle_deviation_mean;
+  max_angle = previous_angle_deviation_max;
+
+
+  // cout << "Min Angle: " << endl;
+  // cout << min_angle << endl;
+  // cout << "Max Angle: " << endl;
+  // cout << max_angle << endl;
+
+
+
+
+  // Transform the points to new frame
+  transformRobotCoordinates();
+
+  g_previous_robot_world_frame_coordinate = g_robot_world_frame_coordinate;
+  ros::param::get("/previous_robot_world_frame_coordinate_x", g_previous_robot_world_frame_coordinate.point.x);
+  ros::param::get("/previous_robot_world_frame_coordinate_y", g_previous_robot_world_frame_coordinate.point.y);
+  ros::param::get("/previous_robot_world_frame_coordinate_z", g_previous_robot_world_frame_coordinate.point.z);
+
+
+  // Compute and save additional robot trajectory information to odometry
+  computeTrajectoryInformation();
+
+  // g_previous_robot_world_frame_coordinate
+
+  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
+  // cout << g_previous_robot_world_frame_coordinate << endl;
+  
+  for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
+  {
+
+    g_x = it->x;
+    g_y = it->y;
+    g_z = it->z;
+
+    // Transform the points to new frame
+    transformPointCoordinates();
+
+
+    
+    // Computing Observation Angle of point with respect to lidar frame:
+    // double observation_angle = computeObservationAngle();
+
+
+    // out_cloud_ptr->points.push_back(*it);
+
+    float floor_height = 0.50;
+
+    // Computing Angle Deviation of point with respect to previous frame:
+    double angle_deviation = computeAngleDeviation();
+    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
+    if((not isnan(angle_deviation)))
+    {
+      angle_deviation_vec.push_back(angle_deviation);
+      
+    }
+
+
+    if (floorFilter(g_filter_floor))
+    {
+
+
+      bool observable = computePointObservability();
+
+      // Condition on the angle deviation on observed points.
+      if((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation < max_angle) && (observable)) {
+
+        out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+
+        g_matched_angle_deviation += 1;
+        // cout << previous_matched_angle_deviation << endl;
+
+      }
+
+      // else if ((g_z < floor_height) || (((( pow(g_x,2) + pow(g_y,2) ) >= pow(70,2)) || (( pow(g_x,2) + pow(g_y,2) ) <= pow(30,2)))
+      // && cylinderCondition(g_x, g_y, g_z, 0, 4, 100))) {
+      // else if ((g_z < floor_height) || ((( pow(g_x,2) + pow(g_y,2) ) >= pow(70,2)) || (( pow(g_x,2) + pow(g_y,2) ) <= pow(30,2)))) {
+
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+      // }
+
+      // else if ((!cylinderCondition(g_x, g_y, g_z, 0, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5)) {
+
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+      // }
+
+      // else if (angle_deviation_vec.size() < 100) { // To ensure that if the angle deviation cannot be computed for at least 100 points as well as the current point, include the point either way.
+      
+      // // To ensure that if the angle deviation is computed as 0 for the current point, include the point either way.
+      // // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
+      // else if (angle_deviation == 0.0) { 
+
+      // // To ensure that if the angle deviation is computed as 0 for the current point, include the point either way.
+      // // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
+      // // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
+      // // Can also create an adaptive threshold while this happens
+      // else if ((angle_deviation == 0.0) || (previous_matched_angle_deviation < 7000)) { 
+        
+      // // To ensure that if the angle deviation is computed as 0 for the current point, include the point either way.
+      // // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
+      // // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
+      // // Can also create an adaptive threshold while this happens
+      // // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
+      // else if ((angle_deviation == 0.0) || (previous_matched_angle_deviation < 7000) || (g_matched_angle_deviation < 100)) { 
+
+      // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
+      // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
+      // Can also create an adaptive threshold while this happens
+      // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
+      else if ((g_matched_angle_deviation < 10)) { 
+        // cout <<"something is wrong" <<endl;
+        out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+
+      }
+      
+
+      else // Condition to visualize unselected points with a different intensity
+      {
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 0.75;
+      }
+
+    }
+    else
+    {
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 0.5;
+    }
+
+
+  }
+
+
+
+  computeAngleDeviationStatistics();
+  
+
+
+  // ros::param::get("/filter_name", g_filter_name);
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
+  // }
+
+  // cout << max_angle << endl;
+
+  ros::param::get("/filter_name", g_filter_name);
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed";
+  // }
+
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("ang_dev") + string("_") + "show" + string("_") + "show";
+  }
+  else if (g_filter_name.find("ang_dev") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "show" + string("_") + "show";
+  }
+  
+  
+
+  g_in_cloud_size = in_cloud_ptr->size();
+  g_out_cloud_size = out_cloud_ptr->size();
+  computeFilteredPointsData();
+  updateROSParams();
+
+
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1158,14 +1481,40 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
 
   // Bool to determine weather to filter the floor.
   // Need to check how many more points apart from the floor are filtered by my filters
-  g_filter_floor = true;
+  g_filter_floor = false;
 
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+
+  // Based on the results it seems that a double ring does not help for this particular dataset
+  // and the best results occur when the retained floor is between the radius of 10 and 20 m,
+  // again for particularly for the KITTI_06 dataset based on experiments conducted
+
+
+  // g_min_retained_floor_radius = 0;
+  // g_min_retained_floor_radius = 5;
+  // g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 15;
+  // g_min_retained_floor_radius = 20;
+  g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 30;
+  // g_min_retained_floor_radius = 50;
+  // g_min_retained_floor_radius = 70;
+  // g_max_retained_floor_radius = 10;
+  // g_max_retained_floor_radius = 15;
+  // g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 25;
+  // g_max_retained_floor_radius = 1000;
+  // g_max_retained_floor_radius = 30;
+  g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 40;
+  // g_max_retained_floor_radius = 60;
+  // g_max_retained_floor_radius = 80;
+
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1225,6 +1574,12 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
 
   // Trying min and max radius parameters that worked quite well individually and comparing performance against all other radius filters.
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 8, 30); //removed suspected unneccesary points in form of radius filter
+
+
+  // Angle Deviation Filters
+  // To test inner radius of points required to be removed
+  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
+  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
@@ -1316,6 +1671,34 @@ SCMapping::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
   // g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
   // g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
+
+
+
+  // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:
+  double q_x = robot_odom.pose.pose.orientation.x;
+  double q_y = robot_odom.pose.pose.orientation.y;
+  double q_z = robot_odom.pose.pose.orientation.z;
+  double q_w = robot_odom.pose.pose.orientation.w;
+
+  // Quaternion
+  tf2::Quaternion q(q_x, q_y, q_z, q_w);
+  // 3x3 Rotation matrix from quaternion
+  tf2::Matrix3x3 m(q);
+  // Roll Pitch and Yaw from rotation matrix
+  double roll;
+  double pitch;
+  double yaw;
+  m.getRPY(roll, pitch, yaw);
+
+
+  g_robot_angle = abs(yaw * 180 / M_PI);
+
+  ros::param::get("/robot_previous_angle", g_robot_previous_angle);
+
+  if ((abs(g_robot_previous_angle) > 175) && (abs(g_robot_angle) < 0.5)) { //Can probably reduce this from 0.5
+    g_robot_angle = 180;
+  }
+
       
 
 
@@ -1332,10 +1715,10 @@ SCMapping::imu_callback(const sensor_msgs::Imu::ConstPtr& imu_in)
 
   g_robot_orientation = g_robot_imu.orientation;
 
-  g_robot_angular_velocity = g_robot_imu.angular_velocity;
-  ros::param::set("/robot_angular_velocity_x", g_robot_angular_velocity.x);
-  ros::param::set("/robot_angular_velocity_y", g_robot_angular_velocity.y);
-  ros::param::set("/robot_angular_velocity_z", g_robot_angular_velocity.z);
+  // g_robot_angular_velocity = g_robot_imu.angular_velocity;
+  // ros::param::set("/robot_angular_velocity_x", g_robot_angular_velocity.x);
+  // ros::param::set("/robot_angular_velocity_y", g_robot_angular_velocity.y);
+  // ros::param::set("/robot_angular_velocity_z", g_robot_angular_velocity.z);
 
   g_robot_linear_acceleration = g_robot_imu.linear_acceleration;
   ros::param::set("/robot_linear_acceleration_x", g_robot_linear_acceleration.x);
