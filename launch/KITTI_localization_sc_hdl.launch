@@ -14,7 +14,8 @@
   <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
   <param name="/dataset" type="string" value="KITTI" />
-  <param name="/sequence" type="string" value="00" />
+  <param name="/sequence" type="string" value="06" />
+  <!-- <param name="/sequence" type="string" value="00" /> -->
   <param name="/filter_name" type="string" value="" />
   <param name="/number_of_frames" type="int" value="0" />
   <param name="/total_input_points" type="int" value="0" />
@@ -59,8 +60,8 @@
 
 
   <arg name="dataset" default="KITTI" />
-  <!-- <arg name="sequence" default="06" /> -->
-  <arg name="sequence" default="00" />
+  <arg name="sequence" default="06" />
+  <!-- <arg name="sequence" default="00" /> -->
   <arg name="filter_name" default="" />
 
   <arg name="enable_gps" default="false" />
@@ -155,7 +156,7 @@
 
 
   <!-- hdl_localization_nodelet -->
-  <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)">
+  <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)" output="screen">
     <remap from="/velodyne_points" to="/selected_points" />
     <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" />
     <!-- <remap from="/odom" to="$(arg scan_matching_output_topic)"/> -->

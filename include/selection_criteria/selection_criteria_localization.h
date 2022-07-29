@@ -104,6 +104,7 @@ SOFTWARE. */
 #include <fstream>
 #include <iterator>
 #include <cstdlib>
+#include <iomanip>
 
 // NAMESPACES
 using namespace std;
@@ -299,17 +300,31 @@ class SCLocalization
     computeObservationAngle();
 
 
-    /** \brief Compute Distance T Score
+    ////////////////////////////////////////////////////////////////////////////////
+    /** \brief Cumulative Density Function: https://www.quantstart.com/articles/Statistical-Distributions-in-C/
       *
-      * computes the probability of a point being at a certian distance from the robot based on a student t distribution and chosen parameters
+      * computes the Cumulative probability of a Z value based on a normal distribution
       * 
-      * \input[in] std: the standard deviation of the student t distribution
-      * \input[in] sample_size: the sample size for the student t distribution
+      * \input[in] x: Z score
       * 
-      * \output t_Score The probability based on a student t distribution
+      * \output probability The probability based on a normal distribution
       */
     double
-    computeDistanceTScore(double std, int sample_size);
+    cdf(const double& x) const;
+
+
+    /** \brief Compute Distance Probability
+      *
+      * computes the probability of a point being at a certian distance from the robot based on a normal distribution and chosen parameters
+      * 
+      * \input[in] eu_distance: the eucledian distance of a point from the robot
+      * \input[in] mean: the mean of the normal distribution
+      * \input[in] std: the standard deviation of the normal distribution
+      * 
+      * \output probability The probability based on a normal distribution
+      */
+    double
+    computeDistanceProbability(double eu_distance, double mean, double std);
 
 
     /** \brief Filter 

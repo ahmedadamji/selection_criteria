@@ -826,7 +826,6 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
 
-
   }
   g_filter_name = "vanilla";
 
@@ -1238,7 +1237,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   // min_angle = previous_angle_deviation_mean;
   // max_angle = previous_angle_deviation_max;
 
-  min_angle = previous_angle_deviation_mean;
+  min_angle = previous_angle_deviation_mean/10;
   max_angle = previous_angle_deviation_max;
 
 
@@ -1326,13 +1325,13 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       //   vis_cloud_ptr->points.back().intensity = 1;
       // }
 
-      // else if ((!cylinderCondition(g_x, g_y, g_z, 0, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5)) {
+      else if ((!cylinderCondition(g_x, g_y, g_z, 0, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.4)) {
 
-      //   out_cloud_ptr->points.push_back(*it);
+        out_cloud_ptr->points.push_back(*it);
 
-      //   vis_cloud_ptr->points.push_back(*it);
-      //   vis_cloud_ptr->points.back().intensity = 1;
-      // }
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
 
       // else if (angle_deviation_vec.size() < 100) { // To ensure that if the angle deviation cannot be computed for at least 100 points as well as the current point, include the point either way.
       
@@ -1393,7 +1392,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
 
   // if (g_filter_name.empty())
   // {
-  //   g_filter_name = string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
+  //   g_filter_name = string("ang_dev") + string("_") + "p1mean" + string("_") + "max";
   // }
   // else if (g_filter_name.find("ang_dev") != string::npos)
   // {
@@ -1401,29 +1400,16 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   // }
   // else
   // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + to_string(min_angle) + string("_") + to_string(max_angle);
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p1mean" + string("_") + "max";
   // }
 
   // cout << max_angle << endl;
 
   ros::param::get("/filter_name", g_filter_name);
 
-  // if (g_filter_name.empty())
-  // {
-  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed";
-  // }
-  // else if (g_filter_name.find("ang_dev") != string::npos)
-  // {
-  //   g_filter_name = g_filter_name;
-  // }
-  // else
-  // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed";
-  // }
-
   if (g_filter_name.empty())
   {
-    g_filter_name = string("ang_dev") + string("_") + "show" + string("_") + "show";
+    g_filter_name = string("ang_dev") + string("_") + "p1mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed_p4linearspeed";
   }
   else if (g_filter_name.find("ang_dev") != string::npos)
   {
@@ -1431,8 +1417,21 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "show" + string("_") + "show";
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p1mean" + string("_") + "max_cyl_0_4_120_rad_60_120_angularspeed_p4linearspeed";
   }
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "show" + string("_") + "show";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "show" + string("_") + "show";
+  // }
   
   
 

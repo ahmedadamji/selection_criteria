@@ -15,8 +15,56 @@
 
   <arg name="dataset" default="KITTI" />
   <!-- <arg name="sequence" default="06" /> -->
-  <arg name="sequence" default="00" />
+  <arg name="sequence" default="06" />
   <arg name="filter_name" default="" />
+
+
+  <!-- Setting Ros Params -->
+  <param name="/use_sim_time" value="true" />
+  <param name="/dataset" type="string" value="KITTI" />
+  <param name="/sequence" type="string" value="06" />
+  <!-- <param name="/sequence" type="string" value="00" /> -->
+  <param name="/filter_name" type="string" value="" />
+  <param name="/number_of_frames" type="int" value="0" />
+  <param name="/total_input_points" type="int" value="0" />
+  <param name="/total_output_points" type="int" value="0" />
+  <param name="/total_filtered_points" type="int" value="0" />
+  <param name="/previous_robot_world_frame_coordinate_x" type="double" value="0" />
+  <param name="/previous_robot_world_frame_coordinate_y" type="double" value="0" />
+  <param name="/previous_robot_world_frame_coordinate_z" type="double" value="0" />
+  <param name="/robot_angular_velocity_x" type="double" value="0" />
+  <param name="/robot_angular_velocity_y" type="double" value="0" />
+  <param name="/robot_angular_velocity_z" type="double" value="0" />
+  <param name="/robot_previous_angular_velocity" type="double" value="0" />
+  <param name="/robot_previous_angle" type="double" value="0" />
+  <param name="/robot_linear_acceleration_x" type="double" value="0" />
+  <param name="/robot_linear_acceleration_y" type="double" value="0" />
+  <param name="/robot_linear_acceleration_z" type="double" value="0" />
+  <param name="/current_time" type="double" value="0" />
+  <param name="/robot_linear_velocity_x" type="double" value="0" />
+  <param name="/robot_linear_velocity_y" type="double" value="0" />
+  <param name="/robot_linear_velocity_z" type="double" value="0" />
+  <param name="/robot_linear_velocity_abs" type="double" value="0" />
+  <param name="/robot_previous_linear_velocity_x" type="double" value="0" />
+  <param name="/robot_previous_linear_velocity_y" type="double" value="0" />
+  <param name="/robot_previous_linear_velocity_z" type="double" value="0" />
+  <!-- <param name="/robot_previous_linear_velocity_abs" type="double" value="0" /> -->
+  <!-- <param name="/previous_time" type="double" value="1317384506.40" /> -->
+  <param name="/previous_time" type="double" value="1317646534.93" />
+
+  <param name="/previous_angle_deviation_min" type="double" value="0.0" />
+  <param name="/previous_angle_deviation_max" type="double" value="0.0" />
+  <param name="/previous_angle_deviation_mean" type="double" value="0.0" />
+  <param name="/previous_angle_deviation_std" type="double" value="0.0" />
+  <param name="/previous_matched_angle_deviation" type="int" value="0" />
+
+  <param name="/previous_distance_min" type="double" value="0.0" />
+  <param name="/previous_distance_max" type="double" value="0.0" />
+  <param name="/previous_distance_mean" type="double" value="0.0" />
+  <param name="/previous_distance_std" type="double" value="0.0" />
+  <param name="/previous_matched_distance" type="int" value="0" />
+ 
+
 
   <!-- optional arguments -->
   <arg name="enable_robot_odometry_init_guess" default="false" />
@@ -200,7 +248,7 @@
 
   <!-- <arg name="bag_name" default="$(arg dataset)_$(arg sequence)_$(arg filter_name)" /> -->
   <arg name="bag_name" default="$(arg dataset)_$(arg sequence)" />
-  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -O /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/localization/$(arg bag_name) /odom_transformed"/>   
+  <node pkg="rosbag" type="record" name="rosbag_record_odom" args="record -O /root/catkin_ws/src/project_ws/catkin_ws/src/data/$(arg dataset)/$(arg sequence)/results/graph_slam/$(arg bag_name) /odom_transformed"/>   
   
 
 

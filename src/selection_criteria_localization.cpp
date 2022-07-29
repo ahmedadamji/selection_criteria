@@ -859,20 +859,58 @@ SCLocalization::computeObservationAngle()
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Cumulative density function: https://www.quantstart.com/articles/Statistical-Distributions-in-C/
+double
+SCLocalization::cdf(const double& x) const
+{
+  double k = 1.0/(1.0 + 0.2316419*x);
+  double k_sum = k*(0.319381530 + k*(-0.356563782 + k*(1.781477937 + k*(-1.821255978 + 1.330274429*k))));
+
+  return (1.0 - (1.0/(pow(2*M_PI,0.5)))*exp(-0.5*x*x) * k_sum);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 double
-SCLocalization::computeDistanceTScore(double std, int sample_size)
+SCLocalization::computeDistanceProbability(double eu_distance, double mean, double std)
 {
 
-  double t_score = 0.0;
-  double eu_distance = sqrt(pow(g_x,2) + pow(g_y,2));
+  double z_score = 0.0;
+  double probability = 0.0;
+
+  // As we want the points closest to the robot with highest probability
+  mean = 0;
 
 
-  t_score = (eu_distance / (std / sqrt(sample_size)));
+  z_score = ((eu_distance - mean) / (std));
 
 
-  return t_score;
+  // https://en.cppreference.com/w/cpp/numeric/math/erfc
+  // normal cumulative distribution function
+  // probability = erfc(-z_score/std::sqrt(2))/2; // erfc (complementary error function)
+
+
+  // https://www.quantstart.com/articles/Statistical-Distributions-in-C/
+  // normal cumulative distribution function
+  // Adding a 1.0 -  as I want the probability that the distance is greater than this value and not less than
+  probability = 1.0 - cdf(z_score);
+
+  // https://cplusplus.com/forum/beginner/62864/
+  // probability = exp( -1 * (eu_distance - mean) * (eu_distance - mean) / (2 * std * std)) / (std * sqrt(2 * M_PI));
+
+
+  //  For Student T distribution
+
+  // int degrees_of_freedom = sample_size - 1;
+
+  // t_score = ((eu_distance - mean) / (std / sqrt(sample_size)));
+
+  // // https://en.cppreference.com/w/cpp/numeric/math/erfc
+  // // normal cumulative distribution function
+  // double ncdf = erfc(-t_score/std::sqrt(2))/2; // erfc (complementary error function)
+
+  return probability;
 
 }
 
@@ -1581,6 +1619,32 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   vis_cloud_ptr->points.clear();
 
 
+  distance_vec.clear();
+  
+  distance_mean.data = 0.0;
+  distance_std.data = 0.0;
+  distance_min.data = 0.0;
+  distance_max.data = 0.0;
+
+  g_matched_distance = 0;
+
+
+
+  ros::param::get("/previous_distance_mean", previous_distance_mean);
+  ros::param::get("/previous_distance_std", previous_distance_std);
+  ros::param::get("/previous_distance_mean", previous_distance_min);
+  ros::param::get("/previous_distance_max", previous_distance_max);
+
+  int previous_matched_distance;
+  ros::param::get("/previous_matched_distance", previous_matched_distance);
+
+
+  std = previous_distance_std;
+  // cout << std << endl;
+
+
+
+
 
   // Transform the points to new frame
   transformRobotCoordinates();
@@ -1599,7 +1663,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   // cout << "g_previous_robot_world_frame_coordinate: " << endl;
   // cout << g_previous_robot_world_frame_coordinate << endl;
   
-  int sample_size = in_cloud_ptr->size();
+  // int sample_size = in_cloud_ptr->size();
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -1619,7 +1683,17 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
     // out_cloud_ptr->points.push_back(*it);
 
+
     float floor_height = 0.50;
+
+    // Computing Distance of point with respect to robot:
+    double distance = computeDistance();
+    //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
+    if((not isnan(distance)))
+    {
+      distance_vec.push_back(distance);
+      
+    }
 
 
 
@@ -1629,13 +1703,18 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
       bool observable = computePointObservability();
 
-      double std = 0.0;
       float sample_probability = (float) rand()/RAND_MAX;
+      // cout << "Sample Probability: " << sample_probability << endl;
 
-      double t_score = computeDistanceTScore(std, sample_size);
+      double probability = computeDistanceProbability(distance, previous_distance_mean, 20*std);
+      // if (distance < 20) {
+      //   // cout << "Mean: " << previous_distance_mean << endl;
+      //   cout << "Probability: " << probability << endl;
+      // }
+
 
       // Condition on the angle deviation on observed points.
-      if(t_score > sample_probability) {
+      if(probability > sample_probability) {
 
         out_cloud_ptr->points.push_back(*it);
 
@@ -1663,12 +1742,18 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
 
 
+  computeDistanceStatistics();
+
+
+
   ros::param::get("/filter_name", g_filter_name);
+
+  string current_filter_name = string("beta") + string("_") + "20std";
 
 
   if (g_filter_name.empty())
   {
-    g_filter_name = string("beta") + string("_") + "show" + string("_") + "show";
+    g_filter_name = current_filter_name;
   }
   else if (g_filter_name.find("beta") != string::npos)
   {
@@ -1676,7 +1761,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("beta") + string("_") + "show" + string("_") + "show";
+    g_filter_name = g_filter_name + string("_") + current_filter_name;
   }
   
   
@@ -1753,7 +1838,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // g_max_retained_floor_radius = 60;
   // g_max_retained_floor_radius = 80;
 
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
@@ -1827,7 +1912,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
 
   // Beta Filters
-  betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
