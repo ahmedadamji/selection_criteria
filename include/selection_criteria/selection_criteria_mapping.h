@@ -222,6 +222,14 @@ class SCMapping
     void 
     computeFilteredPointsData ();
 
+    /** \brief Save Angle Deviation Histogram
+      *
+      * Saves a Histogram of the angle deviation between points and stores them to a text file
+      * 
+      */
+    void
+    saveAngleDeviationHistogram(unsigned int histogramAngleDeviation[900]);
+
     /** \brief Transform Robot Coordinates 
       *
       * Transforms point coordinates of the robot from the lidar to the world coordinate frame
