@@ -865,8 +865,8 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
 
-	/* Angle Deviation histogram */
-	unsigned int histogramAngleDeviation[900] = { 0 };
+	// /* Angle Deviation histogram */
+	// unsigned int histogramAngleDeviation[900] = { 0 };
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -881,21 +881,21 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
     transformPointCoordinates();
 
 
-    // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation_idx;
+    // // Computing Angle Deviation of point with respect to previous frame:
+    // double angle_deviation_idx;
 
-    if((not isnan(computeAngleDeviation()))) {
-      angle_deviation_idx = computeAngleDeviation()/0.1;
-    }
-    else {
-      angle_deviation_idx = 0;
-    }
+    // if((not isnan(computeAngleDeviation()))) {
+    //   angle_deviation_idx = computeAngleDeviation()/0.1;
+    // }
+    // else {
+    //   angle_deviation_idx = 0;
+    // }
 
-    // cout << angle_deviation_idx << endl;
+    // // cout << angle_deviation_idx << endl;
 
-    unsigned int vAngleDeviation = (int) angle_deviation_idx;
+    // unsigned int vAngleDeviation = (int) angle_deviation_idx;
 
-		++histogramAngleDeviation[vAngleDeviation];
+		// ++histogramAngleDeviation[vAngleDeviation];
 
 
 
@@ -917,8 +917,8 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
   }
-  g_filter_name = "vanilla";
-  // g_filter_name = "show";
+  // g_filter_name = "vanilla";
+  g_filter_name = "vanilla_0.45";
 
 
 
@@ -929,7 +929,7 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   computeFilteredPointsData();
-  saveAngleDeviationHistogram(histogramAngleDeviation);
+  // saveAngleDeviationHistogram(histogramAngleDeviation);
   updateROSParams();
 
 
@@ -1327,11 +1327,11 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   int previous_matched_angle_deviation;
   ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
-  // min_angle = previous_angle_deviation_mean;
-  // max_angle = previous_angle_deviation_max;
+  min_angle = previous_angle_deviation_mean/2;
+  max_angle = previous_angle_deviation_max;
 
-  min_angle = 0;
-  max_angle = 0.1;
+  // min_angle = 0;
+  // max_angle = 0.1;
 
 
   // cout << "Min Angle: " << endl;
@@ -1426,13 +1426,13 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       //   vis_cloud_ptr->points.back().intensity = 1;
       // }
 
-      // else if ((!cylinderCondition(g_x, g_y, g_z, 60, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.4)) {
+      else if ((!cylinderCondition(g_x, g_y, g_z, 60, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.4)) {
 
-      //   out_cloud_ptr->points.push_back(*it);
+        out_cloud_ptr->points.push_back(*it);
 
-      //   vis_cloud_ptr->points.push_back(*it);
-      //   vis_cloud_ptr->points.back().intensity = 1;
-      // }
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+      }
 
       // else if ((!cylinderCondition(g_x, g_y, g_z, 0, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5)) {
 
@@ -1464,15 +1464,25 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
       // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
       // Can also create an adaptive threshold while this happens
+      // Also adding a condition that the rest of the points are sampled randomly with a 10% probability
+      else if ( ((float) rand()/RAND_MAX) > 0.99) { 
+        // cout <<"something is wrong" <<endl;
+        out_cloud_ptr->points.push_back(*it);
+
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
+
+      }
+
       // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
-      // else if ((g_matched_angle_deviation < 10)) { 
-      //   // cout <<"something is wrong" <<endl;
-      //   out_cloud_ptr->points.push_back(*it);
+      else if ((g_matched_angle_deviation < 10)) { 
+        // cout <<"something is wrong" <<endl;
+        out_cloud_ptr->points.push_back(*it);
 
-      //   vis_cloud_ptr->points.push_back(*it);
-      //   vis_cloud_ptr->points.back().intensity = 1;
+        vis_cloud_ptr->points.push_back(*it);
+        vis_cloud_ptr->points.back().intensity = 1;
 
-      // }
+      }
       
 
       else // Condition to visualize unselected points with a different intensity
@@ -1497,11 +1507,42 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   
 
 
+  // ros::param::get("/filter_name", g_filter_name);
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "0" + string("_") + "p1";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "0" + string("_") + "p1";
+  // }
+
+
+  // ros::param::get("/filter_name", g_filter_name);
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
+  // }
+
   ros::param::get("/filter_name", g_filter_name);
 
   if (g_filter_name.empty())
   {
-    g_filter_name = string("ang_dev") + string("_") + "0" + string("_") + "p1";
+    g_filter_name = string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
   }
   else if (g_filter_name.find("ang_dev") != string::npos)
   {
@@ -1509,39 +1550,8 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "0" + string("_") + "p1";
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
   }
-
-
-  // ros::param::get("/filter_name", g_filter_name);
-
-  // if (g_filter_name.empty())
-  // {
-  //   g_filter_name = string("ang_dev") + string("_") + "p1mean" + string("_") + "max_rad_0_15";
-  // }
-  // else if (g_filter_name.find("ang_dev") != string::npos)
-  // {
-  //   g_filter_name = g_filter_name;
-  // }
-  // else
-  // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p1mean" + string("_") + "max_rad_0_15";
-  // }
-
-  // ros::param::get("/filter_name", g_filter_name);
-
-  // if (g_filter_name.empty())
-  // {
-  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed";
-  // }
-  // else if (g_filter_name.find("ang_dev") != string::npos)
-  // {
-  //   g_filter_name = g_filter_name;
-  // }
-  // else
-  // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed";
-  // }
 
   // if (g_filter_name.empty())
   // {
@@ -1603,7 +1613,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
 
   // Bool to determine weather to filter the floor.
   // Need to check how many more points apart from the floor are filtered by my filters
-  g_filter_floor = false;
+  g_filter_floor = true;
 
 
   // Based on the results it seems that a double ring does not help for this particular dataset
@@ -1636,7 +1646,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1701,7 +1711,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
-  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
