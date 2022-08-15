@@ -190,7 +190,7 @@
     <param name="distance_thresh" value="30.0" />
     <param name="accum_distance_thresh" value="25.0" />
     <param name="min_edge_interval" value="15.0" />
-    <param name="fitness_score_thresh" value="2.5" />
+    <param name="fitness_score_thresh" value="2.5" /> <!-- Try 0.5 or 1 -->
     <!-- scan matching params -->
     <param name="registration_method" value="FAST_GICP" />
     <param name="reg_num_threads" value="0" />

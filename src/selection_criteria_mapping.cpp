@@ -901,6 +901,7 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
     g_double_floor_ring = false;
+    g_filter_floor = false;
     g_gap_to_next_floor_ring = 35.0;
 
     if (floorFilter(g_filter_floor))
@@ -918,7 +919,9 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
   }
   // g_filter_name = "vanilla";
-  g_filter_name = "vanilla_0.45";
+  // g_filter_name = "vanilla_0.45";
+  g_filter_name = "show";
+
 
 
 
@@ -1641,7 +1644,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // g_max_retained_floor_radius = 60;
   // g_max_retained_floor_radius = 80;
 
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
@@ -1711,7 +1714,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
-  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 
