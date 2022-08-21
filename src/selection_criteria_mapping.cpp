@@ -458,6 +458,8 @@ SCMapping::transformRobotCoordinates()
 
   
 
+  
+
   // geometry_msgs::TransformStamped transformStamped;
   // ros::Duration cache_(5);
   // tf2_ros::Buffer tfBuffer(cache_);
@@ -1330,7 +1332,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   int previous_matched_angle_deviation;
   ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
-  min_angle = previous_angle_deviation_mean/2;
+  min_angle = previous_angle_deviation_mean;
   max_angle = previous_angle_deviation_max;
 
   // min_angle = 0;
@@ -1429,13 +1431,13 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       //   vis_cloud_ptr->points.back().intensity = 1;
       // }
 
-      else if ((!cylinderCondition(g_x, g_y, g_z, 60, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.4)) {
+      // else if ((!cylinderCondition(g_x, g_y, g_z, 60, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.4)) {
 
-        out_cloud_ptr->points.push_back(*it);
+      //   out_cloud_ptr->points.push_back(*it);
 
-        vis_cloud_ptr->points.push_back(*it);
-        vis_cloud_ptr->points.back().intensity = 1;
-      }
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+      // }
 
       // else if ((!cylinderCondition(g_x, g_y, g_z, 0, 4, 120)) || radiusCondition(g_x, g_y, g_z, 60, 120) || (g_robot_angular_velocity > 5)) {
 
@@ -1526,26 +1528,11 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   // }
 
 
-  // ros::param::get("/filter_name", g_filter_name);
-
-  // if (g_filter_name.empty())
-  // {
-  //   g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
-  // }
-  // else if (g_filter_name.find("ang_dev") != string::npos)
-  // {
-  //   g_filter_name = g_filter_name;
-  // }
-  // else
-  // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
-  // }
-
   ros::param::get("/filter_name", g_filter_name);
 
   if (g_filter_name.empty())
   {
-    g_filter_name = string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
+    g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
   }
   else if (g_filter_name.find("ang_dev") != string::npos)
   {
@@ -1553,8 +1540,23 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
   }
+
+  // ros::param::get("/filter_name", g_filter_name);
+
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
+  // }
 
   // if (g_filter_name.empty())
   // {
@@ -1644,7 +1646,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // g_max_retained_floor_radius = 60;
   // g_max_retained_floor_radius = 80;
 
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
@@ -1714,7 +1716,7 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
   // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
-  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 

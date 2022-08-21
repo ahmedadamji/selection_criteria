@@ -9,12 +9,13 @@
   <!-- input clouds are transformed in odom_child_frame, and then localization is performed in that frame -->
   <!-- this is useful to match the LIDAR and IMU coodinate systems -->
   <!-- <arg name="odom_child_frame_id" default="base_link" /> -->
-  <arg name="odom_child_frame_id" default="robosense" />
+  <arg name="odom_child_frame_id" default="base_link" />
 
   <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
-  <param name="/dataset" type="string" value="KITTI" />
-  <param name="/sequence" type="string" value="06" />
+  <param name="/dataset" type="string" value="AID" />
+  <param name="/sequence" type="string" value="20220622" />
+  <!-- <param name="/sequence" type="string" value="00" /> -->
   <param name="/filter_name" type="string" value="" />
   <param name="/number_of_frames" type="int" value="0" />
   <param name="/total_input_points" type="int" value="0" />
@@ -40,18 +41,24 @@
   <param name="/robot_previous_linear_velocity_y" type="double" value="0" />
   <param name="/robot_previous_linear_velocity_z" type="double" value="0" />
   <!-- <param name="/robot_previous_linear_velocity_abs" type="double" value="0" /> -->
-  <param name="/previous_time" type="double" value="1317384506.40" />
+  <!-- <param name="/previous_time" type="double" value="1317384506.40" /> -->
+  <param name="/previous_time" type="double" value="1317646534.93" />
+
   <param name="/previous_angle_deviation_min" type="double" value="0.0" />
   <param name="/previous_angle_deviation_max" type="double" value="0.0" />
   <param name="/previous_angle_deviation_mean" type="double" value="0.0" />
   <param name="/previous_angle_deviation_std" type="double" value="0.0" />
   <param name="/previous_matched_angle_deviation" type="int" value="0" />
+
+  <param name="/previous_distance_min" type="double" value="0.0" />
+  <param name="/previous_distance_max" type="double" value="0.0" />
+  <param name="/previous_distance_mean" type="double" value="0.0" />
+  <param name="/previous_distance_std" type="double" value="0.0" />
+  <param name="/previous_matched_distance" type="int" value="0" />
  
 
-
-
   <arg name="dataset" default="AID" />
-  <arg name="sequence" default="TB1L0" />
+  <arg name="sequence" default="20220622" />
   <arg name="filter_name" default="" />
 
   <arg name="enable_gps" default="false" />
@@ -67,42 +74,33 @@
   <arg name="use_global_localization" default="true" />
   <arg name="imu_topic" default="/imu/data" />
   <arg name="enable_robot_odometry_prediction" value="true" />
-  <arg name="robot_odom_frame_id" value="odom" />
-  <!-- <arg name="robot_odom_frame_id" value="map" /> -->
+  <arg name="robot_odom_frame_id" value="map" />
   <arg name="plot_estimation_errors" value="false" />
 
   <include file="$(find hdl_global_localization)/launch/hdl_global_localization.launch" if="$(arg use_global_localization)" />
-  
-  <!-- transformation between lidar and base_link -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link robosense 10" /> -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="base_map" args="0 0 0 0 0 0 /odom /map 100" /> -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="base_link_odom" args="0 0 0 1.571 0 0 /map /base_link 100" /> -->
-
-
-  <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
-
-  <!-- From Dr Abdellatif -->
-  <!-- <arg name="scan_matching_output_topic" default="/aide/odometry/sm/map/baselink"/>
-  <arg name="odometry_topic" default="/aide/odometry/filtered/psamap/baselink"/> -->
+      
+  <arg name="scan_matching_output_topic" default="/aide/odometry/sm/map/baselink"/>
+  <arg name="odometry_topic" default="/aide/odometry/filtered/psamap/baselink"/>
+ 
 
   <!-- prefiltering_nodelet -->
   <node pkg="nodelet" type="nodelet" name="prefiltering_nodelet" args="load hdl_graph_slam/PrefilteringNodelet $(arg nodelet_manager)" output="screen">
-      <remap from="/velodyne_points" to="$(arg points_topic)" />
-      <remap from="/imu/data" to="$(arg imu_topic)" />
-      <param name="deskewing" value="true" />
-      <param name="scan_period" value="0.1" />
-      <param name="base_link_frame" value="base_link" />
-      <param name="use_distance_filter" value="true" />
-      <param name="distance_near_thresh" value="10" />
-      <param name="distance_far_thresh" value="200.0" />
-      <param name="downsample_method" value="VOXELGRID" />
-      <param name="downsample_resolution" value="0.3" />
-      <param name="outlier_removal_method" value="RADIUS" />
-      <param name="statistical_mean_k" value="30" />
-      <param name="statistical_stddev" value="1.2" />
-      <param name="radius_radius" value="0.5" />
-      <param name="radius_min_neighbors" value="2" />
+    <remap from="/velodyne_points" to="$(arg points_topic)" />
+    <remap from="/imu/data" to="$(arg imu_topic)" />
+    <param name="deskewing" value="true" />
+    <param name="scan_period" value="0.1" />
+    <param name="base_link_frame" value="base_link" />
+    <param name="use_distance_filter" value="true" />
+    <param name="distance_near_thresh" value="10" />
+    <param name="distance_far_thresh" value="200.0" />
+    <param name="downsample_method" value="VOXELGRID" />
+    <param name="downsample_resolution" value="0.3" />
+    <param name="outlier_removal_method" value="RADIUS" />
+    <param name="statistical_mean_k" value="30" />
+    <param name="statistical_stddev" value="1.2" />
+    <param name="radius_radius" value="0.5" />
+    <param name="radius_min_neighbors" value="2" />
   </node>
 
   <!-- floor_detection_nodelet -->
@@ -125,27 +123,26 @@
     <remap from="/points_input" to="/filtered_points" />
   </node>
 
-    <!-- globalmap_server_nodelet -->
-    <!-- <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
-      <param name="globalmap_pcd" value="src/data/maps/KITTI_06_Vanilla.pcd" />
-      <param name="convert_utm_to_local" value="true" />
-      <param name="downsample_resolution" value="0.1" />
-    </node> -->
+  <!-- globalmap_server_nodelet -->
+  <!-- <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
+    <param name="globalmap_pcd" value="src/data/maps/KITTI_06_Vanilla.pcd" />
+    <param name="convert_utm_to_local" value="true" />
+    <param name="downsample_resolution" value="0.1" />
+  </node> -->
+
 
   <!-- hdl_localization_nodelet -->
-  <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)">
+  <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)" output="screen">
     <remap from="/velodyne_points" to="/selected_points" />
     <remap from="/gpsimu_driver/imu_data" to="$(arg imu_topic)" />
-    <!-- <remap from="/odom" to="$(arg scan_matching_output_topic)"/> -->
+    <remap from="/odom" to="$(arg scan_matching_output_topic)"/>
     <!-- odometry frame_id -->
     <param name="odom_child_frame_id" value="$(arg odom_child_frame_id)" />
     <!-- imu settings -->
     <!-- during "cool_time", imu inputs are ignored -->
     <param name="use_imu" value="$(arg use_imu)" />
-    <!-- <param name="invert_acc" value="$(arg invert_imu_acc)" />
-    <param name="invert_gyro" value="$(arg invert_imu_gyro)" /> -->
     <param name="cool_time_duration" value="2.0" />
-
+    
     <!-- robot odometry-based prediction -->
     <param name="enable_robot_odometry_prediction" value="$(arg enable_robot_odometry_prediction)" />
     <param name="robot_odom_frame_id" value="$(arg robot_odom_frame_id)" />
@@ -166,7 +163,7 @@
     
     <!-- if "specify_init_pose" is true, pose estimator will be initialized with the following params -->
     <!-- otherwise, you need to input an initial pose with "2D Pose Estimate" on rviz" -->
-    <param name="specify_init_pose" value="true" /> <!--  here if we use the same bag file for localization and mapping we canb have this as true as this is the origin of the map, otherwise we set to false and specify starting position in rviz, in real life this is done using gps.-->
+    <param name="specify_init_pose" value="false" />
     <param name="init_pos_x" value="0.0" />
     <param name="init_pos_y" value="0.0" />
     <param name="init_pos_z" value="0.0" />
@@ -174,12 +171,8 @@
     <param name="init_ori_x" value="0.0" />
     <param name="init_ori_y" value="0.0" />
     <param name="init_ori_z" value="0.0" />
-
     <param name="use_global_localization" value="$(arg use_global_localization)" />
-
-    <!-- <param name="points_topic" value="/selected_points" /> -->
   </node>
-
 
   <!-- node to correct the odometry orientations to be compatible with the kitti dataset -->
   <node pkg="selection_criteria" type="correct_odometry_kitti" name="correct_odometry_kitti" output="screen"/>
@@ -214,4 +207,5 @@
   <!-- start plotjuggler -->
   <!-- To install this need to run: sudo apt-get install ros-melodic-plotjuggler -->
   <!-- <node pkg="plotjuggler" type="plotjuggler" name="my_plot_Juggler" args="" /> -->
+
 </launch>
