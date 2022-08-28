@@ -456,7 +456,7 @@ class SCLocalization
       * Will return points that are expected to be spaced maximally with respect to each other
       * 
       * \input[in] in_cloud_ptr the input PointCloud2 pointer
-      * \input[in] std: The standard deviation of points spacing based on their distance from the robot
+      * \input[in] z: The number of standard deviations with respect to the distribution of points to parameterise the beta filter
       * 
       * \input[out] out_cloud_ptr the output PointCloud2 pointer
       * \input[out] vis_cloud_ptr the vis PointCloud2 pointer, to visualize selected points in rviz clearly
@@ -466,7 +466,7 @@ class SCLocalization
     betaFilter (PointCPtr &in_cloud_ptr,
                 PointCPtr &out_cloud_ptr,
                 PointCPtr &vis_cloud_ptr,
-                float std);
+                double z);
 
     /** \brief Add 
       *
@@ -578,6 +578,10 @@ class SCLocalization
     /** \brief Average Size of Filtered Points. */
     double g_average_filtered_points;
 
+
+    /** \brief Height of the floor in m. */
+    double g_floor_height;
+
     /** \brief X-Coordinate of curent point in the pointcloud. */
     double g_x;
 
@@ -623,6 +627,13 @@ class SCLocalization
 
     /** \brief Robot coordinate in world frame. */
     geometry_msgs::PointStamped g_robot_world_frame_coordinate;
+
+
+    /** \brief Base-Link coordinate in lidar frame. */
+    geometry_msgs::PointStamped g_base_link_lidar_frame_coordinate;
+
+    /** \brief Base-Link coordinate in world frame. */
+    geometry_msgs::PointStamped g_base_link_world_frame_coordinate;
 
     /** \brief Robot coordinate in world frame in the previous position. */
     geometry_msgs::PointStamped g_previous_robot_world_frame_coordinate;

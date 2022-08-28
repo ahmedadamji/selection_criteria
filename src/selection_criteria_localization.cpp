@@ -185,27 +185,28 @@ SCLocalization::floorFilter(bool filter_floor = false)
   // g_min_retained_floor_radius = 0;
   // g_min_retained_floor_radius = 5;
   // g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 20;
   // g_max_retained_floor_radius = 10;
   // g_max_retained_floor_radius = 15;
   // g_max_retained_floor_radius = 20;
   // g_max_retained_floor_radius = 25;
+  // g_max_retained_floor_radius = 30;
 
 
   //This height needs to be converted from the map frame to the velo frame value
   // To simplify this for now, base link z value is: 0.93 and velo link z value is 0.802724058277
   // Therefore z value of 0.005 in velo link is 0.1223 in base link
-  float floor_height = 0.50;
   //BECAUSE OF THE PLANE BEING INCLINED, CANNOT GET RID OF ALL POINTS BASED ON THIS SIMPLE HEIGHT THRESHOLD SO USING A HIGHER VALUE
   //Say in the future it can be improved by integrating the usage of floor detection
 
   if(filter_floor == true)
   {
     // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2))))
-    if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2))))
+    if ((g_z >= g_floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2))))
     {
       return true;
     }
-    else if((g_double_floor_ring) && ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius + g_gap_to_next_floor_ring,2))
+    else if((g_double_floor_ring) && ((g_z >= g_floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius + g_gap_to_next_floor_ring,2))
                                       && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius + g_gap_to_next_floor_ring,2))))) {
       return true;
     }
@@ -405,6 +406,29 @@ SCLocalization::transformRobotCoordinates()
   {
     ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
   }
+
+
+  g_base_link_world_frame_coordinate.header.frame_id = "base_link";
+  g_base_link_world_frame_coordinate.header.stamp = ros::Time (0);
+  g_base_link_world_frame_coordinate.point.x = 0.0;
+  g_base_link_world_frame_coordinate.point.y = 0.0;
+  g_base_link_world_frame_coordinate.point.z = 0.0;
+
+
+  try
+  {
+    g_listener_.transformPoint ("velo_link", 
+                                g_base_link_world_frame_coordinate,
+                                g_base_link_lidar_frame_coordinate);
+  }
+  catch (tf::TransformException& ex)
+  {
+    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  }
+
+
+
+  g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 2.13;
 
   
 
@@ -970,6 +994,14 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
       //   out_cloud_ptr->points.push_back(*it);
       // }
 
+      // if (!radiusCondition(g_x, g_y, g_z, 20, 40) || (g_z < g_floor_height))
+      // {
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+      // }
+
       // if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50) && (g_z >= 0.05))
       // {
       //   out_cloud_ptr->points.push_back(*it);
@@ -988,6 +1020,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
 
   }
   g_filter_name = "vanilla";
+  // g_filter_name = "rad_40_20";
 
 
   // g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius);
@@ -1061,8 +1094,8 @@ SCLocalization::cylinderFilter( PointCPtr &in_cloud_ptr,
 
 
       // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-      if (!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
-          (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) // within the radius limits
+      if ((!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
+          (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) || (g_z < g_floor_height)) // within the radius limits
           
       {
         out_cloud_ptr->points.push_back(*it);
@@ -1141,13 +1174,21 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
 
     if (floorFilter(g_filter_floor))
     {
-      if ((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_radius,2)))
+      if (((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_radius,2))) || (g_z < g_floor_height))
       {
         out_cloud_ptr->points.push_back(*it);
 
         vis_cloud_ptr->points.push_back(*it);
         vis_cloud_ptr->points.back().intensity = 1;
       }
+      // else if(g_z < g_floor_height)
+      // {
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 0.6;
+
+      // }
       else
       {
         vis_cloud_ptr->points.push_back(*it);
@@ -1445,7 +1486,6 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
 
     // out_cloud_ptr->points.push_back(*it);
 
-    float floor_height = 0.50;
 
     // Computing Angle Deviation of point with respect to previous frame:
     double angle_deviation = computeAngleDeviation();
@@ -1609,7 +1649,7 @@ SCLocalization::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_clo
 
 void
 SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr,
-                           float std = 0.0)
+                           double z = 0.0)
 {
 
   // Need to show fianl oerformance agianst vanilla visually, without saving metric data to show true performance and say how saving metrics have a small affect.
@@ -1639,7 +1679,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   ros::param::get("/previous_matched_distance", previous_matched_distance);
 
 
-  std = previous_distance_std;
+  double std = z * previous_distance_std;
   // cout << std << endl;
 
 
@@ -1684,8 +1724,6 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
     // out_cloud_ptr->points.push_back(*it);
 
 
-    float floor_height = 0.50;
-
     // Computing Distance of point with respect to robot:
     double distance = computeDistance();
     //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
@@ -1706,7 +1744,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
       float sample_probability = (float) rand()/RAND_MAX;
       // cout << "Sample Probability: " << sample_probability << endl;
 
-      double probability = computeDistanceProbability(distance, previous_distance_mean, 20*std);
+      double probability = computeDistanceProbability(distance, previous_distance_mean, std);
       // if (distance < 20) {
       //   // cout << "Mean: " << previous_distance_mean << endl;
       //   cout << "Probability: " << probability << endl;
@@ -1714,7 +1752,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
 
       // Condition on the angle deviation on observed points.
-      if(probability > sample_probability) {
+      if((probability > sample_probability) || (g_z < g_floor_height)) {
 
         out_cloud_ptr->points.push_back(*it);
 
@@ -1748,7 +1786,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
   ros::param::get("/filter_name", g_filter_name);
 
-  string current_filter_name = string("beta") + string("_") + "20std";
+  string current_filter_name = string("beta") + string("_") + to_string(z);
 
 
   if (g_filter_name.empty())
@@ -1838,12 +1876,12 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // g_max_retained_floor_radius = 60;
   // g_max_retained_floor_radius = 80;
 
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1887,7 +1925,6 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
 
   // Radius Filters
-  // To test inner radius of points required to be removed
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 2, 50); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 4, 50); //removed suspected unneccesary points in form of radius filter
@@ -1896,10 +1933,21 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 10, 50); //removed suspected unneccesary points in form of radius filter
 
   // To test outer radius of points required to be retained
-  // USe the inner radius herre based on the best inner radius identified and add some more tests to this
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 100); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 80); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 60); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 40); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of radius filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 20); //removed suspected unneccesary points in form of radius filter
+
+
+  // To test inner radius of points required to be retained
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 10, 120); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 20, 120); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 30, 120); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 40, 120); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 60, 120); //removed suspected unneccesary points in form of radius filter
+  // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 80, 120); //removed suspected unneccesary points in form of radius filter
 
   // Trying min and max radius parameters that worked quite well individually and comparing performance against all other radius filters.
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 8, 30); //removed suspected unneccesary points in form of radius filter
@@ -1913,6 +1961,14 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Beta Filters
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 2); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 3); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 4); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 6); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 12); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 24); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 48); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 

@@ -519,6 +519,10 @@ class SCMapping
     /** \brief Average Size of Filtered Points. */
     double g_average_filtered_points;
 
+
+    /** \brief Height of the floor in m. */
+    double g_floor_height;
+
     /** \brief X-Coordinate of curent point in the pointcloud. */
     double g_x;
 
@@ -564,6 +568,13 @@ class SCMapping
 
     /** \brief Robot coordinate in world frame. */
     geometry_msgs::PointStamped g_robot_world_frame_coordinate;
+
+
+    /** \brief Base-Link coordinate in lidar frame. */
+    geometry_msgs::PointStamped g_base_link_lidar_frame_coordinate;
+
+    /** \brief Base-Link coordinate in world frame. */
+    geometry_msgs::PointStamped g_base_link_world_frame_coordinate;
 
     /** \brief Robot coordinate in world frame in the previous position. */
     geometry_msgs::PointStamped g_previous_robot_world_frame_coordinate;

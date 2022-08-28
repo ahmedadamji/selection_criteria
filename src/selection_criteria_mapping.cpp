@@ -180,27 +180,28 @@ SCMapping::floorFilter(bool filter_floor = false)
   // g_min_retained_floor_radius = 0;
   // g_min_retained_floor_radius = 5;
   // g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 20;
   // g_max_retained_floor_radius = 10;
   // g_max_retained_floor_radius = 15;
   // g_max_retained_floor_radius = 20;
   // g_max_retained_floor_radius = 25;
+  // g_max_retained_floor_radius = 30;
 
 
   //This height needs to be converted from the map frame to the velo frame value
   // To simplify this for now, base link z value is: 0.93 and velo link z value is 0.802724058277
   // Therefore z value of 0.005 in velo link is 0.1223 in base link
-  float floor_height = 0.5;
   //BECAUSE OF THE PLANE BEING INCLINED, CANNOT GET RID OF ALL POINTS BASED ON THIS SIMPLE HEIGHT THRESHOLD SO USING A HIGHER VALUE
   //Say in the future it can be improved by integrating the usage of floor detection
 
   if(filter_floor == true)
   {
     // if ((g_z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2))))
-    if ((g_point_world_frame_coordinate.point.z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2))))
+    if ((g_z >= g_floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius,2))))
     {
       return true;
     }
-    else if((g_double_floor_ring) && ((g_point_world_frame_coordinate.point.z >= floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius + g_gap_to_next_floor_ring,2))
+    else if((g_double_floor_ring) && ((g_z >= g_floor_height)||((( pow(g_x,2) + pow(g_y,2) ) <= pow(g_max_retained_floor_radius + g_gap_to_next_floor_ring,2))
                                       && (( pow(g_x,2) + pow(g_y,2) ) >= pow(g_min_retained_floor_radius + g_gap_to_next_floor_ring,2))))) {
       return true;
     }
@@ -456,7 +457,28 @@ SCMapping::transformRobotCoordinates()
     ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
   }
 
-  
+
+  g_base_link_world_frame_coordinate.header.frame_id = "base_link";
+  g_base_link_world_frame_coordinate.header.stamp = ros::Time (0);
+  g_base_link_world_frame_coordinate.point.x = 0.0;
+  g_base_link_world_frame_coordinate.point.y = 0.0;
+  g_base_link_world_frame_coordinate.point.z = 0.0;
+
+
+  try
+  {
+    g_listener_.transformPoint ("velo_link", 
+                                g_base_link_world_frame_coordinate,
+                                g_base_link_lidar_frame_coordinate);
+  }
+  catch (tf::TransformException& ex)
+  {
+    ROS_ERROR ("Received a trasnformation exception: %s", ex.what());
+  }
+
+
+
+  g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 2.13;
 
   
 
@@ -483,7 +505,6 @@ SCMapping::transformRobotCoordinates()
   // cout << "g_robot_world_frame_coordinate: " << endl;
   // cout << g_robot_world_frame_coordinate << endl;
   
-
 
 }
 
@@ -999,8 +1020,8 @@ SCMapping::cylinderFilter( PointCPtr &in_cloud_ptr,
 
 
       // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-      if (!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
-          (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) // within the radius limits
+      if ((!(((( (-height <= g_x) && (g_x <= -x_axis_origin) ) || ((x_axis_origin <= g_x) && (g_x <=  height)))) && // within the X limits
+          (( pow(g_z,2) + pow(g_y,2) ) <= pow(radius,2)))) || (g_z < g_floor_height)) // within the radius limits
           
       {
         out_cloud_ptr->points.push_back(*it);
@@ -1079,7 +1100,7 @@ SCMapping::radiusFilter( PointCPtr &in_cloud_ptr,
 
     if (floorFilter(g_filter_floor))
     {
-      if ((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_radius,2)))
+      if (((( pow(g_x,2) + pow(g_y,2) ) >= pow(min_radius,2)) && (( pow(g_x,2) + pow(g_y,2) ) <= pow(max_radius,2))) || (g_z < g_floor_height))
       {
         out_cloud_ptr->points.push_back(*it);
 
@@ -1161,10 +1182,11 @@ SCMapping::ringFilter( PointCPtr &in_cloud_ptr,
     if (floorFilter(g_filter_floor))
     {
       // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-      if ((!(( g_x >= (-x_axis_origin - ring_height) && g_x <= (x_axis_origin + ring_height)) && // within the X limits
+      if (((!(( g_x >= (-x_axis_origin - ring_height) && g_x <= (x_axis_origin + ring_height)) && // within the X limits
           (( pow(g_z,2) + pow(g_y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
           ((( g_x >= (-ring_height) && g_x <= (ring_height)) && // within the X limits
-          (( pow(g_z,2) + pow(g_y,2) ) <= pow(ring_max_radius,2)))) // within the max radius limits
+          (( pow(g_z,2) + pow(g_y,2) ) <= pow(ring_max_radius,2)))) ||
+          (g_z < g_floor_height)) // within the max radius limits
         )
       {
         out_cloud_ptr->points.push_back(*it);
@@ -1243,9 +1265,10 @@ SCMapping::boxFilter(PointCPtr &in_cloud_ptr,
     if (floorFilter(g_filter_floor))
     {
 
-      if (!( ((g_z >= z_axis_min) && (g_z <= z_axis_max)) &&
+      if ((!( ((g_z >= z_axis_min) && (g_z <= z_axis_max)) &&
             ((g_x >= x_axis_min) && (g_x <= x_axis_max)) &&
-            ((g_y >= y_axis_min) && (g_y <= y_axis_max)))) // Not within the box limits
+            ((g_y >= y_axis_min) && (g_y <= y_axis_max)))) || 
+            (g_z < g_floor_height)) // Not within the box limits
       {
         out_cloud_ptr->points.push_back(*it);
 
@@ -1401,7 +1424,8 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       bool observable = computePointObservability();
 
       // Condition on the angle deviation on observed points.
-      if((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation <= max_angle) && (observable)) {
+      if(((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation <= max_angle) && (observable))
+          || (g_z < g_floor_height)) {
 
         out_cloud_ptr->points.push_back(*it);
 
