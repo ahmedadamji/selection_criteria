@@ -1545,7 +1545,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   
 
 
-  // ros::param::get("/filter_name", g_filter_name);
+  ros::param::get("/filter_name", g_filter_name);
 
   // if (g_filter_name.empty())
   // {
@@ -1561,20 +1561,20 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   // }
 
 
-  ros::param::get("/filter_name", g_filter_name);
+  // ros::param::get("/filter_name", g_filter_name);
 
-  if (g_filter_name.empty())
-  {
-    g_filter_name = string("ang_dev") + string("_") + "0.75mean" + string("_") + "0.9max";
-  }
-  else if (g_filter_name.find("ang_dev") != string::npos)
-  {
-    g_filter_name = g_filter_name;
-  }
-  else
-  {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "0.75mean" + string("_") + "0.9max";
-  }
+  // if (g_filter_name.empty())
+  // {
+  //   g_filter_name = string("ang_dev") + string("_") + "0.75mean" + string("_") + "0.9max";
+  // }
+  // else if (g_filter_name.find("ang_dev") != string::npos)
+  // {
+  //   g_filter_name = g_filter_name;
+  // }
+  // else
+  // {
+  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "0.75mean" + string("_") + "0.9max";
+  // }
 
   // ros::param::get("/filter_name", g_filter_name);
 
@@ -1591,18 +1591,18 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "p5mean" + string("_") + "max_cyl_60_4_120_rad_60_120_angularspeed_p4linearspeed_p01sampling";
   // }
 
-  // if (g_filter_name.empty())
-  // {
-  //   g_filter_name = string("ang_dev") + string("_") + "show" + string("_") + "show";
-  // }
-  // else if (g_filter_name.find("ang_dev") != string::npos)
-  // {
-  //   g_filter_name = g_filter_name;
-  // }
-  // else
-  // {
-  //   g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "show" + string("_") + "show";
-  // }
+  if (g_filter_name.empty())
+  {
+    g_filter_name = string("ang_dev") + string("_") + "show" + string("_") + "show";
+  }
+  else if (g_filter_name.find("ang_dev") != string::npos)
+  {
+    g_filter_name = g_filter_name;
+  }
+  else
+  {
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "show" + string("_") + "show";
+  }
   
   
 
