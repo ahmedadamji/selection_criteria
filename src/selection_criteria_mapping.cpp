@@ -667,7 +667,7 @@ SCMapping::computeAngleDeviation()
 
   // Angle between observation of the point in degrees:
   // Note: If angle_deviation is nan, may mean that poisition of point was not estimated by LiDAR.
-  double ratio = (g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt)/(2*g_mod_d1*g_mod_d2);
+  double ratio = (g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt_sqr)/(2*g_mod_d1*g_mod_d2);
   if (ratio > 1.0) {
     ratio = 1.0;
   }
