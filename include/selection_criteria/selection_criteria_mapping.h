@@ -661,6 +661,8 @@ class SCMapping
     double g_mod_d1_sqr;
     /** \brief square of modulus of d2 */
     double g_mod_d2_sqr;
+    /** \brief square of modulus of vdt */
+    double g_mod_vdt_sqr;
 
 
     //The vector to store the angle deviation of all points in a vector for visualization

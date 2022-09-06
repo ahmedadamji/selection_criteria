@@ -15,15 +15,15 @@
 
   <arg name="dataset" default="KITTI" />
   <!-- <arg name="sequence" default="06" /> -->
-  <arg name="sequence" default="06" />
+  <arg name="sequence" default="00" />
   <arg name="filter_name" default="" />
 
 
   <!-- Setting Ros Params -->
   <param name="/use_sim_time" value="true" />
   <param name="/dataset" type="string" value="KITTI" />
-  <param name="/sequence" type="string" value="06" />
-  <!-- <param name="/sequence" type="string" value="00" /> -->
+  <!-- <param name="/sequence" type="string" value="06" /> -->
+  <param name="/sequence" type="string" value="00" />
   <param name="/filter_name" type="string" value="" />
   <param name="/number_of_frames" type="int" value="0" />
   <param name="/total_input_points" type="int" value="0" />
@@ -78,6 +78,8 @@
   <arg name="use_imu" default="true" /><!-- Disable to maximise the effect of selected points upon visualization of performance-->
 
   <arg name="imu_topic" default="/kitti/oxts/imu" />
+  <arg name="gps_topic" default="/kitti/oxts/gps/fix" />
+
 
   <!-- transformation between lidar and base_link -->
   <node pkg="tf" type="static_transform_publisher" name="lidar2base_publisher" args="0 0 0 0 0 0 base_link velo_link 10" />

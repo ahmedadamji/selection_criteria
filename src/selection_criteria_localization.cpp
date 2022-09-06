@@ -1760,6 +1760,37 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
         vis_cloud_ptr->points.back().intensity = 1;
 
       }
+
+      // else if (radiusCondition(g_x, g_y, g_z, 60, 80)) {
+      // // else if (radiusCondition(g_x, g_y, g_z, 60, 80)) {
+
+
+      //   out_cloud_ptr->points.push_back(*it);
+
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
+
+      // }
+
+      else if ((radiusCondition(g_x, g_y, g_z, 60, 80)) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.46)) {
+
+
+
+        // out_cloud_ptr->points.push_back(*it);
+
+        // vis_cloud_ptr->points.push_back(*it);
+        // vis_cloud_ptr->points.back().intensity = 1;
+
+        if ( ((float) rand()/RAND_MAX) > 0.80) { 
+          // cout <<"something is wrong" <<endl;
+          out_cloud_ptr->points.push_back(*it);
+
+          vis_cloud_ptr->points.push_back(*it);
+          vis_cloud_ptr->points.back().intensity = 0.85;
+
+        }
+      }
+      
       
 
       else // Condition to visualize unselected points with a different intensity
@@ -1786,7 +1817,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
   ros::param::get("/filter_name", g_filter_name);
 
-  string current_filter_name = string("beta") + string("_") + to_string(z);
+  string current_filter_name = string("beta") + string("_") + to_string(z) + "_rad_60_80_velocity_sampled";
 
 
   if (g_filter_name.empty())
@@ -1881,7 +1912,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1961,7 +1992,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Beta Filters
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
-  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
+  betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 2); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 3); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 4); //removed suspected unneccesary points in form of angle deviation filter

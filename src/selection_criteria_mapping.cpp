@@ -478,7 +478,7 @@ SCMapping::transformRobotCoordinates()
 
 
 
-  g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 2.13;
+  g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 0.3;
 
   
 
@@ -662,6 +662,8 @@ SCMapping::computeAngleDeviation()
   g_mod_d2_sqr = pow(g_mod_d2,2);
   // cout << "g_mod_d2_sq: " << endl;
   // cout << g_mod_d2_sqr << endl;
+
+  g_mod_vdt_sqr = pow(g_mod_vdt,2);
 
   // Angle between observation of the point in degrees:
   // Note: If angle_deviation is nan, may mean that poisition of point was not estimated by LiDAR.
@@ -1355,8 +1357,8 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   int previous_matched_angle_deviation;
   ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
 
-  min_angle = previous_angle_deviation_mean;
-  max_angle = previous_angle_deviation_max;
+  min_angle = 0.75*previous_angle_deviation_mean;
+  max_angle = 0.9*previous_angle_deviation_max;
 
   // min_angle = 0;
   // max_angle = 0.1;
@@ -1405,8 +1407,6 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
 
     // out_cloud_ptr->points.push_back(*it);
 
-    float floor_height = 0.50;
-
     // Computing Angle Deviation of point with respect to previous frame:
     double angle_deviation = computeAngleDeviation();
     //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
@@ -1422,10 +1422,11 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
 
 
       bool observable = computePointObservability();
+      // bool observable = true;
+
 
       // Condition on the angle deviation on observed points.
-      if(((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation <= max_angle) && (observable))
-          || (g_z < g_floor_height)) {
+      if(((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation <= max_angle) && (observable)) || (g_z < g_floor_height)) {
 
         out_cloud_ptr->points.push_back(*it);
 
@@ -1494,24 +1495,24 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
       // Can also create an adaptive threshold while this happens
       // Also adding a condition that the rest of the points are sampled randomly with a 10% probability
-      else if ( ((float) rand()/RAND_MAX) > 0.99) { 
+      else if ( ((float) rand()/RAND_MAX) > 0.80) { 
         // cout <<"something is wrong" <<endl;
         out_cloud_ptr->points.push_back(*it);
 
         vis_cloud_ptr->points.push_back(*it);
-        vis_cloud_ptr->points.back().intensity = 1;
+        vis_cloud_ptr->points.back().intensity = 0.85;
 
       }
 
       // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
-      else if ((g_matched_angle_deviation < 10)) { 
-        // cout <<"something is wrong" <<endl;
-        out_cloud_ptr->points.push_back(*it);
+      // else if ((g_matched_angle_deviation < 10)) { 
+      //   // cout <<"something is wrong" <<endl;
+      //   out_cloud_ptr->points.push_back(*it);
 
-        vis_cloud_ptr->points.push_back(*it);
-        vis_cloud_ptr->points.back().intensity = 1;
+      //   vis_cloud_ptr->points.push_back(*it);
+      //   vis_cloud_ptr->points.back().intensity = 1;
 
-      }
+      // }
       
 
       else // Condition to visualize unselected points with a different intensity
@@ -1519,6 +1520,14 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
         vis_cloud_ptr->points.push_back(*it);
         vis_cloud_ptr->points.back().intensity = 0.75;
       }
+
+    }
+    else if ( ((float) rand()/RAND_MAX) > 0.80) { 
+      // cout <<"something is wrong" <<endl;
+      out_cloud_ptr->points.push_back(*it);
+
+      vis_cloud_ptr->points.push_back(*it);
+      vis_cloud_ptr->points.back().intensity = 0.85;
 
     }
     else
@@ -1556,7 +1565,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
 
   if (g_filter_name.empty())
   {
-    g_filter_name = string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
+    g_filter_name = string("ang_dev") + string("_") + "0.75mean" + string("_") + "0.9max";
   }
   else if (g_filter_name.find("ang_dev") != string::npos)
   {
@@ -1564,7 +1573,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   }
   else
   {
-    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "mean" + string("_") + "max_p01sampling";
+    g_filter_name = g_filter_name + string("_") + string("ang_dev") + string("_") + "0.75mean" + string("_") + "0.9max";
   }
 
   // ros::param::get("/filter_name", g_filter_name);

@@ -156,7 +156,7 @@ class SCLocalization
 
       /** \brief Radius Filter Condition 
       *
-      * used for filtering points inside a defined radial region
+      * used for filtering points outside a defined radial region
       * 
       * \input[in] x: x co-ordinate of point in point cloud
       * \input[in] y: y co-ordinate of point in point cloud
