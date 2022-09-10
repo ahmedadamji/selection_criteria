@@ -1469,18 +1469,9 @@ void
 SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 {
   // Need to use this to predict where an observed point was in the previous frame
-  // Can do this by estimating the relative velocity of a point based on its distance from the robot,
-  // and use that to estimate its location from the previous frame
-  // can use this to find the angle difference of the point in successive frames
-  // can store history of velocity of the robot in a ros topic or param to check if the angle diviation
-  // of a point from its last observation has been greater than a set threshold to decide if the point will be useful.
-  
-  // As hdl is a graph based slam algorithm, think of COMP0130 coursework of how points were eliminated there and look at coursework feedback.
 
   nav_msgs::Odometry robot_odom;
   robot_odom = *odom_in;
-  // geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
-  // double velocity = getVelocity(robot_twist);
 
 
   // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:

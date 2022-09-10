@@ -1630,48 +1630,11 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
 void
 SCMapping::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
 {
-  // Need to use this to predict where an observed point was in the previous frame
-  // Can do this by estimating the relative velocity of a point based on its distance from the robot,
-  // and use that to estimate its location from the previous frame
-  // can use this to find the angle difference of the point in successive frames
-  // can store history of velocity of the robot in a ros topic or param to check if the angle diviation
-  // of a point from its last observation has been greater than a set threshold to decide if the point will be useful.
   
-  // As hdl is a graph based slam algorithm, think of COMP0130 coursework of how points were eliminated there and look at coursework feedback.
+  // Need to use this to predict where an observed point was in the previous frame
 
   nav_msgs::Odometry robot_odom;
   robot_odom = *odom_in;
-  // geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
-  // double velocity = getVelocity(robot_twist);
-
-
-  // // Find lidar and robot coordinate using odometry message, as using transform points increases the computational complexity alot for some reason and slam fails.
-  // // But if i can fix this problem, it would be much more accurate
-  // The problem was because of trying to call a rosparm from the server whilte itterating through each point from the cloud, therefore it could not keep up!
-
-  // //Make Lidar frame id a global variable that can be adjusted from a yaml file alonside other variables later
-  // g_robot_lidar_frame_coordinate.header.frame_id = "velo_link";
-  // g_robot_lidar_frame_coordinate.header.stamp = ros::Time (0);
-  // g_robot_lidar_frame_coordinate.point.x = 0.0;
-  // g_robot_lidar_frame_coordinate.point.y = 0.0;
-  // g_robot_lidar_frame_coordinate.point.z = 0.0;  
-
-  // g_robot_world_frame_coordinate = g_robot_lidar_frame_coordinate;
-  // g_robot_world_frame_coordinate.point.x = robot_odom.pose.pose.position.x;
-  // g_robot_world_frame_coordinate.point.y = robot_odom.pose.pose.position.y;
-  // g_robot_world_frame_coordinate.point.z = robot_odom.pose.pose.position.z;
-
-  // g_point_lidar_frame_coordinate.header.frame_id = "velo_link";
-  // g_point_lidar_frame_coordinate.header.stamp = ros::Time (0);
-  // g_point_lidar_frame_coordinate.point.x = g_x;
-  // g_point_lidar_frame_coordinate.point.y = g_y;
-  // g_point_lidar_frame_coordinate.point.z = g_z;
-
-  // g_point_world_frame_coordinate = g_point_lidar_frame_coordinate;
-  // g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
-  // g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
-  // g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
-
 
 
   // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:
