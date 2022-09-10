@@ -228,7 +228,7 @@ class SCMapping
       * 
       */
     void
-    saveAngleDeviationHistogram(unsigned int histogramAngleDeviation[900]);
+    saveAlphaHistogram(unsigned int histogramAlpha[900]);
 
     /** \brief Transform Robot Coordinates 
       *
@@ -261,7 +261,7 @@ class SCMapping
       * \output angle The angle deviation of a point relative to previous frame
       */
     double
-    computeAngleDeviation ();
+    computeAlpha ();
 
     /** \brief Compute Angle Deviation Statistics
       *
@@ -269,7 +269,7 @@ class SCMapping
       * 
       */
     void
-    computeAngleDeviationStatistics ();
+    computeAlphaStatistics ();
 
     /** \brief Compute Point Observability
       *
@@ -407,7 +407,7 @@ class SCMapping
       *  
       */
     void 
-    angleDeviationFilter (PointCPtr &in_cloud_ptr,
+    AlphaFilter (PointCPtr &in_cloud_ptr,
                           PointCPtr &out_cloud_ptr,
                           PointCPtr &vis_cloud_ptr,
                           float min_angle,

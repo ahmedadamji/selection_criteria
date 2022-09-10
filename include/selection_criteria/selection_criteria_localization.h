@@ -489,16 +489,6 @@ class SCLocalization
     void
     callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1);
 
-    /** \brief Get Robot Velocity 
-      *
-      * used to get the vehicle velocity based on Odometry
-      * 
-      * \input[in] robot_twist a Twist geometry_msgs const pointer
-      * 
-      * \return velocity
-      */
-    double
-    getVelocity(const geometry_msgs::Twist& robot_twist);
 
     /** \brief Odometry CallBack function.
       * 

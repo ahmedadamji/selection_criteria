@@ -32,10 +32,6 @@ typedef sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::Po
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Will return points based on the conditions set by the algorithm
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
 SCMapping::SCMapping (ros::NodeHandle &nh):
   g_cloud_ptr (new PointC), // input point cloud
   g_cloud_filtered (new PointC), // filtered point cloud
@@ -163,27 +159,11 @@ SCMapping::floorFilter(bool filter_floor = false)
 {
 
   // This is a floor condition where points above the floor are selected based on height, that are far away from the robot, this has not been yet implemented in a function or a filter.
-  // Can I try to filter the points that have been detected as floor points by the floor detection nodelet.
-  // And is there any reason for me to do this?
-  // Investigate if points far away or close from the floor are more useful to filter and conclude why  if  (filter) {
-
-
-  // g_min_retained_floor_radius = 0;
-  // g_min_retained_floor_radius = 5;
-  // g_min_retained_floor_radius = 10;
-  // g_min_retained_floor_radius = 20;
-  // g_max_retained_floor_radius = 10;
-  // g_max_retained_floor_radius = 15;
-  // g_max_retained_floor_radius = 20;
-  // g_max_retained_floor_radius = 25;
-  // g_max_retained_floor_radius = 30;
 
 
   //This height needs to be converted from the map frame to the velo frame value
   // To simplify this for now, base link z value is: 0.93 and velo link z value is 0.802724058277
   // Therefore z value of 0.005 in velo link is 0.1223 in base link
-  //BECAUSE OF THE PLANE BEING INCLINED, CANNOT GET RID OF ALL POINTS BASED ON THIS SIMPLE HEIGHT THRESHOLD SO USING A HIGHER VALUE
-  //Say in the future it can be improved by integrating the usage of floor detection
 
   if(filter_floor == true)
   {
@@ -281,18 +261,7 @@ SCMapping::computeFilteredPointsData()
   double g_average_output_points = ((1.0 * g_total_output_points)/(1.0 * g_total_number_of_frames));
   double g_average_filtered_points = ((1.0 * g_total_filtered_points)/(1.0 * g_total_number_of_frames));
 
-  // cout << "Total number of input points: " << endl;
-  // cout << g_total_input_points << endl;
-  // cout << "Total number of output points: " << endl;
-  // cout << g_total_output_points << endl;
-  // cout << "Total number of filtered points: " << endl;
-  // cout << g_total_filtered_points << endl;
-  // cout << "Average number of input points per frame: " << endl;
-  // cout << g_average_input_points << endl;
-  // cout << "Average number of output points per frame: " << endl;
-  // cout << g_average_output_points << endl;
-  // cout << "Average number of filtered points per frame: " << endl;
-  // cout << g_average_filtered_points << endl;
+
 
   // defining array of filtered points data
   string filtered_points_data[6] = { "Total number of input points: " + to_string(g_total_input_points),
@@ -364,7 +333,7 @@ SCMapping::computeFilteredPointsData()
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCMapping::saveAngleDeviationHistogram(unsigned int histogramAngleDeviation[900]) {
+SCMapping::saveAlphaHistogram(unsigned int histogramAlpha[900]) {
 
   // get array size
   int arraySize = 900;
@@ -377,7 +346,7 @@ SCMapping::saveAngleDeviationHistogram(unsigned int histogramAngleDeviation[900]
     g_file_name = g_file_name + "_ff";
   }
 
-  g_file_name = g_file_name + "_AngleDeviationHistogram.txt";
+  g_file_name = g_file_name + "_AlphaHistogram.txt";
   
   int i = 0;
   try {
@@ -386,7 +355,7 @@ SCMapping::saveAngleDeviationHistogram(unsigned int histogramAngleDeviation[900]
     if (inputFile.is_open()){   //checking whether the file is open
       string tp;
       while(getline(inputFile, tp)){ //read data from file object and put it into string.
-          histogramAngleDeviation[i] += stoi(tp);
+          histogramAlpha[i] += stoi(tp);
           i++;
       }
       inputFile.close(); //close the file object.
@@ -408,7 +377,7 @@ SCMapping::saveAngleDeviationHistogram(unsigned int histogramAngleDeviation[900]
     {
       //store array contents to text file
       for (int j = 0; j < arraySize; j++) {
-        fw << histogramAngleDeviation[j] << "\n";
+        fw << histogramAlpha[j] << "\n";
       }
       fw.close();
     }
@@ -472,29 +441,6 @@ SCMapping::transformRobotCoordinates()
   g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 0.3;
 
   
-
-  // geometry_msgs::TransformStamped transformStamped;
-  // ros::Duration cache_(5);
-  // tf2_ros::Buffer tfBuffer(cache_);
-  // // tf2_ros::TransformListener tfListener(tfBuffer);
-  // //CHECK IF THIS WORKS OR WILL HAVE TO INCLUDE BUFFER AGAIN SOMEHOW
-  // try
-  // {
-  //   transformStamped = tfBuffer.lookupTransform("map", "velo_link",ros::Time(0));
-    
-  //   tf2::doTransform(g_robot_lidar_frame_coordinate, g_robot_world_frame_coordinate, transformStamped);
-      
-  // }
-  // catch (tf2::TransformException &ex)
-  // {
-  //   ROS_WARN("%s", ex.what());
-  // }
-
-
-
-
-  // cout << "g_robot_world_frame_coordinate: " << endl;
-  // cout << g_robot_world_frame_coordinate << endl;
   
 
 }
@@ -519,16 +465,10 @@ SCMapping::computeTrajectoryInformation()
   double time_elapsed = g_current_time - g_previous_time;
 
 
-  // // To get the robot's angular velocity data
-  // ros::param::get("/robot_angular_velocity_x", g_robot_angular_velocity_x);
-  // ros::param::get("/robot_angular_velocity_y", g_robot_angular_velocity_y);
 
   ros::param::get("/robot_previous_angular_velocity", g_robot_previous_angular_velocity);
 
 
-  // double robot_position_vector_abs = sqrt(pow(g_robot_world_frame_coordinate.point.x,2)
-  //                                    + pow(g_robot_world_frame_coordinate.point.y,2));
-  // g_robot_angle = (atan2(g_robot_world_frame_coordinate.point.y , g_robot_world_frame_coordinate.point.x)) * 180 / M_PI;
 
   ros::param::get("/robot_previous_angle", g_robot_previous_angle);
   if(g_robot_angle == 0.0) {
@@ -539,7 +479,6 @@ SCMapping::computeTrajectoryInformation()
   g_robot_angular_velocity = ((abs(g_robot_angular_velocity) + abs(g_robot_previous_angular_velocity)) / 2); //To get a smoother velocity chart
 
 
-  // g_robot_angular_velocity = (abs(g_robot_angle));
 
   // To get the robot's linear acceleration data
   // Not concidering z axis as it has acceleration due to gravity, and gives irrelevant readings.
@@ -552,10 +491,6 @@ SCMapping::computeTrajectoryInformation()
 
 
 
-  // Not using odometry data and purely IMU readings, therefore coordinate frame may not affect this.
-  // g_robot_linear_velocity_x = g_robot_previous_linear_velocity_x + (time_elapsed * g_robot_linear_acceleration_x);
-  // g_robot_linear_velocity_y = g_robot_previous_linear_velocity_y + (time_elapsed * g_robot_linear_acceleration_y);
-
   // The following formula for velocity uses odometry data and no acceleration information from IMU, to check if the imu is giving reliable data:
   g_robot_linear_velocity_x = (g_robot_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x) / time_elapsed;
   g_robot_linear_velocity_x = ((g_robot_linear_velocity_x + g_robot_previous_linear_velocity_x) / 2); //To get a smoother velocity chart
@@ -563,13 +498,6 @@ SCMapping::computeTrajectoryInformation()
   g_robot_linear_velocity_y = ((g_robot_linear_velocity_y + g_robot_previous_linear_velocity_y) / 2); //To get a smoother velocity chart
 
   g_robot_linear_velocity_abs = sqrt(pow(g_robot_linear_velocity_x,2) + pow(g_robot_linear_velocity_y,2));
-
-  // cout << g_robot_linear_velocity_x << endl;
-  // cout << g_robot_linear_velocity_y << endl;
-
-
-  // cout << fixed << g_robot_linear_velocity_abs << endl; //fixed opeartor used to not print the velocity in decimals
-
 
 
 
@@ -599,20 +527,11 @@ SCMapping::transformPointCoordinates()
 
 ////////////////////////////////////////////////////////////////////////////////
 double
-SCMapping::computeAngleDeviation()
+SCMapping::computeAlpha()
 {
 
   double alpha = 0.0;
 
-
-  // cout << "g_robot_world_frame_coordinate: " << endl;
-  // cout << g_robot_world_frame_coordinate << endl;
-
-  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
-  // cout << g_previous_robot_world_frame_coordinate << endl;
-
-  // cout << "g_point_world_frame_coordinate: " << endl;
-  // cout << g_point_world_frame_coordinate << endl;
 
 
   g_vdt[0] = g_robot_world_frame_coordinate.point.x - g_previous_robot_world_frame_coordinate.point.x;
@@ -630,68 +549,17 @@ SCMapping::computeAngleDeviation()
 
 
   g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])));
-  // cout << "g_mod_vdt: " << endl;
-  // cout << g_mod_vdt << endl;
-
   g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])));
-  // cout << "g_mod_d1: " << endl;
-  // cout << g_mod_d1 << endl;
-
   g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])));
-  // cout << "g_mod_d2: " << endl;
-  // cout << g_mod_d2 << endl;
-
-
-  // g_mod_vdt = sqrt(((g_vdt[0])*(g_vdt[0])) + ((g_vdt[1])*(g_vdt[1])) + ((g_vdt[2])*(g_vdt[2])));
-  // g_mod_d1 = sqrt(((g_d1[0])*(g_d1[0])) + ((g_d1[1])*(g_d1[1])) + ((g_d1[2])*(g_d1[2])));
-  // g_mod_d2 = sqrt(((g_d2[0])*(g_d2[0])) + ((g_d2[1])*(g_d2[1])) + ((g_d2[2])*(g_d2[2])));
 
   g_mod_d1_sqr = pow(g_mod_d1,2);
-  // cout << "g_mod_d1_sqr: " << endl;
-  // cout << g_mod_d1_sqr << endl;
-
   g_mod_d2_sqr = pow(g_mod_d2,2);
-  // cout << "g_mod_d2_sq: " << endl;
-  // cout << g_mod_d2_sqr << endl;
-
   g_mod_vdt_sqr = pow(g_mod_vdt,2);
 
   // Angle between observation of the point in degrees:
   double ratio = (g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt_sqr)/(2*g_mod_d1*g_mod_d2);
   alpha = (acos(ratio)) * 180 / M_PI;
 
-  // if (alpha == 0.0) {
-  //   cout << "0.0 Angle Problem: " << endl;
-  //   cout << "g_mod_d1_sqr: " << endl;
-  //   cout << g_mod_d1_sqr << endl;
-  //   cout << "g_mod_d2_sqr: " << endl;
-  //   cout << g_mod_d2_sqr << endl;
-  //   cout << "g_mod_vdt: " << endl;
-  //   cout << g_mod_vdt << endl;
-  //   cout << "g_mod_d1: " << endl;
-  //   cout << g_mod_d1 << endl;
-  //   cout << "g_mod_d2: " << endl;
-  //   cout << g_mod_d2 << endl;
-  // }
-
-  // if(isnan(alpha))
-  // {
-  //   cout << "NaN Angle Problem: " << endl;
-  //   cout << "g_mod_d1_sqr: " << endl;
-  //   cout << g_mod_d1_sqr << endl;
-  //   cout << "g_mod_d2_sqr: " << endl;
-  //   cout << g_mod_d2_sqr << endl;
-  //   cout << "g_mod_vdt: " << endl;
-  //   cout << g_mod_vdt << endl;
-  //   cout << "g_mod_d1: " << endl;
-  //   cout << g_mod_d1 << endl;
-  //   cout << "g_mod_d2: " << endl;
-  //   cout << g_mod_d2 << endl;
-  // }
-
-
-  // cout << "The angle deviation of the current point is: " << endl;
-  // cout << alpha << endl;
 
   return alpha;
 
@@ -699,7 +567,7 @@ SCMapping::computeAngleDeviation()
 
 ////////////////////////////////////////////////////////////////////////////////
 void
-SCMapping::computeAngleDeviationStatistics()
+SCMapping::computeAlphaStatistics()
 {
   // Finding the sum, mean, square of sums and std of angle deviation
   // double sum = std::accumulate(alpha_vec.begin(), alpha_vec.end(), 0.0);
@@ -875,7 +743,7 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
 	// /* Angle Deviation histogram */
-	// unsigned int histogramAngleDeviation[900] = { 0 };
+	// unsigned int histogramAlpha[900] = { 0 };
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -893,8 +761,8 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
     // // Computing Angle Deviation of point with respect to previous frame:
     // double alpha_idx;
 
-    // if((not isnan(computeAngleDeviation()))) {
-    //   alpha_idx = computeAngleDeviation()/0.1;
+    // if((not isnan(computeAlpha()))) {
+    //   alpha_idx = computeAlpha()/0.1;
     // }
     // else {
     //   alpha_idx = 0;
@@ -902,9 +770,9 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
     // // cout << alpha_idx << endl;
 
-    // unsigned int vAngleDeviation = (int) alpha_idx;
+    // unsigned int vAlpha = (int) alpha_idx;
 
-		// ++histogramAngleDeviation[vAngleDeviation];
+		// ++histogramAlpha[vAlpha];
 
 
 
@@ -941,7 +809,7 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   computeFilteredPointsData();
-  // saveAngleDeviationHistogram(histogramAngleDeviation);
+  // saveAlphaHistogram(histogramAlpha);
   updateROSParams();
 
 
@@ -1311,7 +1179,7 @@ SCMapping::boxFilter(PointCPtr &in_cloud_ptr,
 ////////////////////////////////////////////////////////////////////////////////
 
 void
-SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr,
+SCMapping::AlphaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &vis_cloud_ptr,
                             float min_angle = 0, float max_angle = 35)
 {
 
@@ -1392,7 +1260,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
     // out_cloud_ptr->points.push_back(*it);
 
     // Computing Angle Deviation of point with respect to previous frame:
-    double alpha = computeAngleDeviation();
+    double alpha = computeAlpha();
     //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
     if((not isnan(alpha)))
     {
@@ -1525,7 +1393,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
 
 
 
-  computeAngleDeviationStatistics();
+  computeAlphaStatistics();
   
 
 
@@ -1732,8 +1600,8 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
 
   // Angle Deviation Filters
   // To test inner radius of points required to be removed
-  // angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
-  angleDeviationFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
+  // AlphaFilter(filtered_cloud, cloud_out, vis_cloud, 0, 30); //removed suspected unneccesary points in form of angle deviation filter
+  AlphaFilter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points in form of angle deviation filter
 
 
   // Ring Filters // Test based on best height range from cylinder filter, range from radius filter, and inner radius of cylinder 

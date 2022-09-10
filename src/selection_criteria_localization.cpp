@@ -721,28 +721,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
       vis_cloud_ptr->points.push_back(*it);
       vis_cloud_ptr->points.back().intensity = 1;
 
-      // if (cylinderCondition(x, y, z))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-      // }
 
-      // if (!radiusCondition(g_x, g_y, g_z, 20, 40) || (g_z < g_floor_height))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-
-      //   vis_cloud_ptr->points.push_back(*it);
-      //   vis_cloud_ptr->points.back().intensity = 1;
-      // }
-
-      // if (cylinderCondition(g_x, g_y, g_z, 0, 4, 100) && radiusCondition(g_x, g_y, g_z, 0, 50) && (g_z >= 0.05))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-      // }
-
-      // if (ringCondition(x, y, z))
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
-      // }
 
     }
 
@@ -753,13 +732,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
   }
   g_filter_name = "vanilla";
 
-  // g_filter_name = "rad_40_20";
 
-
-  // g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius);
-  // if(g_double_floor_ring) {
-  //   g_filter_name = "vanilla_" + to_string(g_min_retained_floor_radius) + "_" + to_string(g_max_retained_floor_radius) + "_" + to_string(g_gap_to_next_floor_ring);
-  // }
   g_in_cloud_size = in_cloud_ptr->size();
   g_out_cloud_size = out_cloud_ptr->size();
   computeFilteredPointsData();
@@ -907,14 +880,7 @@ SCLocalization::radiusFilter( PointCPtr &in_cloud_ptr,
         vis_cloud_ptr->points.push_back(*it);
         vis_cloud_ptr->points.back().intensity = 1;
       }
-      // else if(g_z < g_floor_height)
-      // {
-      //   out_cloud_ptr->points.push_back(*it);
 
-      //   vis_cloud_ptr->points.push_back(*it);
-      //   vis_cloud_ptr->points.back().intensity = 0.6;
-
-      // }
       else
       {
         vis_cloud_ptr->points.push_back(*it);
@@ -1183,12 +1149,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   // Compute and save additional robot trajectory information to odometry
   computeTrajectoryInformation();
 
-  // g_previous_robot_world_frame_coordinate
 
-  // cout << "g_previous_robot_world_frame_coordinate: " << endl;
-  // cout << g_previous_robot_world_frame_coordinate << endl;
-  
-  // int sample_size = in_cloud_ptr->size();
   
   for ( PointC::iterator it = in_cloud_ptr->begin(); it != in_cloud_ptr->end(); it++)
   {
@@ -1200,13 +1161,6 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
     // Transform the points to new frame
     transformPointCoordinates();
 
-
-    
-    // Computing Observation Angle of point with respect to lidar frame:
-    // double observation_angle = computeObservationAngle();
-
-
-    // out_cloud_ptr->points.push_back(*it);
 
 
     // Computing Distance of point with respect to robot:
@@ -1230,10 +1184,6 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
       // cout << "Sample Probability: " << sample_probability << endl;
 
       double probability = computeDistanceProbability(distance, previous_distance_mean, std);
-      // if (distance < 20) {
-      //   // cout << "Mean: " << previous_distance_mean << endl;
-      //   cout << "Probability: " << probability << endl;
-      // }
 
 
       // Condition on the angle deviation on observed points.
@@ -1411,9 +1361,9 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // To test best thickness of forward points to be eliminated
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 2, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter --> works as the best cyliner filter with almost 45% of filtered cloud
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 4, 100); //removed suspected unneccesary points in form of cylinder filter
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 5, 100); //removed suspected unneccesary points in form of cylinder filter
-  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 6, 100); //removed suspected unneccesary points in form of cylinder filter --> note in report that 6 fails
+  // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 6, 100); //removed suspected unneccesary points in form of cylinder filter
 
   // To test range of points required to be removed
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 10); //removed suspected unneccesary points in form of cylinder filter
@@ -1500,11 +1450,6 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // boxFilter(filtered_cloud, cloud_out, vis_cloud, -30, 30, -3, 3, -100, 100); //removed suspected unneccesary points in form of ring filter
   
 
-  // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)
-
-  // Add filter to remove points that have not had an enough angle diviation from previous frame or N frames ago
-
-
 
   // write head and publish output
   sensor_msgs::PointCloud2 output;
@@ -1516,16 +1461,6 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   vis_output.header = filtered_cloud_msg->header;
   pub_.publish (output);
   pub_vis_selected_points_.publish (vis_output);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double
-SCLocalization::getVelocity(const geometry_msgs::Twist& robot_twist)
-{
-
-  return 0.0;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
