@@ -133,68 +133,6 @@ class SCLocalization
     SCLocalization(ros::NodeHandle& nh);
 
 
-    /** \brief Cylinder Filter Condition 
-      *
-      * used for filtering points inside a defined cylinder
-      * 
-      * \input[in] x: x co-ordinate of point in point cloud
-      * \input[in] y: y co-ordinate of point in point cloud
-      * \input[in] z: z co-ordinate of point in point cloud
-      * \input[in] x_axis_origin: The origin of the cylinder in the x axis
-      * \input[in] radius: The radius of the cylinder
-      * \input[in] height: The height of the cylinder
-      *  
-      * \return true if condition is fulfilled
-      */
-    bool 
-    cylinderCondition(double x,
-                      double y,
-                      double z,
-                      float x_axis_origin,
-                      float radius,
-                      float height);
-
-      /** \brief Radius Filter Condition 
-      *
-      * used for filtering points outside a defined radial region
-      * 
-      * \input[in] x: x co-ordinate of point in point cloud
-      * \input[in] y: y co-ordinate of point in point cloud
-      * \input[in] z: z co-ordinate of point in point cloud
-      * \input[in] min_radius: The minimum filtering radius
-      * \input[in] max_radius: The maximum filtering radius
-      *  
-      * \return true if condition is fulfilled
-      */
-    bool 
-    radiusCondition(double x,
-                    double y,
-                    double z,
-                    float min_radius,
-                    float max_radius);
-
-    /** \brief Ring Filter Condition 
-      *
-      * used for filtering points outside a defined ring
-      * 
-      * \input[in] x: x co-ordinate of point in point cloud
-      * \input[in] y: y co-ordinate of point in point cloud
-      * \input[in] z: z co-ordinate of point in point cloud
-      * \input[in] x_axis_origin: The origin of the ring in the x axis
-      * \input[in] ring_min_radius: The min radius of the ring
-      * \input[in] ring_max_radius: The max radius of the ring
-      * \input[in] ring_height: The height of the ring
-      *  
-      * \return true if condition is fulfilled
-      */
-    bool 
-    ringCondition(double x,
-                  double y,
-                  double z,
-                  float x_axis_origin,
-                  float ring_min_radius,
-                  float ring_max_radius,
-                  float ring_height);
 
     /** \brief Floor Filter Condition 
       *

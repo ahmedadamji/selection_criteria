@@ -32,10 +32,6 @@ typedef sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::Po
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Will return points based on the conditions set by the algorithm
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
 SCLocalization::SCLocalization (ros::NodeHandle &nh):
   g_cloud_ptr (new PointC), // input point cloud
   g_cloud_filtered (new PointC), // filtered point cloud
@@ -58,16 +54,6 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
   pub_distance_std_ = nh_.advertise<std_msgs::Float32> ("/points_distance_std_", 3, true);
   pub_distance_min_ = nh_.advertise<std_msgs::Float32> ("/points_distance_min_", 3, true);
   pub_distance_max_ = nh_.advertise<std_msgs::Float32> ("/points_distance_max_", 3, true);
-
-
-  // // Create a ROS subscriber for the input point cloud and floor
-  // http://wiki.ros.org/message_filters?distro=melodic#Time_Synchronizer
-  // message_filters::Subscriber<sensor_msgs::PointCloud2> c1(nh_, "/points_input", 1);
-  // message_filters::Subscriber<sensor_msgs::PointCloud2> c2(nh_, "/points_input", 1);
-  // // TimeSynchronizer<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> sync(c1, c1, 10);
-  // Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), c1, c2);
-  
-  // sync.registerCallback(boost::bind(&SCLocalization::callback, this, _1, _2));
 
 
 
@@ -93,82 +79,6 @@ SCLocalization::SCLocalization (ros::NodeHandle &nh):
 
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool
-SCLocalization::cylinderCondition(double x,
-                                  double y,
-                                  double z,
-                                  float x_axis_origin = 0,
-                                  float radius = 3,
-                                  float height = 100)
-{
-  // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
-  // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
-  // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
-  // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
-
-
-  // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-  if (!(((( (-height <= x) && (x <= -x_axis_origin) ) || ((x_axis_origin <= x) && (x <=  height)))) && // within the X limits
-      (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool
-SCLocalization::radiusCondition(double x,
-                                double y,
-                                double z,
-                                float min_radius = 0,
-                                float max_radius = 250)
-{
-
-  if ((( pow(x, 2) + pow(y, 2) ) >= pow(min_radius, 2)) && (( pow(x, 2) + pow(y, 2) ) <= pow(max_radius, 2))) // within the radius limits
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
-}
-////////////////////////////////////////////////////////////////////////////////
-
-bool
-SCLocalization::ringCondition(double x,
-                              double y,
-                              double z,
-                              float x_axis_origin = 0,
-                              float ring_min_radius = 3,
-                              float ring_max_radius = 50,
-                              float ring_height = 100)
-{
-
-  // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-  if  ((!(( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
-      (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
-      ((( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
-      (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1020,6 +930,7 @@ SCLocalization::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointC
 
   }
   g_filter_name = "vanilla";
+
   // g_filter_name = "rad_40_20";
 
 
@@ -1772,24 +1683,24 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
       // }
 
-      else if ((radiusCondition(g_x, g_y, g_z, 60, 80)) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.46)) {
+      // else if ((radiusCondition(g_x, g_y, g_z, 60, 80)) || (g_robot_angular_velocity > 5) || (g_robot_linear_velocity_abs < 0.46)) {
 
 
 
-        // out_cloud_ptr->points.push_back(*it);
+      //   // out_cloud_ptr->points.push_back(*it);
 
-        // vis_cloud_ptr->points.push_back(*it);
-        // vis_cloud_ptr->points.back().intensity = 1;
+      //   // vis_cloud_ptr->points.push_back(*it);
+      //   // vis_cloud_ptr->points.back().intensity = 1;
 
-        if ( ((float) rand()/RAND_MAX) > 0.80) { 
-          // cout <<"something is wrong" <<endl;
-          out_cloud_ptr->points.push_back(*it);
+      //   if ( ((float) rand()/RAND_MAX) > 0.80) { 
+      //     // cout <<"something is wrong" <<endl;
+      //     out_cloud_ptr->points.push_back(*it);
 
-          vis_cloud_ptr->points.push_back(*it);
-          vis_cloud_ptr->points.back().intensity = 0.85;
+      //     vis_cloud_ptr->points.push_back(*it);
+      //     vis_cloud_ptr->points.back().intensity = 0.85;
 
-        }
-      }
+      //   }
+      // }
       
       
 
@@ -1817,7 +1728,8 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
 
   ros::param::get("/filter_name", g_filter_name);
 
-  string current_filter_name = string("beta") + string("_") + to_string(z) + "_rad_60_80_velocity_sampled";
+  // string current_filter_name = string("beta") + string("_") + to_string(z) + "_rad_60_80_velocity_sampled";
+  string current_filter_name = string("beta") + string("_") + to_string(z) + "_show";
 
 
   if (g_filter_name.empty())
@@ -1889,25 +1801,29 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // g_min_retained_floor_radius = 0;
   // g_min_retained_floor_radius = 5;
-  // g_min_retained_floor_radius = 10;
+  g_min_retained_floor_radius = 10;
   // g_min_retained_floor_radius = 15;
   // g_min_retained_floor_radius = 20;
-  g_min_retained_floor_radius = 10;
+  // g_min_retained_floor_radius = 10;
   // g_min_retained_floor_radius = 30;
+  // g_min_retained_floor_radius = 40;
   // g_min_retained_floor_radius = 50;
+  // g_min_retained_floor_radius = 60;
   // g_min_retained_floor_radius = 70;
   // g_max_retained_floor_radius = 10;
   // g_max_retained_floor_radius = 15;
-  // g_max_retained_floor_radius = 20;
+  g_max_retained_floor_radius = 20;
   // g_max_retained_floor_radius = 25;
   // g_max_retained_floor_radius = 1000;
   // g_max_retained_floor_radius = 30;
-  g_max_retained_floor_radius = 20;
+  // g_max_retained_floor_radius = 20;
   // g_max_retained_floor_radius = 40;
+  // g_max_retained_floor_radius = 50;
   // g_max_retained_floor_radius = 60;
+  // g_max_retained_floor_radius = 70;
   // g_max_retained_floor_radius = 80;
 
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
@@ -1992,7 +1908,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Beta Filters
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
-  betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 2); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 3); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 4); //removed suspected unneccesary points in form of angle deviation filter
@@ -2013,13 +1929,6 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)
 
   // Add filter to remove points that have not had an enough angle diviation from previous frame or N frames ago
-
-
-  // // Previous condition -->
-  // Filter(filtered_cloud, cloud1); //removed suspected unneccesary points
-  // // Why do we need to add these clouds?
-  // Add(cloud1, floor_cloud);// add rm floor
-  // Add(floor_cloud, cloud_out);
 
 
 
@@ -2063,35 +1972,6 @@ SCLocalization::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   robot_odom = *odom_in;
   // geometry_msgs::Twist robot_twist = robot_odom.twist.twist;
   // double velocity = getVelocity(robot_twist);
-
-
-  // // Find lidar and robot coordinate using odometry message, as using transform points increases the computational complexity alot for some reason and slam fails.
-  // // But if i can fix this problem, it would be much more accurate
-  // The problem was because of trying to call a rosparm from the server whilte itterating through each point from the cloud, therefore it could not keep up!
-
-  // //Make Lidar frame id a global variable that can be adjusted from a yaml file alonside other variables later
-  // g_robot_lidar_frame_coordinate.header.frame_id = "velo_link";
-  // g_robot_lidar_frame_coordinate.header.stamp = ros::Time (0);
-  // g_robot_lidar_frame_coordinate.point.x = 0.0;
-  // g_robot_lidar_frame_coordinate.point.y = 0.0;
-  // g_robot_lidar_frame_coordinate.point.z = 0.0;  
-
-  // g_robot_world_frame_coordinate = g_robot_lidar_frame_coordinate;
-  // g_robot_world_frame_coordinate.point.x = robot_odom.pose.pose.position.x;
-  // g_robot_world_frame_coordinate.point.y = robot_odom.pose.pose.position.y;
-  // g_robot_world_frame_coordinate.point.z = robot_odom.pose.pose.position.z;
-
-  // g_point_lidar_frame_coordinate.header.frame_id = "velo_link";
-  // g_point_lidar_frame_coordinate.header.stamp = ros::Time (0);
-  // g_point_lidar_frame_coordinate.point.x = g_x;
-  // g_point_lidar_frame_coordinate.point.y = g_y;
-  // g_point_lidar_frame_coordinate.point.z = g_z;
-
-  // g_point_world_frame_coordinate = g_point_lidar_frame_coordinate;
-  // g_point_world_frame_coordinate.point.x = g_robot_world_frame_coordinate.point.x;
-  // g_point_world_frame_coordinate.point.y = g_robot_world_frame_coordinate.point.y;
-  // g_point_world_frame_coordinate.point.z = g_robot_world_frame_coordinate.point.z;
-
 
 
   // Converting Odom Orientation from Quaternion to Roll Pitch and Yaw:

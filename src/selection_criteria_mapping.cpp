@@ -55,15 +55,6 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
 
 
 
-  // // Create a ROS subscriber for the input point cloud and floor
-  // http://wiki.ros.org/message_filters?distro=melodic#Time_Synchronizer
-  // message_filters::Subscriber<sensor_msgs::PointCloud2> c1(nh_, "/points_input", 1);
-  // message_filters::Subscriber<sensor_msgs::PointCloud2> c2(nh_, "/points_input", 1);
-  // // TimeSynchronizer<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> sync(c1, c1, 10);
-  // Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), c1, c2);
-  
-  // sync.registerCallback(boost::bind(&SCMapping::callback, this, _1, _2));
-
 
 
   // Create a ROS subscriber for the input point cloud
@@ -89,81 +80,6 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-bool
-SCMapping::cylinderCondition(double x,
-                                  double y,
-                                  double z,
-                                  float x_axis_origin = 0,
-                                  float radius = 3,
-                                  float height = 100)
-{
-  // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
-  // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
-  // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
-  // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
-
-
-  // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-  if (!(((( (-height <= x) && (x <= -x_axis_origin) ) || ((x_axis_origin <= x) && (x <=  height)))) && // within the X limits
-      (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool
-SCMapping::radiusCondition(double x,
-                           double y,
-                           double z,
-                           float min_radius = 0,
-                           float max_radius = 250)
-{
-
-  if ((( pow(x,2) + pow(y,2) ) >= pow(min_radius,2)) && (( pow(x,2) + pow(y,2) ) <= pow(max_radius,2))) // within the radius limits
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
-}
-////////////////////////////////////////////////////////////////////////////////
-
-bool
-SCMapping::ringCondition(double x,
-                              double y,
-                              double z,
-                              float x_axis_origin = 0,
-                              float ring_min_radius = 3,
-                              float ring_max_radius = 50,
-                              float ring_height = 100)
-{
-
-  // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
-  if  ((!(( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
-      (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
-      ((( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
-      (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -666,14 +582,7 @@ SCMapping::computeAngleDeviation()
   g_mod_vdt_sqr = pow(g_mod_vdt,2);
 
   // Angle between observation of the point in degrees:
-  // Note: If angle_deviation is nan, may mean that poisition of point was not estimated by LiDAR.
   double ratio = (g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt_sqr)/(2*g_mod_d1*g_mod_d2);
-  if (ratio > 1.0) {
-    ratio = 1.0;
-  }
-  else if (ratio < -1.0) {
-    ratio = -1.0;
-  }
   angle_deviation = (acos(ratio)) * 180 / M_PI;
 
   // if (angle_deviation == 0.0) {
