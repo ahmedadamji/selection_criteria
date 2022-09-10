@@ -48,10 +48,10 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
   pub_vis_selected_points_ = nh_.advertise<sensor_msgs::PointCloud2> ("/vis_selected_points", 3, true);
   // odom_abs_pub = nh.advertise<nav_msgs::Odometry> ("/odom_abs", 3); // cannot do this, need to work on rotating the odometry not the pointcloud.
   // Publishing to visualize the statistics of angle deviation of points over time:
-  pub_angle_deviation_mean_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_mean_", 3, true);
-  pub_angle_deviation_std_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_std_", 3, true);
-  pub_angle_deviation_min_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_min_", 3, true);
-  pub_angle_deviation_max_ = nh_.advertise<std_msgs::Float32> ("/points_angle_deviation_max_", 3, true);
+  pub_alpha_mean_ = nh_.advertise<std_msgs::Float32> ("/points_alpha_mean_", 3, true);
+  pub_alpha_std_ = nh_.advertise<std_msgs::Float32> ("/points_alpha_std_", 3, true);
+  pub_alpha_min_ = nh_.advertise<std_msgs::Float32> ("/points_alpha_min_", 3, true);
+  pub_alpha_max_ = nh_.advertise<std_msgs::Float32> ("/points_alpha_max_", 3, true);
 
 
 
@@ -80,6 +80,81 @@ SCMapping::SCMapping (ros::NodeHandle &nh):
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+bool
+SCMapping::cylinderCondition(double x,
+                                  double y,
+                                  double z,
+                                  float x_axis_origin = 0,
+                                  float radius = 3,
+                                  float height = 100)
+{
+  // Formula for the Volume of a cylinder: M_PI * (radius^2) * height
+  // Formula for the Radius of a cylinder: sqrt(Volume / (M_PI * height))
+  // Formula for the Height of a cylinder: Volume / (M_PI * (radius^2))
+  // Formula for the Diameter of a cylinder: (sqrt(Volume / (M_PI * height)))/2
+
+
+  // the cylinder is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+  if (!(((( (-height <= x) && (x <= -x_axis_origin) ) || ((x_axis_origin <= x) && (x <=  height)))) && // within the X limits
+      (( pow(z,2) + pow(y,2) ) <= pow(radius,2)))) // within the radius limits
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool
+SCMapping::radiusCondition(double x,
+                           double y,
+                           double z,
+                           float min_radius = 0,
+                           float max_radius = 250)
+{
+
+  if ((( pow(x,2) + pow(y,2) ) >= pow(min_radius,2)) && (( pow(x,2) + pow(y,2) ) <= pow(max_radius,2))) // within the radius limits
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+}
+////////////////////////////////////////////////////////////////////////////////
+
+bool
+SCMapping::ringCondition(double x,
+                              double y,
+                              double z,
+                              float x_axis_origin = 0,
+                              float ring_min_radius = 3,
+                              float ring_max_radius = 50,
+                              float ring_height = 100)
+{
+
+  // the ring is needed in both sides, front and back as the argument that the angle doesnt change in the line of motion still holds
+  if  ((!(( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
+      (( pow(z,2) + pow(y,2) ) <= pow(ring_min_radius,2)))) && // within the min radius limits
+      ((( x >= (- x_axis_origin - ring_height) && x <= (x_axis_origin + ring_height)) && // within the Z limits
+      (( pow(z,2) + pow(y,2) ) <= pow(ring_max_radius,2))))) // within the max radius limits
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -182,15 +257,15 @@ SCMapping::updateROSParams()
   ros::param::set("/robot_previous_angle", g_robot_angle);
 
 
-  ros::param::set("/previous_angle_deviation_min", angle_deviation_min.data);
-  ros::param::set("/previous_angle_deviation_max", angle_deviation_max.data);
-  ros::param::set("/previous_angle_deviation_mean", angle_deviation_mean.data);
-  ros::param::set("/previous_angle_deviation_std", angle_deviation_std.data);
+  ros::param::set("/previous_alpha_min", alpha_min.data);
+  ros::param::set("/previous_alpha_max", alpha_max.data);
+  ros::param::set("/previous_alpha_mean", alpha_mean.data);
+  ros::param::set("/previous_alpha_std", alpha_std.data);
 
-  int previous_matched_angle_deviation = g_matched_angle_deviation;
-  ros::param::set("/previous_matched_angle_deviation", previous_matched_angle_deviation);
+  int previous_matched_alpha = g_matched_alpha;
+  ros::param::set("/previous_matched_alpha", previous_matched_alpha);
 
-  // cout << previous_matched_angle_deviation << endl;
+  // cout << previous_matched_alpha << endl;
 
 
 
@@ -527,7 +602,7 @@ double
 SCMapping::computeAngleDeviation()
 {
 
-  double angle_deviation = 0.0;
+  double alpha = 0.0;
 
 
   // cout << "g_robot_world_frame_coordinate: " << endl;
@@ -583,9 +658,9 @@ SCMapping::computeAngleDeviation()
 
   // Angle between observation of the point in degrees:
   double ratio = (g_mod_d1_sqr + g_mod_d2_sqr - g_mod_vdt_sqr)/(2*g_mod_d1*g_mod_d2);
-  angle_deviation = (acos(ratio)) * 180 / M_PI;
+  alpha = (acos(ratio)) * 180 / M_PI;
 
-  // if (angle_deviation == 0.0) {
+  // if (alpha == 0.0) {
   //   cout << "0.0 Angle Problem: " << endl;
   //   cout << "g_mod_d1_sqr: " << endl;
   //   cout << g_mod_d1_sqr << endl;
@@ -599,7 +674,7 @@ SCMapping::computeAngleDeviation()
   //   cout << g_mod_d2 << endl;
   // }
 
-  // if(isnan(angle_deviation))
+  // if(isnan(alpha))
   // {
   //   cout << "NaN Angle Problem: " << endl;
   //   cout << "g_mod_d1_sqr: " << endl;
@@ -616,9 +691,9 @@ SCMapping::computeAngleDeviation()
 
 
   // cout << "The angle deviation of the current point is: " << endl;
-  // cout << angle_deviation << endl;
+  // cout << alpha << endl;
 
-  return angle_deviation;
+  return alpha;
 
 }
 
@@ -627,65 +702,65 @@ void
 SCMapping::computeAngleDeviationStatistics()
 {
   // Finding the sum, mean, square of sums and std of angle deviation
-  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
-  // double mean = sum / angle_deviation_vec.size();
-  // double sq_sum = std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0);
+  // double sum = std::accumulate(alpha_vec.begin(), alpha_vec.end(), 0.0);
+  // double mean = sum / alpha_vec.size();
+  // double sq_sum = std::inner_product(alpha_vec.begin(), alpha_vec.end(), alpha_vec.begin(), 0.0);
   // double E = 0.0;
   // // Quick Question - Can vector::size() return 0?
-  // double inverse = 1.0 / static_cast<double>(angle_deviation_vec.size());
-  // for(unsigned int i=0;i<angle_deviation_vec.size();i++)
+  // double inverse = 1.0 / static_cast<double>(alpha_vec.size());
+  // for(unsigned int i=0;i<alpha_vec.size();i++)
   // {
-  //     E += pow(static_cast<double>(angle_deviation_vec[i]) - mean, 2);
+  //     E += pow(static_cast<double>(alpha_vec[i]) - mean, 2);
   // }
   // double stdev =  sqrt(inverse * E);
 
-  // double sum = std::accumulate(angle_deviation_vec.begin(), angle_deviation_vec.end(), 0.0);
-  // double mean = sum / angle_deviation_vec.size();
-  // std::vector<double> diff(angle_deviation_vec.size());
-  // std::transform(angle_deviation_vec.begin(), angle_deviation_vec.end(), diff.begin(),
+  // double sum = std::accumulate(alpha_vec.begin(), alpha_vec.end(), 0.0);
+  // double mean = sum / alpha_vec.size();
+  // std::vector<double> diff(alpha_vec.size());
+  // std::transform(alpha_vec.begin(), alpha_vec.end(), diff.begin(),
   //               std::bind2nd(std::minus<double>(), mean));
   // double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  // double std = std::sqrt(sq_sum / angle_deviation_vec.size());
+  // double std = std::sqrt(sq_sum / alpha_vec.size());
 
   // Finding the sum of the vector of stored angle deviations
   double sum = 0.0;
-  for(int i=0;i<angle_deviation_vec.size();i++)
-          sum+=angle_deviation_vec[i];
+  for(int i=0;i<alpha_vec.size();i++)
+          sum+=alpha_vec[i];
 
   // cout << sum << endl;
 
   // Finding the mean of the vector of stored angle deviations
-  double mean = sum/angle_deviation_vec.size();
+  double mean = sum/alpha_vec.size();
 
   // Finding the standard deviation of the vector of stored angle deviations
-  double stdev = std::sqrt(std::inner_product(angle_deviation_vec.begin(), angle_deviation_vec.end(), angle_deviation_vec.begin(), 0.0)
-                 / angle_deviation_vec.size() - mean * mean);
+  double stdev = std::sqrt(std::inner_product(alpha_vec.begin(), alpha_vec.end(), alpha_vec.begin(), 0.0)
+                 / alpha_vec.size() - mean * mean);
 
 
 
-  auto minmax = std::minmax_element(angle_deviation_vec.begin(), angle_deviation_vec.end());
+  auto minmax = std::minmax_element(alpha_vec.begin(), alpha_vec.end());
   // Smoothning the computed statistics based on previous data
-  angle_deviation_mean.data = ((mean + previous_angle_deviation_mean) / 2);
-  angle_deviation_std.data = ((stdev + previous_angle_deviation_std) / 2);
-  angle_deviation_min.data = ((*minmax.first + previous_angle_deviation_min) / 2);
-  angle_deviation_max.data = ((*minmax.second + previous_angle_deviation_max) / 2);
+  alpha_mean.data = ((mean + previous_alpha_mean) / 2);
+  alpha_std.data = ((stdev + previous_alpha_std) / 2);
+  alpha_min.data = ((*minmax.first + previous_alpha_min) / 2);
+  alpha_max.data = ((*minmax.second + previous_alpha_max) / 2);
 
   // Making sure the statistics of the angle are smoothened, even in instances of unexpected erroes
   if(isnan(sum))
   {
-    angle_deviation_mean.data = previous_angle_deviation_mean;
-    angle_deviation_std.data = previous_angle_deviation_std;
-    angle_deviation_min.data = previous_angle_deviation_min;
-    angle_deviation_max.data = previous_angle_deviation_max;
+    alpha_mean.data = previous_alpha_mean;
+    alpha_std.data = previous_alpha_std;
+    alpha_min.data = previous_alpha_min;
+    alpha_max.data = previous_alpha_max;
   }
 
   // Publishing the smoothened angles
-  pub_angle_deviation_mean_.publish (angle_deviation_mean);
-  pub_angle_deviation_std_.publish (angle_deviation_std);
-  pub_angle_deviation_min_.publish (angle_deviation_min);
-  pub_angle_deviation_max_.publish (angle_deviation_max);
+  pub_alpha_mean_.publish (alpha_mean);
+  pub_alpha_std_.publish (alpha_std);
+  pub_alpha_min_.publish (alpha_min);
+  pub_alpha_max_.publish (alpha_max);
 
-  // cout << angle_deviation_max << endl;
+  // cout << alpha_max << endl;
 
   
 
@@ -816,18 +891,18 @@ SCMapping::Filter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, PointCPtr &
 
 
     // // Computing Angle Deviation of point with respect to previous frame:
-    // double angle_deviation_idx;
+    // double alpha_idx;
 
     // if((not isnan(computeAngleDeviation()))) {
-    //   angle_deviation_idx = computeAngleDeviation()/0.1;
+    //   alpha_idx = computeAngleDeviation()/0.1;
     // }
     // else {
-    //   angle_deviation_idx = 0;
+    //   alpha_idx = 0;
     // }
 
-    // // cout << angle_deviation_idx << endl;
+    // // cout << alpha_idx << endl;
 
-    // unsigned int vAngleDeviation = (int) angle_deviation_idx;
+    // unsigned int vAngleDeviation = (int) alpha_idx;
 
 		// ++histogramAngleDeviation[vAngleDeviation];
 
@@ -895,12 +970,12 @@ SCMapping::cylinderFilter( PointCPtr &in_cloud_ptr,
   vis_cloud_ptr->points.clear();
 
 
-  angle_deviation_vec.clear();
+  alpha_vec.clear();
 
-  angle_deviation_mean.data = 0.0;
-  angle_deviation_std.data = 0.0;
-  angle_deviation_min.data = 0.0;
-  angle_deviation_max.data = 0.0;
+  alpha_mean.data = 0.0;
+  alpha_std.data = 0.0;
+  alpha_min.data = 0.0;
+  alpha_max.data = 0.0;
 
 
 
@@ -1247,27 +1322,27 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
   vis_cloud_ptr->points.clear();
 
 
-  angle_deviation_vec.clear();
+  alpha_vec.clear();
   
-  angle_deviation_mean.data = 0.0;
-  angle_deviation_std.data = 0.0;
-  angle_deviation_min.data = 0.0;
-  angle_deviation_max.data = 0.0;
+  alpha_mean.data = 0.0;
+  alpha_std.data = 0.0;
+  alpha_min.data = 0.0;
+  alpha_max.data = 0.0;
 
-  g_matched_angle_deviation = 0;
+  g_matched_alpha = 0;
 
 
 
-  ros::param::get("/previous_angle_deviation_mean", previous_angle_deviation_mean);
-  ros::param::get("/previous_angle_deviation_std", previous_angle_deviation_std);
-  ros::param::get("/previous_angle_deviation_mean", previous_angle_deviation_min);
-  ros::param::get("/previous_angle_deviation_max", previous_angle_deviation_max);
+  ros::param::get("/previous_alpha_mean", previous_alpha_mean);
+  ros::param::get("/previous_alpha_std", previous_alpha_std);
+  ros::param::get("/previous_alpha_mean", previous_alpha_min);
+  ros::param::get("/previous_alpha_max", previous_alpha_max);
 
-  int previous_matched_angle_deviation;
-  ros::param::get("/previous_matched_angle_deviation", previous_matched_angle_deviation);
+  int previous_matched_alpha;
+  ros::param::get("/previous_matched_alpha", previous_matched_alpha);
 
-  min_angle = 0.75*previous_angle_deviation_mean;
-  max_angle = 0.9*previous_angle_deviation_max;
+  min_angle = 0.75*previous_alpha_mean;
+  max_angle = 0.9*previous_alpha_max;
 
   // min_angle = 0;
   // max_angle = 0.1;
@@ -1317,11 +1392,11 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
     // out_cloud_ptr->points.push_back(*it);
 
     // Computing Angle Deviation of point with respect to previous frame:
-    double angle_deviation = computeAngleDeviation();
+    double alpha = computeAngleDeviation();
     //only pushing back the angle to the vector if the angle was computed properly, to enable computing correct statistics
-    if((not isnan(angle_deviation)))
+    if((not isnan(alpha)))
     {
-      angle_deviation_vec.push_back(angle_deviation);
+      alpha_vec.push_back(alpha);
       
     }
 
@@ -1335,15 +1410,15 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
 
 
       // Condition on the angle deviation on observed points.
-      if(((not isnan(angle_deviation)) && (angle_deviation >= min_angle) && (angle_deviation <= max_angle) && (observable)) || (g_z < g_floor_height)) {
+      if(((not isnan(alpha)) && (alpha >= min_angle) && (alpha <= max_angle) && (observable)) || (g_z < g_floor_height)) {
 
         out_cloud_ptr->points.push_back(*it);
 
         vis_cloud_ptr->points.push_back(*it);
         vis_cloud_ptr->points.back().intensity = 1;
 
-        g_matched_angle_deviation += 1;
-        // cout << previous_matched_angle_deviation << endl;
+        g_matched_alpha += 1;
+        // cout << previous_matched_alpha << endl;
 
       }
 
@@ -1381,24 +1456,24 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       //   vis_cloud_ptr->points.back().intensity = 1;
       // }
 
-      // else if (angle_deviation_vec.size() < 100) { // To ensure that if the angle deviation cannot be computed for at least 100 points as well as the current point, include the point either way.
+      // else if (alpha_vec.size() < 100) { // To ensure that if the angle deviation cannot be computed for at least 100 points as well as the current point, include the point either way.
       
       // // To ensure that if the angle deviation is computed as 0 for the current point, include the point either way.
       // // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
-      // else if (angle_deviation == 0.0) { 
+      // else if (alpha == 0.0) { 
 
       // // To ensure that if the angle deviation is computed as 0 for the current point, include the point either way.
       // // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
       // // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
       // // Can also create an adaptive threshold while this happens
-      // else if ((angle_deviation == 0.0) || (previous_matched_angle_deviation < 7000)) { 
+      // else if ((alpha == 0.0) || (previous_matched_alpha < 7000)) { 
         
       // // To ensure that if the angle deviation is computed as 0 for the current point, include the point either way.
       // // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
       // // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
       // // Can also create an adaptive threshold while this happens
       // // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
-      // else if ((angle_deviation == 0.0) || (previous_matched_angle_deviation < 7000) || (g_matched_angle_deviation < 100)) { 
+      // else if ((alpha == 0.0) || (previous_matched_alpha < 7000) || (g_matched_alpha < 100)) { 
 
       // This condition can signify that the robot has not trnslated or rotated at all, which may mean that the robot is still finding its initial pose.
       // Also adding a condition on the number of points that suited the requirements of the angle constraint, to ensure a minimum number of points meet the requirements
@@ -1414,7 +1489,7 @@ SCMapping::angleDeviationFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_pt
       }
 
       // Also adding a condition that the current number of matched points need to be greater than a minimum threshold to account for unexpected changes in the current frame
-      // else if ((g_matched_angle_deviation < 10)) { 
+      // else if ((g_matched_alpha < 10)) { 
       //   // cout <<"something is wrong" <<endl;
       //   out_cloud_ptr->points.push_back(*it);
 

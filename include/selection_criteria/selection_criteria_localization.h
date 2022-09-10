@@ -133,6 +133,68 @@ class SCLocalization
     SCLocalization(ros::NodeHandle& nh);
 
 
+    /** \brief Cylinder Filter Condition 
+      *
+      * used for filtering points inside a defined cylinder
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] x_axis_origin: The origin of the cylinder in the x axis
+      * \input[in] radius: The radius of the cylinder
+      * \input[in] height: The height of the cylinder
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    cylinderCondition(double x,
+                      double y,
+                      double z,
+                      float x_axis_origin,
+                      float radius,
+                      float height);
+
+      /** \brief Radius Filter Condition 
+      *
+      * used for filtering points outside a defined radial region
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] min_radius: The minimum filtering radius
+      * \input[in] max_radius: The maximum filtering radius
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    radiusCondition(double x,
+                    double y,
+                    double z,
+                    float min_radius,
+                    float max_radius);
+
+    /** \brief Ring Filter Condition 
+      *
+      * used for filtering points outside a defined ring
+      * 
+      * \input[in] x: x co-ordinate of point in point cloud
+      * \input[in] y: y co-ordinate of point in point cloud
+      * \input[in] z: z co-ordinate of point in point cloud
+      * \input[in] x_axis_origin: The origin of the ring in the x axis
+      * \input[in] ring_min_radius: The min radius of the ring
+      * \input[in] ring_max_radius: The max radius of the ring
+      * \input[in] ring_height: The height of the ring
+      *  
+      * \return true if condition is fulfilled
+      */
+    bool 
+    ringCondition(double x,
+                  double y,
+                  double z,
+                  float x_axis_origin,
+                  float ring_min_radius,
+                  float ring_max_radius,
+                  float ring_height);
 
     /** \brief Floor Filter Condition 
       *
@@ -462,10 +524,6 @@ class SCLocalization
     ros::Publisher pub_;
     ros::Publisher pub_vis_selected_points_;
     ros::Publisher odom_abs_pub;
-    ros::Publisher pub_angle_deviation_mean_;
-    ros::Publisher pub_angle_deviation_std_;
-    ros::Publisher pub_angle_deviation_min_;
-    ros::Publisher pub_angle_deviation_max_;
     ros::Publisher pub_distance_mean_;
     ros::Publisher pub_distance_std_;
     ros::Publisher pub_distance_min_;
@@ -589,16 +647,6 @@ class SCLocalization
     /** \brief Current orientation reading from imu sensor. */
     geometry_msgs::Quaternion g_robot_orientation;
 
-    // /** \brief Current angular velocity reading from imu sensor. */
-    // geometry_msgs::Vector3 g_robot_angular_velocity;
-    // /** \brief Current angular velocity reading in x from imu sensor. */
-    // double g_robot_angular_velocity_x;
-    // /** \brief Current angular velocity reading in y from imu sensor. */
-    // double g_robot_angular_velocity_y;
-    // /** \brief Current angular velocity reading in z from imu sensor. */
-    // double g_robot_angular_velocity_z;
-    // /** \brief Current absolute angular velocity reading from imu. */
-    // double g_robot_angular_velocity_abs;
 
     /** \brief Current linear acceleration reading from imu sensor. */
     geometry_msgs::Vector3 g_robot_linear_acceleration;
@@ -659,21 +707,6 @@ class SCLocalization
     /** \brief square of modulus of d2 */
     double g_mod_d2_sqr;
 
-
-    //The vector to store the angle deviation of all points in a vector for visualization
-    std::vector<double> angle_deviation_vec;
-    //The std msg to store the statistics of angle deviation of all points for visualization
-    std_msgs::Float32 angle_deviation_mean;
-    std_msgs::Float32 angle_deviation_std;
-    std_msgs::Float32 angle_deviation_min;
-    std_msgs::Float32 angle_deviation_max;
-    double previous_angle_deviation_mean;
-    double previous_angle_deviation_std;
-    double previous_angle_deviation_min;
-    double previous_angle_deviation_max;
-
-    /** \brief number of points that satisfied the constraints of the angle deviation filter */
-    int g_matched_angle_deviation;
 
 
     //The vector to store the distance of all points from the robot in a vector for visualization

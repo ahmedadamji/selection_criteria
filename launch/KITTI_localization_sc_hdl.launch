@@ -44,11 +44,11 @@
   <!-- <param name="/previous_time" type="double" value="1317384506.40" /> -->
   <param name="/previous_time" type="double" value="1317646534.93" />
 
-  <param name="/previous_angle_deviation_min" type="double" value="0.0" />
-  <param name="/previous_angle_deviation_max" type="double" value="0.0" />
-  <param name="/previous_angle_deviation_mean" type="double" value="0.0" />
-  <param name="/previous_angle_deviation_std" type="double" value="0.0" />
-  <param name="/previous_matched_angle_deviation" type="int" value="0" />
+  <param name="/previous_alpha_min" type="double" value="0.0" />
+  <param name="/previous_alpha_max" type="double" value="0.0" />
+  <param name="/previous_alpha_mean" type="double" value="0.0" />
+  <param name="/previous_alpha_std" type="double" value="0.0" />
+  <param name="/previous_matched_alpha" type="int" value="0" />
 
   <param name="/previous_distance_min" type="double" value="0.0" />
   <param name="/previous_distance_max" type="double" value="0.0" />
