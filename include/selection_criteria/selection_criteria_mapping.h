@@ -434,16 +434,6 @@ class SCMapping
     void
     callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg1);
 
-    /** \brief Get Robot Velocity 
-      *
-      * used to get the vehicle velocity based on Odometry
-      * 
-      * \input[in] robot_twist a Twist geometry_msgs const pointer
-      * 
-      * \return velocity
-      */
-    double
-    getVelocity(const geometry_msgs::Twist& robot_twist);
 
     /** \brief Odometry CallBack function.
       * 
@@ -592,16 +582,6 @@ class SCMapping
     /** \brief Current orientation reading from imu sensor. */
     geometry_msgs::Quaternion g_robot_orientation;
 
-    // /** \brief Current angular velocity reading from imu sensor. */
-    // geometry_msgs::Vector3 g_robot_angular_velocity;
-    // /** \brief Current angular velocity reading in x from imu sensor. */
-    // double g_robot_angular_velocity_x;
-    // /** \brief Current angular velocity reading in y from imu sensor. */
-    // double g_robot_angular_velocity_y;
-    // /** \brief Current angular velocity reading in z from imu sensor. */
-    // double g_robot_angular_velocity_z;
-    // /** \brief Current absolute angular velocity reading from imu. */
-    // double g_robot_angular_velocity_abs;
 
     /** \brief Current linear acceleration reading from imu sensor. */
     geometry_msgs::Vector3 g_robot_linear_acceleration;
@@ -611,8 +591,8 @@ class SCMapping
     double g_robot_linear_acceleration_y;
     /** \brief Current linear acceleration reading in z from imu sensor. */
     double g_robot_linear_acceleration_z;
-    // /** \brief Current absolute linear acceleration reading in x from imu sensor. */
-    // double g_robot_linear_acceleration_abs;
+
+
 
     /** \brief Current linear velocity computed in x. */
     double g_robot_linear_velocity_x;
@@ -629,8 +609,8 @@ class SCMapping
     double g_robot_previous_linear_velocity_y;
     /** \brief Current previous linear velocity computed in z. */
     double g_robot_previous_linear_velocity_z;
-    // /** \brief Previous linear velocity computed. */
-    // double g_robot_previous_linear_velocity_abs;
+
+
 
     /** \brief Current angular velocity computed. */
     double g_robot_angular_velocity;

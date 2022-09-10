@@ -1612,18 +1612,6 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   // boxFilter(filtered_cloud, cloud_out, vis_cloud, -30, 30, -3, 3, -100, 100); //removed suspected unneccesary points in form of ring filter
   
 
-  // Add filter to remove moveable objects, (can either cluster or also check if the point is where we predicted it to be from the previous frame?)
-
-  // Add filter to remove points that have not had an enough angle diviation from previous frame or N frames ago
-
-
-  // // Previous condition -->
-  // Filter(filtered_cloud, cloud1); //removed suspected unneccesary points
-  // // Why do we need to add these clouds?
-  // Add(cloud1, floor_cloud);// add rm floor
-  // Add(floor_cloud, cloud_out);
-
-
 
   // write head and publish output
   sensor_msgs::PointCloud2 output;
@@ -1635,16 +1623,6 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   vis_output.header = filtered_cloud_msg->header;
   pub_.publish (output);
   pub_vis_selected_points_.publish (vis_output);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double
-SCMapping::getVelocity(const geometry_msgs::Twist& robot_twist)
-{
-
-  return 0.0;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
