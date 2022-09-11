@@ -76,6 +76,7 @@ Additionally, the launch files must be modified with the name of the correct dat
 ### Mapping
 
 To launch hdl\_graph\_slam, using the selection criteria scripts, run the following command:  
+
 ```
 roslaunch selection_criteria KITTI_graph_slam_sc_hdl.launch dataset:=$(rosparam get /dataset) sequence:=$(rosparam get /sequence) filter_name:=$(rosparam get /filter_name)
 ```
@@ -85,6 +86,7 @@ roslaunch selection_criteria KITTI_graph_slam_sc_hdl.launch dataset:=$(rosparam 
 To evaluate the map, the map must be saved as a pcd file and can be compared using the [CloudCompare](https://www.danielgm.net/cc/) Software.  
 
 Saving built map to pcd:  
+
 ```
 rosrun pcl_ros pointcloud_to_pcd input:=/hdl_graph_slam/map_points 
 ```
@@ -93,6 +95,7 @@ rosrun pcl_ros pointcloud_to_pcd input:=/hdl_graph_slam/map_points
 ### Localization
 
 To launch hdl\_localization, using the selection criteria scripts, run the following command:  
+
 ```
 roslaunch selection_criteria KITTI_localization_sc_hdl.launch dataset:=$(rosparam get /dataset) sequence:=$(rosparam get /sequence) filter_name:=$(rosparam get /filter_name)
 ```
@@ -112,21 +115,26 @@ Using the provided evaluation script for "plot_errors_and_save_statistics.py", t
 i.e. if the trajectory was named KITTI_06_vanilla, the code to save the statistics relating to this trajectory is as follows:  
 
 **Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
+
 ```
 ./plot_errors_and_save_statistics.py KITTI_06_vanilla
 ```
 
 
 Using the provided evaluation script for "plot_statistics.py", the statistics saved for all trajectories can be computed using multiple windows with relevant plots in sevaral tabs, consisting of all metrics discussed in the project report. **Please make sure the correct folder configuration is being followed**.  
+
 i.e. if the trajectories were named KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40, the code to plot the statistics comparing these trajectories is as follows:  
 
 **Please note you need to be in the corresponding statistics folder of the localization folder of the relevant results folder to run this script**  
+
 ```
 ./plot_statistics.py KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40
 ```
 
 Similarly to plot the speed vs error and speed vs time relationship for each of these trajectories, this can be done by following:  
+
 **Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
+
 ```
 ./plot_speed_statistics.py KITTI_06_ff_10_20
 ./plot_speed_statistics.py KITTI_06_ff_20_30
