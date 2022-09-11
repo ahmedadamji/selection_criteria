@@ -84,7 +84,7 @@ The documentation for each function in these scripts are provided in their corre
 
 **For the SLAM algorithm to function, the dataset with recorded LiDAR data should be run simultaneously.**  
 
-**As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset**  
+**As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset. Users are welcome to make the required changes to configure these to work with their datasets**  
 
 
 ### Mapping
