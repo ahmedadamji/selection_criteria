@@ -73,10 +73,10 @@ Additionally, the launch files must be modified with the name of the correct dat
 **Please note the parameters for the implemented filters should be set by calling the function for the required filter inside the callback function.**  
 
 
-**For mapping the required changes need to be made to the selection_criteria_mapping.cpp script.**  
+For mapping the required changes need to be made to the **selection_criteria_mapping.cpp** script.  
 
 
-**For localization the required changes need to be made to the selection_criteria_localization.cpp script.**  
+For localization the required changes need to be made to the **selection_criteria_localization.cpp** script.  
 
 ### Mapping
 
