@@ -150,7 +150,7 @@ ${PCL_INCLUDE_DIRS})
 add_library(selection_criteria_localization_lib src/selection_criteria_localization.cpp)
 add_library(correct_odometry_kitti_lib src/correct_odometry_kitti.cpp)
 add_library(selection_criteria_mapping_lib src/selection_criteria_mapping.cpp)
-add_library(remove_floor_lib src/remove_floor.cpp)
+# add_library(remove_floor_lib src/remove_floor.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -158,7 +158,7 @@ add_library(remove_floor_lib src/remove_floor.cpp)
 add_dependencies(selection_criteria_localization_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(correct_odometry_kitti_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(selection_criteria_mapping_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(remove_floor_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(remove_floor_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -251,17 +251,17 @@ add_dependencies(remove_floor_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 add_executable(selection_criteria_mapping src/selection_criteria_mapping.cpp)
 add_executable(selection_criteria_localization src/selection_criteria_localization.cpp)
 add_executable(correct_odometry_kitti src/correct_odometry_kitti.cpp)
-add_executable(remove_floor src/remove_floor.cpp)
-add_executable(error src/error.cpp)
+# add_executable(remove_floor src/remove_floor.cpp)
+# add_executable(error src/error.cpp)
 add_executable(transform_frame src/transform_frame.cpp)
-add_executable(record_odometry src/record_odometry.cpp)
+# add_executable(record_odometry src/record_odometry.cpp)
 
 
 target_link_libraries(selection_criteria_mapping ${catkin_LIBRARIES})
 target_link_libraries(selection_criteria_localization ${catkin_LIBRARIES})
 target_link_libraries(correct_odometry_kitti ${catkin_LIBRARIES})
-target_link_libraries(remove_floor ${catkin_LIBRARIES})
-target_link_libraries(error ${catkin_LIBRARIES})
+# target_link_libraries(remove_floor ${catkin_LIBRARIES})
+# target_link_libraries(error ${catkin_LIBRARIES})
 target_link_libraries(transform_frame ${catkin_LIBRARIES})
-target_link_libraries(record_odometry ${catkin_LIBRARIES})
+# target_link_libraries(record_odometry ${catkin_LIBRARIES})
 
