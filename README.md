@@ -81,6 +81,12 @@ For localization the required changes need to be made to the **selection_criteri
 
 The documentation for each function in these scripts are provided in their corresponding header file.  
 
+
+**For the SLAM algorithm to function, the dataset with recorded LiDAR data should be run simultaneously.**  
+
+**As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset**  
+
+
 ### Mapping
 
 To launch hdl\_graph\_slam, using the selection criteria scripts, run the following command:  
