@@ -13,24 +13,25 @@ Pending -->
 
 ## Installation
 
-A docker script for the project workspace is made available via the following link that builds an image with the correct ros version, packages and messages required for a quick startup: [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws)
+A docker script for the project workspace is made available via the following link that builds an image with the correct ros version, packages and messages required for a quick startup: [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws).  
 
 
-To install The hdl\_graph\_slam package for utilising the supplied launch files for creating a map with integrated nodes for selection criteria, please follow: [hdl_graph_slam](https://github.com/koide3/hdl_graph_slam).
+To install The hdl\_graph\_slam package for utilising the supplied launch files for creating a map with integrated nodes for selection criteria, please follow: [hdl_graph_slam](https://github.com/koide3/hdl_graph_slam).  
 
-To install The hdl\_localization package for utilising the supplied launch files for localizing in a built map with integrated nodes for selection criteria, please follow: [hdl_localization](https://github.com/koide3/hdl_localization).
+To install The hdl\_localization package for utilising the supplied launch files for localizing in a built map with integrated nodes for selection criteria, please follow: [hdl_localization](https://github.com/koide3/hdl_localization).  
 
-To install The Evo package for running the evaluation scripts, please follow: [Evo](https://pypi.org/project/evo/).
+To install The Evo package for running the evaluation scripts, please follow: [Evo](https://pypi.org/project/evo/).  
 
-To install plotWindow, a package used to create plots for evaluation of recorded trajectories, please follow: [plotWindow](https://github.com/superjax/plotWindow).
+To install plotWindow, a package used to create plots for evaluation of recorded trajectories, please follow: [plotWindow](https://github.com/superjax/plotWindow).  
 
-To install the KITTI odometry sequences, to visualise the affect of selection criteria against a benchmark, please follow: [KITTI Visual Odometry / SLAM Evaluation 2012](https://www.cvlibs.net/datasets/kitti/eval_odometry.php)
+To install the KITTI odometry sequences, to visualise the affect of selection criteria against a benchmark, please follow: [KITTI Visual Odometry / SLAM Evaluation 2012](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).  
 
 
-To install the CloudCompare software, to visualise the affect of selection criteria on map building, please follow: [CloudCompare](https://www.danielgm.net/cc/)
+To install the CloudCompare software, to visualise the affect of selection criteria on map building, please follow: [CloudCompare](https://www.danielgm.net/cc/).  
 
 
 To install this project's package, clone the repository into the src folder of the workspace:  
+
 ```
 git clone https://github.com/ahmedadamji/selection_criteria.git
 ```
@@ -41,23 +42,24 @@ git clone https://github.com/ahmedadamji/selection_criteria.git
 
 
 Open the installed workspace folder in the terminal  
+
 ```
 cd melodic_ws/
 ```
 
 Following that, shell into the corresponding ROS melodic workspace  
+
 ```
 ./run_docker_container.sh 
 ```
 
 Run this command to build all packages:  
+
 ```
 catkin build -DCMAKE_BUILD_TYPE=Release
 ```
 
 The [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository can be referred how to shell into multiple instances of this image from different tabs of the terminal.  
-
-
 
 
 
