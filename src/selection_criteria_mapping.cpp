@@ -1506,11 +1506,6 @@ SCMapping::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_msg)
   g_filter_floor = true;
 
 
-  // Based on the results it seems that a double ring does not help for this particular dataset
-  // and the best results occur when the retained floor is between the radius of 10 and 20 m,
-  // again for particularly for the KITTI_06 dataset based on experiments conducted
-
-
   // g_min_retained_floor_radius = 0;
   // g_min_retained_floor_radius = 5;
   // g_min_retained_floor_radius = 10;

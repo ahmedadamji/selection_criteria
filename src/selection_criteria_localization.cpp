@@ -631,7 +631,7 @@ SCLocalization::computeObservationAngle()
 double
 SCLocalization::cdf(double eu_distance, double std)
 {
-  double x =  eu_distance / ( sigma * sqrt( 2. ) ) ;
+  double x =  eu_distance / ( std * sqrt( 2. ) ) ;
   double y = 1.0 / ( 1.0 + 0.3275911 * x);  
   double erf = 1 - (((((
                  + 1.061405429  * y
@@ -1336,11 +1336,6 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Bool to determine weather to filter the floor.
   // Need to check how many more points apart from the floor are filtered by my filters
   g_filter_floor = true;
-
-
-  // Based on the results it seems that a double ring does not help for this particular dataset
-  // and the best results occur when the retained floor is between the radius of 10 and 20 m,
-  // again for particularly for the KITTI_06 dataset based on experiments conducted
 
 
   // g_min_retained_floor_radius = 0;
