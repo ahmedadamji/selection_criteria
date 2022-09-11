@@ -62,7 +62,8 @@ The [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repositor
 
 
 For either localization or mapping, ensure that in the corresponding cpp scripts and the launch files, the file paths are modified to save the results of the trajectory as well as corresponding statistics.  
-**The results are saved in the data folder, inside the src folder of the workspace. The results recorded for this project are made available at the following link: [data](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucaban4_ucl_ac_uk/EjILZSOOLhRJsH_uLDgDNyYBBYDeQaTyg6IZOxn7z3xxVw?e=zR40JR)**. This can be downloaded to evaluated the recorded trajectories, else the file structure may be copied if needed to record your own trajectories for evauation.  
+**The results are saved in the data folder, inside the src folder of the workspace.**  
+**The results recorded for this project are made available at the following link: [data](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucaban4_ucl_ac_uk/EjILZSOOLhRJsH_uLDgDNyYBBYDeQaTyg6IZOxn7z3xxVw?e=zR40JR)**. This can be downloaded to evaluated the recorded trajectories, else the file structure may be copied if needed to record your own trajectories for evauation.  
 Additionally, the launch files must be modified with the name of the correct dataset and sequence used, as it will save the results to corresponding folders (The folders should however pre-exist with the skeleton similar to the KITTI 00 and 06 results folders).  
 
 
