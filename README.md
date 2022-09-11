@@ -62,8 +62,11 @@ The [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repositor
 
 
 For either localization or mapping, ensure that in the corresponding cpp scripts and the launch files, the file paths are modified to save the results of the trajectory as well as corresponding statistics.  
+
 **The results are saved in the data folder, inside the src folder of the workspace.**  
+
 **The results recorded for this project are made available at the following link: [data](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucaban4_ucl_ac_uk/EjILZSOOLhRJsH_uLDgDNyYBBYDeQaTyg6IZOxn7z3xxVw?e=zR40JR)**. This can be downloaded to evaluated the recorded trajectories, else the file structure may be copied if needed to record your own trajectories for evauation.  
+
 Additionally, the launch files must be modified with the name of the correct dataset and sequence used, as it will save the results to corresponding folders (The folders should however pre-exist with the skeleton similar to the KITTI 00 and 06 results folders).  
 
 
@@ -105,7 +108,9 @@ evo_traj bag KITTI_06.bag /odom_transformed --save_as_tum
 The trajectory statistics, such as the number of points filtered and the time and speed at each recorded frame of the trajectory, are automatically named with the name corresponding to the filter configuration. The recorded odometry must be saved with the same name.  
 
 Using the provided evaluation script for "plot_errors_and_save_statistics.py", the statistics regarding the error metrics can be computed and stored in the corresponding statistics folder. **Please make sure the correct folder configuration is being followed**.  
+
 i.e. if the trajectory was named KITTI_06_vanilla, the code to save the statistics relating to this trajectory is as follows:  
+
 **Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
 ```
 ./plot_errors_and_save_statistics.py KITTI_06_vanilla
@@ -114,6 +119,7 @@ i.e. if the trajectory was named KITTI_06_vanilla, the code to save the statisti
 
 Using the provided evaluation script for "plot_statistics.py", the statistics saved for all trajectories can be computed using multiple windows with relevant plots in sevaral tabs, consisting of all metrics discussed in the project report. **Please make sure the correct folder configuration is being followed**.  
 i.e. if the trajectories were named KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40, the code to plot the statistics comparing these trajectories is as follows:  
+
 **Please note you need to be in the corresponding statistics folder of the localization folder of the relevant results folder to run this script**  
 ```
 ./plot_statistics.py KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40
