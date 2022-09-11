@@ -70,8 +70,13 @@ For either localization or mapping, ensure that in the corresponding cpp scripts
 Additionally, the launch files must be modified with the name of the correct dataset and sequence used, as it will save the results to corresponding folders (The folders should however pre-exist with the skeleton similar to the KITTI 00 and 06 results folders).  
 
 
-**Please note the parameters for the implemented filters should be set by applying the required filter inside the callback function.**  
+**Please note the parameters for the implemented filters should be set by calling the function for the required filter inside the callback function.**  
 
+
+**For mapping the required changes need to be made to the selection_criteria_mapping.cpp script.**  
+
+
+**For localization the required changes need to be made to the selection_criteria_localization.cpp script.**  
 
 ### Mapping
 
@@ -110,7 +115,9 @@ evo_traj bag KITTI_06.bag /odom_transformed --save_as_tum
 
 The trajectory statistics, such as the number of points filtered and the time and speed at each recorded frame of the trajectory, are automatically named with the name corresponding to the filter configuration. The recorded odometry must be saved with the same name.  
 
-Using the provided evaluation script for "plot_errors_and_save_statistics.py", the statistics regarding the error metrics can be computed and stored in the corresponding statistics folder. **Please make sure the correct folder configuration is being followed**.  
+Using the provided evaluation script for "plot_errors_and_save_statistics.py", the statistics regarding the error metrics can be computed and stored in the corresponding statistics folder.  
+
+**Please make sure the correct folder configuration is being followed**.  
 
 i.e. if the trajectory was named KITTI_06_vanilla, the code to save the statistics relating to this trajectory is as follows:  
 
