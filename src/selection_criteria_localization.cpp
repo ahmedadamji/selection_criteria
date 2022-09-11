@@ -659,7 +659,7 @@ SCLocalization::computeDistanceProbability(double eu_distance, double mean, doub
   mean = 0;
 
 
-  z_score = ((eu_distance - mean) / (std));
+  // z_score = ((eu_distance - mean) / (std));
 
 
   // https://en.cppreference.com/w/cpp/numeric/math/erfc
@@ -1149,7 +1149,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   int previous_matched_distance;
   ros::param::get("/previous_matched_distance", previous_matched_distance);
 
-
+  // This is the scaled standard deviation used, (Z_beta * Sigma_beta)
   double std = z * previous_distance_std;
   // cout << std << endl;
 
