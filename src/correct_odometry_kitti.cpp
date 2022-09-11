@@ -83,8 +83,7 @@ CorrectOdometry::odom_callback(const nav_msgs::OdometryConstPtr& odom_in)
   // g_pitch = g_pitch * (180.0 / M_PI);
   // g_yaw = g_yaw * (180.0 / M_PI); 
 
-  //Because while finding error it does not make sense to have one at 180 and another at -180 becuse of the angle change fluctuation:
-  //Also because after transformation, my yaw is pitch and therefore it is easier to compare the orientation without the transformation due to the adjustments i have to make.
+  //After transformation, my yaw is pitch and therefore it is easier to compare the orientation without the transformation due to the adjustments i have to make.
   //Try to set yaw and roll to 0 afterwards and check if i can find same effect.
   //If i have further problems try to make changes in evo to only find absolute error
   g_roll = 0;
