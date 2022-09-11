@@ -70,7 +70,7 @@ For either localization or mapping, ensure that in the corresponding cpp scripts
 Additionally, the launch files must be modified with the name of the correct dataset and sequence used, as it will save the results to corresponding folders (The folders should however pre-exist with the skeleton similar to the KITTI 00 and 06 results folders).  
 
 
-**Please note the parameters for the implemented filters should be set by calling the function for the required filter inside the callback function of the corresponding ``cpp" file.**  
+**Please note the parameters for the implemented filters should be set by calling the function for the required filter inside the callback function of the corresponding "cpp" file.**  
 
 
 For mapping the required changes need to be made to the **selection_criteria_mapping.cpp** script.  
