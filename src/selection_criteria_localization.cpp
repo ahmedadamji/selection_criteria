@@ -631,7 +631,7 @@ SCLocalization::computeObservationAngle()
 double
 SCLocalization::cdf(double eu_distance, double std)
 {
-  double x =  eu_distance / ( sigma * sqrt( 2. ) ) 
+  double x =  eu_distance / ( sigma * sqrt( 2. ) ) ;
   double y = 1.0 / ( 1.0 + 0.3275911 * x);  
   double erf = 1 - (((((
                  + 1.061405429  * y
