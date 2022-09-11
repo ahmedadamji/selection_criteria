@@ -305,12 +305,13 @@ class SCLocalization
       *
       * computes the Cumulative probability of a Z value based on a normal distribution
       * 
-      * \input[in] x: Z score
+      * \input[in] eu_distance: the eucledian distance of a point from the robot
+      * \input[in] std: the standard deviation of the normal distribution
       * 
       * \output probability The probability based on a normal distribution
       */
     double
-    cdf(const double& x) const;
+    cdf(double eu_distance,  double std);
 
 
     /** \brief Compute Distance Probability

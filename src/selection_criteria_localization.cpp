@@ -615,16 +615,36 @@ SCLocalization::computeObservationAngle()
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Cumulative density function: https://www.quantstart.com/articles/Statistical-Distributions-in-C/
-double
-SCLocalization::cdf(const double& x) const
-{
-  double k = 1.0/(1.0 + 0.2316419*x);
-  double k_sum = k*(0.319381530 + k*(-0.356563782 + k*(1.781477937 + k*(-1.821255978 + 1.330274429*k))));
+// ////////////////////////////////////////////////////////////////////////////////
+// // Cumulative density function: https://www.quantstart.com/articles/Statistical-Distributions-in-C/
+// double
+// SCLocalization::cdf(const double& x) const
+// {
+//   double k = 1.0/(1.0 + 0.2316419*x);
+//   double k_sum = k*(0.319381530 + k*(-0.356563782 + k*(1.781477937 + k*(-1.821255978 + 1.330274429*k))));
 
-  return (1.0 - (1.0/(pow(2*M_PI,0.5)))*exp(-0.5*x*x) * k_sum);
+//   return (1.0 - (1.0/(pow(2*M_PI,0.5)))*exp(-0.5*x*x) * k_sum);
+// }
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Cumulative density function: https://cplusplus.com/forum/beginner/62864/#msg340340
+double
+SCLocalization::cdf(double eu_distance, double std)
+{
+  double x =  eu_distance / ( sigma * sqrt( 2. ) ) 
+  double y = 1.0 / ( 1.0 + 0.3275911 * x);  
+  double erf = 1 - (((((
+                 + 1.061405429  * y
+                 - 1.453152027) * y
+                 + 1.421413741) * y
+                 - 0.284496736) * y 
+                 + 0.254829592) * y)
+                 * exp (-x * x); 
+
+	return ( 0.5 * ( 1 + erf ) );
+
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -650,7 +670,7 @@ SCLocalization::computeDistanceProbability(double eu_distance, double mean, doub
   // https://www.quantstart.com/articles/Statistical-Distributions-in-C/
   // normal cumulative distribution function
   // Adding a 1.0 -  as I want the probability that the distance is greater than this value and not less than
-  probability = 1.0 - cdf(z_score);
+  probability = 1.0 - cdf(eu_distance, std);
 
   // https://cplusplus.com/forum/beginner/62864/
   // probability = exp( -1 * (eu_distance - mean) * (eu_distance - mean) / (2 * std * std)) / (std * sqrt(2 * M_PI));
