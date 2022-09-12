@@ -438,7 +438,9 @@ SCMapping::transformRobotCoordinates()
 
 
 
-  g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 0.3;
+  // g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 0.3;
+
+  g_floor_height = g_base_link_lidar_frame_coordinate.point.z + 2.13;
 
   
   
