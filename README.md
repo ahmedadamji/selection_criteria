@@ -14,8 +14,8 @@ Pending -->
 
 ## Installation
 
-A docker script for the project workspace is made available via the following link that builds an image with the correct ros version, packages and messages required for a quick startup: [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws).  
 
+Please install the [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository that creates an environment with the correct ros version, packages and messages required for a quick startup.
 
 To install The hdl\_graph\_slam package for utilising the supplied launch files for creating a map with integrated nodes for selection criteria, please follow: [hdl_graph_slam](https://github.com/koide3/hdl_graph_slam).  
 
