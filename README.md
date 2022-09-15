@@ -27,6 +27,8 @@ To install plotWindow, a package used to create plots for evaluation of recorded
 
 To install the KITTI odometry sequences, to visualise the affect of selection criteria against a benchmark, please follow: [KITTI Visual Odometry / SLAM Evaluation 2012](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).  
 
+The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project. This was done using the [kitti2bag](https://github.com/tomas789/kitti2bag) Python package. This is a recommended pre-processing step if working with the KITTI dataset.
+
 
 To install the CloudCompare software, to visualise the affect of selection criteria on map building, please follow: [CloudCompare](https://www.danielgm.net/cc/).  
 
