@@ -120,9 +120,9 @@ For either localization or mapping, ensure that in the corresponding cpp scripts
 **For the SLAM algorithm to function, the dataset with recorded LiDAR data should be run simultaneously.**  
 
 
-**As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset. Users are welcome to make the required changes to configure these to work with their datasets.**  
+As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset. Users are welcome to make the required changes to configure these to work with their datasets.  
 
-* The bag files for the KITTI dataset were acquired by following this link: [kitti2bag](https://github.com/tomas789/kitti2bag).
+* The bag files for the corresponding sequences of the KITTI dataset were acquired by following this link: [kitti2bag](https://github.com/tomas789/kitti2bag).
 
 - - - -  
 
@@ -139,7 +139,7 @@ roslaunch selection_criteria KITTI_graph_slam_sc_hdl.launch dataset:=$(rosparam 
 
 #### Evaluation
 
-To evaluate the map, the map must be saved as a pcd file and can be compared using the [CloudCompare](https://www.danielgm.net/cc/) Software.  
+To evaluate the built map, it must be saved as a pcd file and can be compared using the [CloudCompare](https://www.danielgm.net/cc/) Software.  
 
 Saving built map to pcd:  
 
@@ -168,15 +168,14 @@ To evaluate the localization performance, convert the recorded odometry to the t
 evo_traj bag KITTI_06.bag /odom_transformed --save_as_tum
 ```
 
+* The trajectory statistics, such as the number of points filtered and the vehicle's time and speed at each recorded frame of the trajectory, are automatically saved in the [data](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucaban4_ucl_ac_uk/EjILZSOOLhRJsH_uLDgDNyYBBYDeQaTyg6IZOxn7z3xxVw?e=zR40JR) folder.  
+
+* The recorded trajectory file must be renamed with the naming convention set for the saved statistics, as this is not achieved automatically.  
+
 - - - -  
 
-The trajectory statistics, such as the number of points filtered and the time and speed at each recorded frame of the trajectory, are automatically named with the name corresponding to the filter configuration. The recorded odometry must be saved with the same name.  
-
-- - - -  
 
 Using the provided evaluation script for "plot_errors_and_save_statistics.py", the statistics regarding the error metrics can be computed and stored in the corresponding statistics folder.  
-
-- - - -  
 
 
 i.e. if the trajectory was named KITTI_06_vanilla, the command to save the statistics relating to this trajectory is as follows:  
@@ -190,11 +189,13 @@ i.e. if the trajectory was named KITTI_06_vanilla, the command to save the stati
 - - - -  
 
 
-Using the provided evaluation script for "plot_statistics.py", the statistics saved for all trajectories can be computed using multiple windows with relevant plots in sevaral tabs, consisting of all metrics discussed in the project report. **Please make sure the correct folder configuration is being followed**.  
+Using the provided evaluation script for "plot_statistics.py", the statistics saved for all trajectories can be computed using multiple windows with relevant plots in sevaral tabs, consisting of all metrics discussed in the project report.  
+
+**Please note you need to be in the corresponding statistics folder of the localization folder of the relevant results folder to run this script**  
+
 
 i.e. if the trajectories were named KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40, the code to plot the statistics comparing these trajectories is as follows:  
 
-**Please note you need to be in the corresponding statistics folder of the localization folder of the relevant results folder to run this script**  
 
 ```
 ./plot_statistics.py KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40
