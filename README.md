@@ -42,7 +42,7 @@ Pending -->
 
 * The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project.  
 
-    * The bag files for the corresponding sequences of the KITTI dataset were acquired by following this link: [kitti2bag](https://github.com/tomas789/kitti2bag).
+    * The bag files for the corresponding sequences of the KITTI dataset were acquired by following this repository: [kitti2bag](https://github.com/tomas789/kitti2bag).
 
 
    
