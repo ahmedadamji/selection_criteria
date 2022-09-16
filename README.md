@@ -182,11 +182,12 @@ Using the provided evaluation script for "plot_errors_and_save_statistics.py", t
 
 i.e. if the trajectory was named KITTI_06_vanilla, the command to save the statistics relating to this trajectory is as follows:  
 
-**Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
 
 ```
 ./plot_errors_and_save_statistics.py KITTI_06_vanilla
 ```
+
+**Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
 
 - - - -  
 
