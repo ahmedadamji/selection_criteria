@@ -92,14 +92,14 @@ The [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repositor
 
 * For mapping the required changes need to be made to the **selection_criteria_mapping.cpp** script.  
 
+    * To fine tune the parameters for the alpha filter, for mapping, this can be done inside the AlphaFilter function, by modifying the min_angle and max_angle variables. It is suggested that these parameters must be a set to a multiple of the statistics of the alpha angle found in the previous frame, which are are makde available from lines 1204 - 1207 of the **selection_criteria_mapping.cpp** script.  
+
 * For localization the required changes need to be made to the **selection_criteria_localization.cpp** script.  
 
-- - - -  
 
 
 The documentation for each function in these scripts are provided in their corresponding header file.
 
-To fine tune the parameters for the alpha filter, for mapping, this can be done inside the AlphaFilter function, by modifying the min_angle and max_angle variables. It is suggested that these parameters must be a set to a multiple of the statistics of the alpha angle found in the previous frame, which are are makde available from lines 1204 - 1207 of the **selection_criteria_mapping.cpp** script.  
 
 - - - -  
 
@@ -117,10 +117,8 @@ For either localization or mapping, ensure that in the corresponding cpp scripts
 - - - -  
 
 
-
 **For the SLAM algorithm to function, the dataset with recorded LiDAR data should be run simultaneously.**  
 
-- - - -  
 
 **As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset. Users are welcome to make the required changes to configure these to work with their datasets.**  
 
