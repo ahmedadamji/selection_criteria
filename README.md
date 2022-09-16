@@ -15,22 +15,38 @@ Pending -->
 ## Installation
 
 
-Please install the [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository that creates an environment with the correct ros version, packages and messages required for a quick startup.
+Please install the [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository that creates an environment with the correct ros version, packages and messages required for a quick startup.  
+
+- - - -  
 
 To install The hdl\_graph\_slam package for utilising the supplied launch files for creating a map with integrated nodes for selection criteria, please follow: [hdl_graph_slam](https://github.com/koide3/hdl_graph_slam).  
 
+- - - -  
+
 To install The hdl\_localization package for utilising the supplied launch files for localizing in a built map with integrated nodes for selection criteria, please follow: [hdl_localization](https://github.com/koide3/hdl_localization).  
+
+- - - -  
 
 To install The Evo package for running the evaluation scripts, please follow: [Evo](https://pypi.org/project/evo/).  
 
+- - - -  
+
 To install plotWindow, a package used to create plots for evaluation of recorded trajectories, please follow: [plotWindow](https://github.com/superjax/plotWindow).  
+
+- - - -  
 
 To install the KITTI odometry sequences, to visualise the affect of selection criteria against a benchmark, please follow: [KITTI Visual Odometry / SLAM Evaluation 2012](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).  
 
-The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project. This was done using the [kitti2bag](https://github.com/tomas789/kitti2bag) Python package. This is a recommended pre-processing step if working with the KITTI dataset.
+- - - -  
+
+The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project. This was done using the [kitti2bag](https://github.com/tomas789/kitti2bag) Python package. This is a recommended pre-processing step if working with the KITTI dataset.  
+
+- - - -  
 
 
 To install the CloudCompare software, to visualise the affect of selection criteria on map building, please follow: [CloudCompare](https://www.danielgm.net/cc/).  
+
+- - - -  
 
 
 To install this project's package, clone the repository into the src folder of the workspace:  
@@ -146,11 +162,14 @@ evo_traj bag KITTI_06.bag /odom_transformed --save_as_tum
 
 The trajectory statistics, such as the number of points filtered and the time and speed at each recorded frame of the trajectory, are automatically named with the name corresponding to the filter configuration. The recorded odometry must be saved with the same name.  
 
+- - - -  
+
 Using the provided evaluation script for "plot_errors_and_save_statistics.py", the statistics regarding the error metrics can be computed and stored in the corresponding statistics folder.  
 
-**Please make sure the correct folder configuration is being followed**.  
+- - - -  
 
-i.e. if the trajectory was named KITTI_06_vanilla, the code to save the statistics relating to this trajectory is as follows:  
+
+i.e. if the trajectory was named KITTI_06_vanilla, the command to save the statistics relating to this trajectory is as follows:  
 
 **Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
 
