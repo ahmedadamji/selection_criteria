@@ -78,10 +78,9 @@ Additionally, the launch files must be modified with the name of the correct dat
 **Please note the parameters for the implemented filters should be set by calling the function for the required filter inside the callback function of the corresponding "cpp" file.**  
 
 
-    * For mapping the required changes need to be made to the **selection_criteria_mapping.cpp** script.  
+* For mapping the required changes need to be made to the **selection_criteria_mapping.cpp** script.  
 
-
-    * For localization the required changes need to be made to the **selection_criteria_localization.cpp** script.  
+* For localization the required changes need to be made to the **selection_criteria_localization.cpp** script.  
 
 To fine tune the parameters for the alpha filter, for mapping, this can be done inside the AlphaFilter function, by modifying the min_angle and max_angle variables. It is suggested that these parameters must be a set to a multiple of the statistics of the alpha angle found in the previous frame, which are are makde available from lines 1204 - 1207 of the **selection_criteria_mapping.cpp** script.  
 
