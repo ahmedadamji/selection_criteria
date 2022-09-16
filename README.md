@@ -193,7 +193,6 @@ i.e. if the trajectory was named KITTI_06_vanilla, the command to save the stati
 
 Using the provided evaluation script for "plot_statistics.py", the statistics saved for all trajectories can be computed using multiple windows with relevant plots in sevaral tabs, consisting of all metrics discussed in the project report.  
 
-**Please note you need to be in the corresponding statistics folder of the localization folder of the relevant results folder to run this script**  
 
 
 i.e. if the trajectories were named KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40, the code to plot the statistics comparing these trajectories is as follows:  
@@ -203,14 +202,18 @@ i.e. if the trajectories were named KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06
 ./plot_statistics.py KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40
 ```
 
+**Please note you need to be in the corresponding statistics folder of the localization folder of the relevant results folder to run this script**  
+
+
 - - - -  
 
 Similarly to plot the speed vs error and speed vs time relationship for each of these trajectories, this can be done by following:  
 
-**Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
 
 ```
 ./plot_speed_statistics.py KITTI_06_ff_10_20
 ./plot_speed_statistics.py KITTI_06_ff_20_30
 ./plot_speed_statistics.py KITTI_06_ff_30_40
 ```
+
+**Please note you need to be in the corresponding localization folder of the relevant results folder to run this script**  
