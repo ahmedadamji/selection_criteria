@@ -14,37 +14,36 @@ Pending -->
 
 ## Installation
 
+   
 
-Please install the [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository that creates an environment with the correct ros version, packages and messages required for a quick startup.  
+* Please install the [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository that creates an environment with the correct ros version, packages and messages required for a quick startup.  
 
-- - - -  
 
 To install The hdl\_graph\_slam package for utilising the supplied launch files for creating a map with integrated nodes for selection criteria, please follow: [hdl_graph_slam](https://github.com/koide3/hdl_graph_slam).  
 
-- - - -  
+   
 
-To install The hdl\_localization package for utilising the supplied launch files for localizing in a built map with integrated nodes for selection criteria, please follow: [hdl_localization](https://github.com/koide3/hdl_localization).  
+* To install The hdl\_localization package for utilising the supplied launch files for localizing in a built map with integrated nodes for selection criteria, please follow: [hdl_localization](https://github.com/koide3/hdl_localization).  
 
-- - - -  
+   
 
-To install The Evo package for running the evaluation scripts, please follow: [Evo](https://pypi.org/project/evo/).  
+* To install The Evo package for running the evaluation scripts, please follow: [Evo](https://pypi.org/project/evo/).  
 
-- - - -  
+   
 
-To install plotWindow, a package used to create plots for evaluation of recorded trajectories, please follow: [plotWindow](https://github.com/superjax/plotWindow).  
+* To install plotWindow, a package used to create plots for evaluation of recorded trajectories, please follow: [plotWindow](https://github.com/superjax/plotWindow).  
 
-- - - -  
+   
 
-To install the KITTI odometry sequences, to visualise the affect of selection criteria against a benchmark, please follow: [KITTI Visual Odometry / SLAM Evaluation 2012](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).  
+* To install the KITTI odometry sequences, to visualise the affect of selection criteria against a benchmark, please follow: [KITTI Visual Odometry / SLAM Evaluation 2012](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).  
 
-- - - -  
+   
 
-The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project. This was done using the [kitti2bag](https://github.com/tomas789/kitti2bag) Python package. This is a recommended pre-processing step if working with the KITTI dataset.  
+* The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project. This was done using the [kitti2bag](https://github.com/tomas789/kitti2bag) Python package. This is a recommended pre-processing step if working with the KITTI dataset.  
 
-- - - -  
+   
 
-
-To install the CloudCompare software, to visualise the affect of selection criteria on map building, please follow: [CloudCompare](https://www.danielgm.net/cc/).  
+* To install the CloudCompare software, to visualise the affect of selection criteria on map building, please follow: [CloudCompare](https://www.danielgm.net/cc/).  
 
 - - - -  
 
@@ -54,6 +53,8 @@ To install this project's package, clone the repository into the src folder of t
 ```
 git clone https://github.com/ahmedadamji/selection_criteria.git
 ```
+
+- - - -  
 
 
 ## Quick Start
@@ -77,6 +78,8 @@ Run this command to build all packages:
 ```
 catkin build -DCMAKE_BUILD_TYPE=Release
 ```
+
+- - - -  
 
 The [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository can be referred how to shell into multiple instances of this image from different tabs of the terminal.  
 
@@ -133,6 +136,8 @@ To launch hdl\_graph\_slam, using the selection criteria scripts, run the follow
 roslaunch selection_criteria KITTI_graph_slam_sc_hdl.launch dataset:=$(rosparam get /dataset) sequence:=$(rosparam get /sequence) filter_name:=$(rosparam get /filter_name)
 ```
 
+- - - -  
+
 #### Evaluation
 
 To evaluate the map, the map must be saved as a pcd file and can be compared using the [CloudCompare](https://www.danielgm.net/cc/) Software.  
@@ -143,6 +148,8 @@ Saving built map to pcd:
 rosrun pcl_ros pointcloud_to_pcd input:=/hdl_graph_slam/map_points 
 ```
 
+- - - -  
+
 
 ### Localization
 
@@ -152,6 +159,8 @@ To launch hdl\_localization, using the selection criteria scripts, run the follo
 roslaunch selection_criteria KITTI_localization_sc_hdl.launch dataset:=$(rosparam get /dataset) sequence:=$(rosparam get /sequence) filter_name:=$(rosparam get /filter_name)
 ```
 
+- - - -  
+
 
 #### Evaluation
 
@@ -159,6 +168,8 @@ To evaluate the localization performance, convert the recorded odometry to the t
 ```
 evo_traj bag KITTI_06.bag /odom_transformed --save_as_tum
 ```
+
+- - - -  
 
 The trajectory statistics, such as the number of points filtered and the time and speed at each recorded frame of the trajectory, are automatically named with the name corresponding to the filter configuration. The recorded odometry must be saved with the same name.  
 
@@ -177,6 +188,8 @@ i.e. if the trajectory was named KITTI_06_vanilla, the command to save the stati
 ./plot_errors_and_save_statistics.py KITTI_06_vanilla
 ```
 
+- - - -  
+
 
 Using the provided evaluation script for "plot_statistics.py", the statistics saved for all trajectories can be computed using multiple windows with relevant plots in sevaral tabs, consisting of all metrics discussed in the project report. **Please make sure the correct folder configuration is being followed**.  
 
@@ -187,6 +200,8 @@ i.e. if the trajectories were named KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06
 ```
 ./plot_statistics.py KITTI_06_ff_10_20 KITTI_06_ff_20_30 KITTI_06_ff_30_40
 ```
+
+- - - -  
 
 Similarly to plot the speed vs error and speed vs time relationship for each of these trajectories, this can be done by following:  
 
