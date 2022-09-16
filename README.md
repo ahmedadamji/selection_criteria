@@ -40,7 +40,10 @@ Pending -->
 
    
 
-* The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project. This was done using the [kitti2bag](https://github.com/tomas789/kitti2bag) Python package. This is a recommended pre-processing step if working with the KITTI dataset.  
+* The KITTI odometry sequences were converted into rosbag files with the LiDAR data in form of PointCloud2 type messages for this project.  
+
+    * The bag files for the corresponding sequences of the KITTI dataset were acquired by following this link: [kitti2bag](https://github.com/tomas789/kitti2bag).
+
 
    
 
@@ -122,7 +125,6 @@ For either localization or mapping, ensure that in the corresponding cpp scripts
 
 As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset. Users are welcome to make the required changes to configure these to work with their datasets.  
 
-* The bag files for the corresponding sequences of the KITTI dataset were acquired by following this link: [kitti2bag](https://github.com/tomas789/kitti2bag).
 
 - - - -  
 
