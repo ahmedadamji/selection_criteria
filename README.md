@@ -64,15 +64,23 @@ catkin build -DCMAKE_BUILD_TYPE=Release
 
 The [**Melodic Workspace**](https://github.com/ahmedadamji/melodic_ws) repository can be referred how to shell into multiple instances of this image from different tabs of the terminal.  
 
+- - - -  
+
 
 
 For either localization or mapping, ensure that in the corresponding cpp scripts and the launch files, the file paths are modified to save the results of the trajectory as well as corresponding statistics.  
+
+- - - -  
 
 **The results are saved in the data folder, inside the src folder of the workspace.**  
 
 **The results recorded for this project are made available at the following link: [data](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucaban4_ucl_ac_uk/EjILZSOOLhRJsH_uLDgDNyYBBYDeQaTyg6IZOxn7z3xxVw?e=zR40JR)**. This can be downloaded to evaluated the recorded trajectories, else the file structure may be copied if needed to record your own trajectories for evauation.  
 
-Additionally, the launch files must be modified with the name of the correct dataset and sequence used, as it will save the results to corresponding folders (The folders should however pre-exist with the skeleton similar to the KITTI 00 and 06 results folders).  
+- - - -  
+
+The launch files must be modified with the name of the correct dataset and sequence used, as it will save the results to corresponding folders (The folders should however pre-exist with the skeleton similar to the KITTI 00 and 06 results folders).  
+
+- - - -  
 
 
 **Please note the parameters for the implemented filters should be set by calling the function for the required filter inside the callback function of the corresponding "cpp" file.**  
@@ -82,15 +90,23 @@ Additionally, the launch files must be modified with the name of the correct dat
 
 * For localization the required changes need to be made to the **selection_criteria_localization.cpp** script.  
 
+- - - -  
+
+
+The documentation for each function in these scripts are provided in their corresponding header file.
+
 To fine tune the parameters for the alpha filter, for mapping, this can be done inside the AlphaFilter function, by modifying the min_angle and max_angle variables. It is suggested that these parameters must be a set to a multiple of the statistics of the alpha angle found in the previous frame, which are are makde available from lines 1204 - 1207 of the **selection_criteria_mapping.cpp** script.  
 
-
-The documentation for each function in these scripts are provided in their corresponding header file.  
+- - - -  
 
 
 **For the SLAM algorithm to function, the dataset with recorded LiDAR data should be run simultaneously.**  
 
+- - - -  
+
 **As the name of the launch files suggests these algorithms are configured to only process LiDAR points from the "/kitti/velo/pointcloud" points topic, published in the bag files corresponding to each sequence of the KITTI dataset. Users are welcome to make the required changes to configure these to work with their datasets.**  
+
+- - - -  
 
 
 ### Mapping
