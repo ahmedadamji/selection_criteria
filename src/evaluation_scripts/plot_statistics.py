@@ -369,7 +369,6 @@ for parameter_idx in range(number_of_parameters):
         scaled_mean_rotational_Z_score_per_filtered_cloud_list[parameter_idx] = (z_rot_list[parameter_idx]/np.max(z_rot_list)) / (np.array(percentage_of_cloud_filtered_list[parameter_idx])/100)
   
 
-
 for parameter_idx in range(number_of_parameters):
 
     if (legend_list[parameter_idx] == 'vanilla'):
@@ -378,7 +377,6 @@ for parameter_idx in range(number_of_parameters):
         scaled_average_error_z_score_per_filtered_cloud_list[parameter_idx] = (((z_trans_list[parameter_idx]/np.max(z_trans_list))+(z_rot_list[parameter_idx]/np.max(z_rot_list)))) / (2*(percentage_of_cloud_filtered_list[parameter_idx])/100)
     
 
-# scaled_average_error_z_score_per_filtered_cloud_list = scaled_average_error_z_score_per_filtered_cloud_list / np.max(scaled_average_error_z_score_per_filtered_cloud_list)
 
 
 
