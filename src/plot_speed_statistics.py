@@ -1,11 +1,32 @@
 #!/usr/bin/env python
 
-#  REFERENCE: https://github.com/MichaelGrupp/evo/issues/20#issuecomment-368425480
-# https://github.com/MichaelGrupp/evo/issues/20
-# https://github.com/MichaelGrupp/evo/wiki/Formats#bag---ros-bagfile
-# https://github.com/MichaelGrupp/evo/blob/master/evo/tools/plot.py
 
-#  PUT EVO LICENCE HERE AND SAY MODIFIED
+
+# MIT License
+
+# Copyright (c) 2022 Ahmed Adamjee
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+# The tools provided by the Evo package (github.com/MichaelGrupp/evo.) was used in this repository to compute APE metrics
+# Reference for the line of best fit: np.polyfit and https://stackoverflow.com/a/31800660
 
 
 import sys
@@ -68,6 +89,8 @@ xyz_diff_magnitude_list = [0.0] * number_of_parameters
 synced_linear_velocity_list = [0.0] * number_of_parameters
 synced_angular_velocity_list = [0.0] * number_of_parameters
 synced_time_list = [0.0] * number_of_parameters
+synced_xyz_diff_magnitude_list = [0.0] * number_of_parameters
+synced_rpy_diff_pitch_list = [0.0] * number_of_parameters
 
 for i in range(len(legend_index)):
     legend_index[i] = i
@@ -82,10 +105,13 @@ for i in range(len(legend_index)):
 for file_num in range(len(sys.argv)-1):
 
     est_file_name = sys.argv[file_num+1]
+    dataset = "KITTI"
+    sequence = "06"
+    sub_folder = ""
 
     print("loading trajectories")
-    traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/localization/06_gt_tum")
-    traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/localization/" + est_file_name + ".tum")
+    traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + dataset + "/" + sequence + "/results/localization/" + sub_folder + sequence + "_gt_tum")
+    traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + dataset + "/" + sequence + "/results/localization/" + sub_folder + est_file_name + ".tum")
 
     print("registering and aligning trajectories")
     traj_ref, traj_est = sync.associate_trajectories(traj_ref, traj_est)
@@ -183,27 +209,6 @@ for file_num in range(len(sys.argv)-1):
     # xyz_diff_magnitude_list[file_num] = xyz_diff_magnitude
 
 
-    # print (np.size(xyz_diff_magnitude))
-    # print (np.size(x))
-
-
-    # for t_idx in range(len(x)):
-        # print(x[t_idx])
-
-    
-    # # creating series
-    # time_series = pd.Series(x)
-    
-    # # values to be inserted
-    # val =[1317384617.16,1317384617.47,1317384617.57,1317384617.99,1317384618.09]
-    
-    # # calling .searchsorted() method
-    # # result = time_series.searchsorted(value = val)
-    
-    # # display
-    # print(time_series[time_series.searchsorted(val)])
-
-
 
 
 
@@ -237,16 +242,20 @@ for file_num in range(len(sys.argv)-1):
             results["angular_velocity"].append(float(text[2].strip('\n')))
             i = i + 1
 
-    # print(translation)
-    # print(rotation)
-    # print(points)
 
     Dataset = "_".join(est_file_name.split("_")[:2])
     # filter_name = "_".join(est_file_name.split("_")[2:])
     filter_name = ""
     filter_name_found = False
     if ("vanilla" in est_file_name.split("_")[2:]):
-        filter_name = filter_name + "Vanilla" + "\n"
+        if (len(est_file_name.split("_")[2:]) > 3):
+            min_rad_index = est_file_name.split("_")[2:].index('vanilla') + 1
+            min_rad = est_file_name.split("_")[2:][min_rad_index]
+            max_rad_index = est_file_name.split("_")[2:].index('vanilla') + 2
+            max_rad = est_file_name.split("_")[2:][max_rad_index]
+            filter_name = filter_name + "Vanilla\n" + " Min: " + min_rad + " Max: " + max_rad + "\n"
+        else:
+            filter_name = filter_name + "Vanilla" + "\n"
         filter_name_found = True
 
     if ("rad" in est_file_name.split("_")[2:]):
@@ -281,7 +290,7 @@ for file_num in range(len(sys.argv)-1):
     if ("ff" in est_file_name.split("_")[2:]):
         filter_name = filter_name + "W/O Floor"
 
-    legend_list[file_num] = filter_name
+    legend_list[file_num] = str(file_num)
 
     time_list[file_num] = results["time"]
     linear_velocity_list[file_num] = results["linear_velocity"]
@@ -295,20 +304,16 @@ for file_num in range(len(sys.argv)-1):
     time_series = pd.Series(np.float64(time_list[file_num]))
     linear_velocity_series = pd.Series(np.float64(linear_velocity_list[file_num]))
     angular_velocity_series = pd.Series(np.float64(angular_velocity_list[file_num]))
-    # find synced index list
     index_list = np.array(time_series[time_series.searchsorted(np.float64(traj_est.timestamps))].index)
-    # print(index_list)
     synced_time_list[file_num] = np.array([time_series[i] for i in index_list])
     synced_linear_velocity_list[file_num] = np.array([linear_velocity_series[i] for i in index_list])
     synced_angular_velocity_list[file_num] = np.array([angular_velocity_series[i] for i in index_list])
-    xyz_diff_magnitude_list[file_num] = np.array([xyz_diff_magnitude[i] for i in range(len(index_list))])
-    # print(np.size(time_list))
-    # print(synced_time_list)
-    # print(np.float64(time_list))
-    # print(np.float64(x))
-    # print(len(synced_time_list[file_num]))
-    # print(len(synced_linear_velocity_list[file_num]))
-    # print(len(xyz_diff_magnitude))
+    synced_xyz_diff_magnitude_list[file_num] = np.array([xyz_diff_magnitude[i] for i in range(len(index_list))])
+    synced_rpy_diff_pitch_list[file_num] = np.array([rpy_diff_pitch[i] for i in range(len(index_list))])
+
+
+
+    print(est_file_name)
 
 
 
@@ -323,21 +328,23 @@ def createFigure():
     # using set_facecolor() method
     # Link with list with colours: https://matplotlib.org/stable/gallery/color/named_colors.html
     ax = plt.axes()
-    ax.set_facecolor("seashell")
-    
+    ax.set_facecolor('white')
+    ax.patch.set_edgecolor('black')
+    ax.patch.set_linewidth('3')  
+    # plt.style.context("seaborn-whitegrid")
+    # fig.patch.set_facecolor('gainsboro')
 
-    fig.patch.set_facecolor('gainsboro')
     # Setting the axis scales
+    plt.rc('xtick', labelsize=16)
+    plt.rc('ytick', labelsize=16)
+    mpl.rc('xtick', labelsize=16)
+    mpl.rc('ytick', labelsize=16)
     plt.yscale('linear')
     plt.xscale('linear')
     plt.ticklabel_format(style='plain',useOffset=False)
     
-    # plt.xticks(range(len(legend_list)),legend_list)
-    # ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    # Adding a grid
-    plt.grid()
-    return fig, plt
 
+    return fig, plt
 
 #############################################################################################
 #############################################################################################
@@ -355,11 +362,23 @@ pw_results.MainWindow.setWindowTitle("SpeedVSTime")
 fig, plt = createFigure()
 
 for i in range(number_of_parameters):
-    plt.plot((synced_time_list[i]-1317384506.40), synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-plt.xlabel("Time (s)", fontsize=13, fontweight='bold')
-plt.ylabel("Linear Velocity (m/s)", fontsize=13, fontweight='bold')
-plt.title("Linear Velocity vs Time Chart with " + Dataset, fontsize=15, fontweight='bold')
-plt.legend(loc='upper left')
+    plt.plot()
+plt.xlabel("", fontsize=18, fontweight='bold')
+plt.ylabel("", fontsize=18, fontweight='bold')
+pw_results.addPlot("", fig)
+
+
+# Creating the plot
+fig, plt = createFigure()
+
+for i in range(number_of_parameters):
+    plt.xlim([0,115])
+    plt.ylim([0,np.max(synced_linear_velocity_list)])
+    plt.plot((synced_time_list[i]-1317384506.40), synced_linear_velocity_list[i], label = legend_list[i])
+plt.xlabel("Time (s)", fontsize=18, fontweight='bold')
+plt.ylabel("Linear Velocity (m/s)", fontsize=18, fontweight='bold')
+# plt.title("Linear Velocity vs Time Chart with " + Dataset, fontsize=15, fontweight='bold')
+# plt.legend(loc='upper left')
 pw_results.addPlot("Linear Velocity vs Time", fig)
 
 
@@ -367,139 +386,52 @@ pw_results.addPlot("Linear Velocity vs Time", fig)
 fig, plt = createFigure()
 
 for i in range(number_of_parameters):
-    plt.plot((synced_time_list[i]-1317384506.40), synced_angular_velocity_list[i], linewidth=2, label = legend_list[i])
-plt.xlabel("Time (s)", fontsize=13, fontweight='bold')
-plt.ylabel("Angular Velocity (m/s)", fontsize=13, fontweight='bold')
-plt.title("Angular Velocity vs Time Chart with " + Dataset, fontsize=15, fontweight='bold')
-plt.legend(loc='upper left')
+    plt.xlim([0,115])
+    plt.ylim([0,np.max(synced_angular_velocity_list)])
+    plt.plot((synced_time_list[i]-1317384506.40), synced_angular_velocity_list[i], label = legend_list[i])
+plt.xlabel("Time (s)", fontsize=18, fontweight='bold')
+plt.ylabel("Angular Velocity (deg/s)", fontsize=18, fontweight='bold')
+# plt.title("Angular Velocity vs Time Chart with " + Dataset, fontsize=15, fontweight='bold')
+# plt.legend(loc='upper left')
 pw_results.addPlot("Angular Velocity vs Time", fig)
 
 
 
-# # Creating the plot
-# fig, plt = createFigure()
-
-# for i in range(number_of_parameters):
-#     plt.plot((synced_time_list[i]-1317384506.40), xyz_diff_magnitude_list[i], linewidth=2, label = legend_list[i])
-#     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-# plt.xlabel("Time (s)", fontsize=13, fontweight='bold')
-# plt.ylabel("ATE (m)", fontsize=13, fontweight='bold')
-# plt.title("Absolute Translational Error vs Time Chart with " + Dataset, fontsize=15, fontweight='bold')
-# plt.legend(loc='upper left')
-# pw_results.addPlot("ATE vs Time", fig)
-
-
-
-# # Creating the plot
-# fig, plt = createFigure()
-
-# for i in range(number_of_parameters):
-#     plt.scatter(synced_linear_velocity_list[i], xyz_diff_magnitude_list[i], s=2, label = legend_list[i])
-#     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-# plt.xlabel("Linear Velocity (m/s)", fontsize=13, fontweight='bold')
-# plt.ylabel("ATE (m)", fontsize=13, fontweight='bold')
-# plt.title("Absolute Translational Error vs Linear Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
-# plt.legend(loc='upper left')
-# pw_results.addPlot("ATE vs Linear Velocity", fig)
-
-
-
-# # Creating the plot
-# fig, plt = createFigure()
-
-# for i in range(number_of_parameters):
-#     plt.scatter(synced_angular_velocity_list[i], xyz_diff_magnitude_list[i], s=2, label = legend_list[i])
-#     # plt.plot(synced_time_list[i], synced_angular_velocity_list[i], linewidth=2, label = legend_list[i])
-# plt.xlabel("Angular Velocity (m/s)", fontsize=13, fontweight='bold')
-# plt.ylabel("ATE (m)", fontsize=13, fontweight='bold')
-# plt.title("Absolute Translational Error vs Angular Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
-# plt.legend(loc='upper left')
-# pw_results.addPlot("ATE vs Angular Velocity", fig)
-
-
 # Creating the plot
 fig, plt = createFigure()
 
-# BIG UP THE FACT THAT I MADE A LINE OF BEST FIT
-# Reference for the line of best fit: np.polyfit and https://stackoverflow.com/a/31800660
 
 for i in range(number_of_parameters):
-    plt.scatter(xyz_diff_magnitude_list[i], synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i]), s=2, label = str("Linear Velocity: " + legend_list[i]))
-    x = xyz_diff_magnitude_list[i]
-    y = synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i])
+    plt.xlim([0,2.45])
+    plt.ylim([0,25])
+    plt.scatter(synced_xyz_diff_magnitude_list[i], synced_linear_velocity_list[i], s=2, label = str("Linear Velocity: " + legend_list[i]))
+    x = synced_xyz_diff_magnitude_list[i]
+    y = synced_linear_velocity_list[i]
     plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Linear Velocity: " + legend_list[i]))
-    plt.scatter(xyz_diff_magnitude_list[i], synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i]), s=2, label = str("Angular Velocity: " + legend_list[i]))
-    # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-    y = synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i])
-    plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Angular Velocity: " + legend_list[i]))
-plt.ylabel("Velocity", fontsize=13, fontweight='bold')
-plt.xlabel("ATE (m)", fontsize=13, fontweight='bold')
-plt.title("Absolute Translational Error vs Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
-plt.legend(loc='upper left')
+
+plt.ylabel("Velocity (m/s)", fontsize=18, fontweight='bold')
+plt.xlabel("APE Translation (m)", fontsize=18, fontweight='bold')
+# plt.title("Absolute Translational Error vs Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
+# plt.legend(loc='upper left')
 pw_results.addPlot("ATE vs Velocity", fig)
 
 
 
-
-# # Creating the plot
-# fig, plt = createFigure()
-
-# for i in range(number_of_parameters):
-#     plt.plot((synced_time_list[i]-1317384506.40), rpy_diff_pitch[:np.size(synced_time_list[i])], linewidth=2, label = legend_list[i])
-#     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-# plt.xlabel("Time (s)", fontsize=13, fontweight='bold')
-# plt.ylabel("ARE (deg)", fontsize=13, fontweight='bold')
-# plt.title("Absolute Rotational Error vs Time Chart with " + Dataset, fontsize=15, fontweight='bold')
-# plt.legend(loc='upper left')
-# pw_results.addPlot("ARE vs Time", fig)
-
-
-
-# # Creating the plot
-# fig, plt = createFigure()
-
-# for i in range(number_of_parameters):
-#     plt.scatter(synced_linear_velocity_list[i], rpy_diff_pitch[:np.size(synced_time_list[i])], s=2, label = legend_list[i])
-#     # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-# plt.xlabel("Linear Velocity (m/s)", fontsize=13, fontweight='bold')
-# plt.ylabel("ARE (deg)", fontsize=13, fontweight='bold')
-# plt.title("Absolute Rotational Error vs Linear Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
-# plt.legend(loc='upper left')
-# pw_results.addPlot("ARE vs Linear Velocity", fig)
-
-
-
-# # Creating the plot
-# fig, plt = createFigure()
-
-# for i in range(number_of_parameters):
-#     plt.scatter(synced_angular_velocity_list[i], rpy_diff_pitch[:np.size(synced_time_list[i])], s=2, label = legend_list[i])
-#     # plt.plot(synced_time_list[i], synced_angular_velocity_list[i], linewidth=2, label = legend_list[i])
-# plt.xlabel("Angular Velocity (m/s)", fontsize=13, fontweight='bold')
-# plt.ylabel("ARE (deg)", fontsize=13, fontweight='bold')
-# plt.title("Absolute Rotational Error vs Angular Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
-# plt.legend(loc='upper left')
-# pw_results.addPlot("ARE vs Angular Velocity", fig)
-
-
-
 # Creating the plot
 fig, plt = createFigure()
 
 for i in range(number_of_parameters):
-    plt.scatter(rpy_diff_pitch[:np.size(synced_time_list[i])], synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i]), s=2, label = str("Linear Velocity: " + legend_list[i]))
-    x = rpy_diff_pitch[:np.size(synced_time_list[i])]
-    y = synced_linear_velocity_list[i]/np.max(synced_linear_velocity_list[i])
+    plt.xlim([0,3.3])
+    plt.ylim([0,25])
+    plt.scatter(synced_rpy_diff_pitch_list[i], synced_linear_velocity_list[i], s=2, label = str("Linear Velocity: " + legend_list[i]))
+    x = synced_rpy_diff_pitch_list[i]
+    y = synced_linear_velocity_list[i]
     plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Linear Velocity: " + legend_list[i]))
-    plt.scatter(rpy_diff_pitch[:np.size(synced_time_list[i])], synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i]), s=2, label = str("Angular Velocity: " + legend_list[i]))
-    x = rpy_diff_pitch[:np.size(synced_time_list[i])]
-    y = synced_angular_velocity_list[i]/np.max(synced_angular_velocity_list[i])
-    plt.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)), label = str("Angular Velocity: " + legend_list[i]))
-    # plt.plot(synced_time_list[i], synced_linear_velocity_list[i], linewidth=2, label = legend_list[i])
-plt.ylabel("Velocity", fontsize=13, fontweight='bold')
-plt.xlabel("ARE (deg)", fontsize=13, fontweight='bold')
-plt.title("Absolute Rotational Error vs Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
-plt.legend(loc='upper left')
+
+plt.ylabel("Velocity (m/s)", fontsize=18, fontweight='bold')
+plt.xlabel("APE Rotation (deg)", fontsize=18, fontweight='bold')
+# plt.title("Absolute Rotational Error vs Velocity Chart with " + Dataset, fontsize=15, fontweight='bold')
+# plt.legend(loc='upper left')
 pw_results.addPlot("ARE vs Velocity", fig)
 
 
@@ -510,50 +442,3 @@ pw_results.addPlot("ARE vs Velocity", fig)
 
 
 pw_results.show()
-
-
-#############################################################################################
-#############################################################################################
-#############################################################################################
-
-
-
-
-
-
-
-    # print("loading plot modules")
-
-    # #TODO:plot three pic like subplots(3)
-    # print("plotting")
-    # plot_collection = plot.PlotCollection("Example")
-    # # metric values
-    # fig_1 = plt.figure(figsize=(8, 8))
-    # plot.error_array(fig_1, xyz_diff_x, color='grey',
-    #                  name="msckf", title=str(ape_metric), linestyle="-")
-    # #plot.error_array(fig_1, diff_z, color='blue',
-    # #                 name="APE", title=str(ape_metric3), linestyle="-")
-
-    # plot_collection.add_figure("raw_x", fig_1)
-    # #
-    # fig_2 = plt.figure(figsize=(8, 8))
-    # plot.error_array(fig_2, xyz_diff_y, color='grey',
-    #                  name="msckf", title=str(ape_metric), linestyle="-")
-    # #plot.error_array(fig_2, diff2_y, color='blue',
-    #  #                name="vins", title=str(ape_metric2), linestyle="dashed")
-    # #plot.error_array(fig_2, diff3_y, color='blue',
-    # #                 name="APE", title=str(ape_metric), linestyle="-")
-
-    # plot_collection.add_figure("raw_y", fig_2)
-    # #
-    # fig_3 = plt.figure(figsize=(8, 8))
-    # plot.error_array(fig_3, xyz_diff_z, color='grey',
-    #                  name="msckf", title=str(ape_metric), linestyle="-")
-    # #plot.error_array(fig_3, diff2_z, color='blue',
-    # #                 name="vins", title=str(ape_metric2), linestyle="dashed")
-    # #plot.error_array(fig_3, diff3_z, color='blue',
-    # #                 name="APE", title=str(ape_metric), linestyle="-")
-
-    # plot_collection.add_figure("raw_z", fig_3)
-
-    # plot_collection.show()

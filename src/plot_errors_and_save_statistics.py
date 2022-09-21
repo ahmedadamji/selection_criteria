@@ -1,11 +1,34 @@
 #!/usr/bin/env python
 
-#  REFERENCE: https://github.com/MichaelGrupp/evo/issues/20#issuecomment-368425480
-# https://github.com/MichaelGrupp/evo/issues/20
-# https://github.com/MichaelGrupp/evo/wiki/Formats#bag---ros-bagfile
-# https://github.com/MichaelGrupp/evo/blob/master/evo/tools/plot.py
 
-#  PUT EVO LICENCE HERE AND SAY MODIFIED
+
+# MIT License
+
+# Copyright (c) 2022 Ahmed Adamjee
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+# The tools provided by the Evo package (github.com/MichaelGrupp/evo.) was used in this repository to compute APE metrics
+#  The plots for the APE for pitch with respect to time were plotted with the aid of some available code where
+#  they plot it for translation vectors seperately: https://github.com/MichaelGrupp/evo/files/1757713/ape_xyz.zip
+
 
 
 import sys
@@ -72,6 +95,24 @@ logger = logging.getLogger(__name__)
 ListOrArray = typing.Union[typing.Sequence[float], np.ndarray]
 
 
+#############################################################################################
+#############################################################################################
+#############################################################################################
+
+def createFigure():
+    # Creating the figure
+    fig = plt.figure()  
+    # Setting the background color of the plot 
+    # using set_facecolor() method
+    # Link with list with colours: https://matplotlib.org/stable/gallery/color/named_colors.html
+    ax = plt.axes()
+
+    return ax, fig, plt
+
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
 
 
 # Can use this code to find the path of the current working directory.
@@ -82,10 +123,17 @@ ListOrArray = typing.Union[typing.Sequence[float], np.ndarray]
 for file_num in range(len(sys.argv)-1):
 
     est_file_name = sys.argv[file_num+1]
+    dataset = "KITTI"
+    sequence = "06"
+    sub_folder = ""
+
+    with open(str(est_file_name + ".tum")) as f:
+        lines = f.readlines()
+    total_time = float(lines[-1].split(' ')[0])-1317384506.40 #Subtracting total time for KITTI 06 sequence
 
     print("loading trajectories")
-    traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/localization/06_gt_tum")
-    traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/KITTI/06/results/localization/" + est_file_name + ".tum")
+    traj_ref = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + dataset + "/" + sequence + "/results/localization/" + sub_folder + sequence + "_gt_tum")
+    traj_est = file_interface.read_tum_trajectory_file("/root/catkin_ws/src/project_ws/catkin_ws/src/data/" + dataset + "/" + sequence + "/results/localization/" + sub_folder + est_file_name + ".tum")
 
     print("registering and aligning trajectories")
     traj_ref, traj_est = sync.associate_trajectories(traj_ref, traj_est)
@@ -180,15 +228,16 @@ for file_num in range(len(sys.argv)-1):
     mean_pitch = np.mean(rpy_diff_pitch)
 
 
-    # Printing statistics for APE for pitch
-    print("ape_statistics for Pitch:")
-    print("std:", std_pitch)
-    print("rmse:", rmse_pitch)
-    print("max:", max_pitch)
-    print("min:", min_pitch)
-    print("median:", median_pitch)
-    print("sse:", sse_pitch)
-    print("mean:", mean_pitch)
+
+    # # Printing statistics for APE for pitch
+    # print("ape_statistics for Pitch:")
+    # print("std:", std_pitch)
+    # print("rmse:", rmse_pitch)
+    # print("max:", max_pitch)
+    # print("min:", min_pitch)
+    # print("median:", median_pitch)
+    # print("sse:", sse_pitch)
+    # print("mean:", mean_pitch)
 
 
     # Plotting APE for rotation part
@@ -198,7 +247,7 @@ for file_num in range(len(sys.argv)-1):
     fig_pitch, ax = plt.subplots()
 
     if isinstance(traj_est, trajectory.PoseTrajectory3D):
-        x = traj_est.timestamps
+        x = traj_est.timestamps-1317384506.40
         xlabel = "$t$ (s)"
     else:
         x = np.arange(0., len(rpy_diff_pitch))
@@ -207,19 +256,34 @@ for file_num in range(len(sys.argv)-1):
     ylabel = "$Pitch$ (deg)"
     # ax.plot(x, rpy_diff_pitch[1:], label = 'pitch')
     c = np.tan(x)
-    ax.plot(x, rpy_diff_pitch[1:], label = 'APE (deg)', alpha = 1.0, color='grey')
-    ax.plot(x, [rmse_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'rmse', color='purple')
+
+
+    # Creating the plot
+    ax, fig, plt = createFigure()
+    # plt.figure(figsize=(4, 5))
+    plt.gcf().set_size_inches(6, 6)
+
+    plt.plot(x, rpy_diff_pitch[1:], label = 'APE (deg)', alpha = 1.0, color='grey')
+    plt.plot(x, [mean_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'mean', color='green')
+    plt.plot(x, [median_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'median', color='red')
+    plt.plot(x, [rmse_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'rmse', color='purple')
     # ax.plot(x, [max_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'max', color='yellow')
     # ax.plot(x, [min_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'min', color='blue')
-    ax.plot(x, [median_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'median', color='red')
     # ax.plot(x, [sse_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'sse')
-    ax.plot(x, [mean_pitch for i in range(len(rpy_diff_pitch[1:]))], label = 'mean', color='green')
-    ax.add_patch(Rectangle((x.min(), mean_pitch-std_pitch), x.max(), mean_pitch+std_pitch,label='std', color='lightblue'))
+    ax.add_patch(Rectangle((x.min(), mean_pitch-std_pitch), x.max(), mean_pitch+std_pitch,label='std', color='lightsteelblue'))
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    ax.legend(frameon=True, loc='upper right')
-    plt.savefig(str("aper_plots/" + est_file_name + "_" + "aper.png"))
+    plt.legend(frameon=True, loc='upper right')
+    # plt.figure(figsize=((0.953-0.161),(0.936-0.116)))
+    # plt.subplots_adjust(top=0.936,
+    #                     bottom=0.116,
+    #                     left=0.161,
+    #                     right=0.953,
+    #                     hspace=0.2,
+    #                     wspace=0.2)
     # plt.show()
+    plt.savefig(str("aper_plots/" + est_file_name + "_" + "aper.png"))
+
 
 
     # #  CODE FOR FINDING INDIVIDUAL TRANSLATION DIFFERENCES:
@@ -242,14 +306,14 @@ for file_num in range(len(sys.argv)-1):
     mean_trans = ape_statistics["mean"]
 
 
-    print("ape_statistics for Translation:")
-    print("std:", std_trans)
-    print("rmse:", rmse_trans)
-    print("max:", max_trans)
-    print("min:", min_trans)
-    print("median:", median_trans)
-    print("sse:", sse_trans)
-    print("mean:", mean_trans)
+    # # print("ape_statistics for Translation:")
+    # print("std:", std_trans)
+    # print("rmse:", rmse_trans)
+    # print("max:", max_trans)
+    # print("min:", min_trans)
+    # print("median:", median_trans)
+    # print("sse:", sse_trans)
+    # print("mean:", mean_trans)
 
 
     #  Saving results to statistics text file:
@@ -269,65 +333,16 @@ for file_num in range(len(sys.argv)-1):
             'min: '+ str(min_pitch),
             'median: '+ str(median_pitch),
             'sse: '+ str(sse_pitch),
-            'mean: '+ str(mean_pitch)]
+            'mean: '+ str(mean_pitch),
+            '------------------------------',
+            'Additional Statistics: ',
+            'time: ' + str(total_time)]
 
     with open(str("statistics/" + est_file_name + "_" + "statistics.txt"), 'w') as f:
         for line in lines:
             f.write(line)
             f.write('\n')
 
-
-
-
-
-
-
-
-
-    # #  CODE FOR FINDING INDIVIDUAL TRANSLATION DIFFERENCES:
-
-    # data = (traj_ref, traj_est)
-
-    # ape_metric = metrics.APE(metrics.PoseRelation.translation_part)
-
-    # ape_metric.process_data(data)
-
-    # ape_statistics = ape_metric.get_all_statistics()
-
-    # print("mean:", ape_statistics["mean"])
-
-    # print("calculating xyz differences")
-    # import numpy as np
-    # xyz_diff = np.abs(traj_ref.positions_xyz - traj_est.positions_xyz)
-    # # print(xyz_diff)
-
-    # xyz_diff_x = xyz_diff[:,0]
-    # xyz_diff_y = xyz_diff[:,1]
-    # xyz_diff_z = xyz_diff[:,2]
-
-    # # Only finding for x and y as z does not matter
-    # xyz_diff_magnitude = np.sqrt(np.square(xyz_diff_x)+np.square(xyz_diff_y))
-
-
-    # print (np.size(xyz_diff_magnitude))
-    # print (np.size(x))
-
-
-    # for t_idx in range(len(x)):
-        # print(x[t_idx])
-
-    
-    # # creating series
-    # time_series = pd.Series(x)
-    
-    # # values to be inserted
-    # val =[1317384617.16,1317384617.47,1317384617.57,1317384617.99,1317384618.09]
-    
-    # # calling .searchsorted() method
-    # # result = time_series.searchsorted(value = val)
-    
-    # # display
-    # print(time_series[time_series.searchsorted(val)])
 
 
 
