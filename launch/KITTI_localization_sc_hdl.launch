@@ -64,9 +64,9 @@
   <!-- <arg name="sequence" default="00" /> -->
   <arg name="filter_name" default="" />
 
-  <arg name="enable_gps" default="false" />
-  <arg name="enable_imu_acc" default="false" />
-  <arg name="enable_imu_ori" default="false" />
+  <arg name="enable_gps" default="true" />
+  <arg name="enable_imu_acc" default="true" />
+  <arg name="enable_imu_ori" default="true" />
 
 
   <!-- optional arguments -->
@@ -78,6 +78,7 @@
   <arg name="invert_imu_gyro" default="false" />
   <arg name="use_global_localization" default="true" />
   <arg name="imu_topic" default="/kitti/oxts/imu" />
+  <arg name="gps_topic" default="/kitti/oxts/gps/fix" />
   <arg name="enable_robot_odometry_prediction" value="true" />
   <arg name="robot_odom_frame_id" value="odom" />
   <!-- <arg name="robot_odom_frame_id" value="map" /> -->

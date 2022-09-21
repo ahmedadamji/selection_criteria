@@ -1273,7 +1273,7 @@ SCLocalization::betaFilter(PointCPtr &in_cloud_ptr, PointCPtr &out_cloud_ptr, Po
   ros::param::get("/filter_name", g_filter_name);
 
   // string current_filter_name = string("beta") + string("_") + to_string(z) + "_rad_60_80_velocity_sampled";
-  string current_filter_name = string("beta") + string("_") + to_string(z) + "_show";
+  string current_filter_name = string("beta") + string("_") + to_string(z);
 
 
   if (g_filter_name.empty())
@@ -1362,7 +1362,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // g_max_retained_floor_radius = 70;
   // g_max_retained_floor_radius = 80;
 
-  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
 
   // Explain the naming convension of the test files properly in the thesis.
 
@@ -1447,7 +1447,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Beta Filters
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
-  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
+  betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 2); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 3); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 4); //removed suspected unneccesary points in form of angle deviation filter
