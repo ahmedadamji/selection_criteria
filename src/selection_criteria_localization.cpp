@@ -1367,7 +1367,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
   // Explain the naming convension of the test files properly in the thesis.
 
   // Floor Removal Tests --> Try these with and without removing floor
-  // Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
+  Filter(filtered_cloud, cloud_out, vis_cloud); //removed suspected unneccesary points
   // cylinderFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 100); //removed suspected unneccesary points in form of cylinder filter
   // radiusFilter(filtered_cloud, cloud_out, vis_cloud, 0, 50); //removed suspected unneccesary points in form of radius filter
   // ringFilter(filtered_cloud, cloud_out, vis_cloud, 0, 3, 50, 100); //removed suspected unneccesary points in form of ring filter
@@ -1447,7 +1447,7 @@ SCLocalization::callback(const sensor_msgs::PointCloud2ConstPtr& filtered_cloud_
 
   // Beta Filters
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 0.5); //removed suspected unneccesary points in form of angle deviation filter
-  betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
+  // betaFilter(filtered_cloud, cloud_out, vis_cloud, 1); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 2); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 3); //removed suspected unneccesary points in form of angle deviation filter
   // betaFilter(filtered_cloud, cloud_out, vis_cloud, 4); //removed suspected unneccesary points in form of angle deviation filter
